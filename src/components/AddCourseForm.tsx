@@ -1,8 +1,13 @@
+// components/AddCourseForm.tsx
 "use client";
 
 import { useState } from "react";
 
-export default function AddCourseForm() {
+export default function AddCourseForm({
+  onCourseCreated,
+}: {
+  onCourseCreated: () => void;
+}) {
   const [name, setName] = useState("");
   const [location, setLocation] = useState("");
   const [latitude, setLatitude] = useState("");
@@ -28,13 +33,12 @@ export default function AddCourseForm() {
     setLoading(false);
 
     if (res.ok) {
-      alert("Bana skapad!");
       setName("");
       setLocation("");
       setLatitude("");
       setLongitude("");
       setImageUrl("");
-    } else {
+      onCourseCreated();
       alert("Fel vid skapande");
     }
   };
