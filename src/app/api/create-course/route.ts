@@ -6,7 +6,7 @@ import type { Database } from "@/types/supabase";
 
 export async function POST(req: NextRequest) {
   const supabase = createRouteHandlerClient<Database>({
-    cookies: () => cookies(), // ✅ skicka in en funktion som returnerar cookies()
+    cookies: () => cookies(),
   });
 
   const body = await req.json();
@@ -14,8 +14,7 @@ export async function POST(req: NextRequest) {
 
   const {
     data: { user },
-  } = await supabase.auth.getUser(); // ✅ fungerar nu utan fel
-
+  } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
