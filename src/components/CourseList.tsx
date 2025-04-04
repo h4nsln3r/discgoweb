@@ -1,7 +1,7 @@
-// components/CourseList.tsx
 "use client";
 
 import { useEffect, useState } from "react";
+import AddScoreForm from "./AddScoreForm";
 import Map from "./Map";
 
 export type Course = {
@@ -15,6 +15,7 @@ export type Course = {
 
 export default function CourseList({ refresh }: { refresh: boolean }) {
   const [courses, setCourses] = useState<Course[]>([]);
+  const [openForms, setOpenForms] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -25,6 +26,13 @@ export default function CourseList({ refresh }: { refresh: boolean }) {
 
     fetchCourses();
   }, [refresh]);
+
+  const toggleForm = (courseId: string) => {
+    setOpenForms((prev) => ({
+      ...prev,
+      [courseId]: !prev[courseId],
+    }));
+  };
 
   if (!courses.length)
     return <p className="text-gray-500">Inga banor tillagda än.</p>;
@@ -39,21 +47,38 @@ export default function CourseList({ refresh }: { refresh: boolean }) {
           >
             <h3 className="text-lg font-semibold">{course.name}</h3>
             <p className="text-sm text-gray-600">{course.location}</p>
-            {/* {course.image_url && (
+
+            {course.image_url && (
               <img
                 src={course.image_url}
                 alt={course.name}
                 className="mt-2 rounded object-cover max-h-48 w-full"
               />
-            )} */}
+            )}
+
             {course.latitude && course.longitude && (
               <p className="text-xs text-gray-500 mt-1">
                 📍 {course.latitude}, {course.longitude}
               </p>
             )}
+
+            <button
+              onClick={() => toggleForm(course.id)}
+              className="mt-4 text-sm text-blue-600 underline"
+            >
+              {openForms[course.id] ? "Stäng formulär" : "Lägg till resultat"}
+            </button>
+
+            {openForms[course.id] && (
+              <AddScoreForm
+                courseId={course.id}
+                onClose={() => toggleForm(course.id)}
+              />
+            )}
           </div>
         ))}
       </div>
+
       <Map courses={courses} />
     </>
   );
