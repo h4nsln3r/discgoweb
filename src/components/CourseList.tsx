@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import AddScoreForm from "./AddScoreForm";
 import Map from "./Map";
+import CourseScores from "./CourseScores";
 
 export type Course = {
   id: string;
@@ -75,6 +76,7 @@ export default function CourseList({ refresh }: { refresh: boolean }) {
                 onClose={() => toggleForm(course.id)}
               />
             )}
+            <CourseScores courseId={course.id} />
           </div>
         ))}
       </div>
