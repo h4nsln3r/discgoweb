@@ -3,7 +3,7 @@ import "../styles/global.scss";
 import "./globals.css";
 
 import type { Metadata } from "next";
-import Navbar from "@/components/Navbar";
+import TopbarWrapper from "../components/TopbarWrapper.server";
 
 export const metadata: Metadata = {
   title: "Discgolf App",
@@ -18,7 +18,7 @@ export default function RootLayout({
   return (
     <html lang="sv">
       <body>
-        <Navbar />
+        <TopbarWrapper />
         {children}
       </body>
     </html>
