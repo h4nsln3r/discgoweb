@@ -72,33 +72,45 @@ export default function Topbar({ user }: { user: SlimUser | null }) {
         />
       )}
 
-      {/* 📋 Sidemenu */}
+      {/* 📋 Responsiv sidomeny */}
       <div
-        className={`fixed top-0 left-0 h-full w-64 bg-white shadow-md z-50 transform transition-transform duration-300 ${
+        className={`fixed top-0 left-0 h-full w-64 max-w-[80%] sm:max-w-xs bg-white shadow-md z-50 transform transition-transform duration-300 overflow-y-auto ${
           menuOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="p-4 flex justify-between items-center border-b">
-          <h2 className="text-lg font-bold">Meny</h2>
+        <div className="p-5 flex justify-between items-center border-b">
+          <h2 className="text-lg font-semibold">Meny</h2>
           <button onClick={() => setMenuOpen(false)} aria-label="Stäng meny">
             <XMarkIcon className="w-6 h-6 text-gray-800" />
           </button>
         </div>
 
-        <ul className="p-4 space-y-4 text-base">
+        <ul className="p-5 space-y-4 text-base">
           <li>
-            <Link href="/dashboard" onClick={() => setMenuOpen(false)}>
-              Dashboard
+            <Link
+              href="/dashboard"
+              onClick={() => setMenuOpen(false)}
+              className="block hover:text-blue-600 transition"
+            >
+              🏠 Dashboard
             </Link>
           </li>
           <li>
-            <Link href="/profile" onClick={() => setMenuOpen(false)}>
-              Min profil
+            <Link
+              href="/profile"
+              onClick={() => setMenuOpen(false)}
+              className="block hover:text-blue-600 transition"
+            >
+              👤 Min profil
             </Link>
           </li>
           <li>
-            <Link href="/auth" onClick={() => setMenuOpen(false)}>
-              Logga ut
+            <Link
+              href="/auth"
+              onClick={() => setMenuOpen(false)}
+              className="block hover:text-red-600 transition"
+            >
+              🚪 Logga ut
             </Link>
           </li>
         </ul>
