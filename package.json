@@ -11,6 +11,7 @@
     "clean": "rimraf .next"
   },
   "dependencies": {
+    "@heroicons/react": "~2.2.0",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/supabase-js": "~2.49.3",
     "leaflet": "~1.9.4",
@@ -22,16 +23,17 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
-    "@tailwindcss/postcss": "^4",
     "@types/leaflet": "~1.9.17",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "autoprefixer": "~10.4.21",
     "eslint": "^9",
     "eslint-config-next": "15.2.4",
+    "postcss": "~8.5.3",
     "rimraf": "~6.0.1",
     "supabase": "^2.20.5",
-    "tailwindcss": "^4",
+    "tailwindcss": "~3.4.17",
     "typescript": "^5"
   }
 }
