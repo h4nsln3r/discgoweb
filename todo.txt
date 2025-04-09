@@ -1,3 +1,21 @@
 discgoweb nytt namn förslag
 
+Gömma menyn om man inte är inloggad
+eller bara byta inehållet?
 
+göra en tabell av banrekorden
+
+Lägga till bilder till sin runda banrekord
+  - scorekort
+  - miljöbild
+
+Kunna kommentera ett rekord
+
+PRofilbild
+
+Kartan med alla banor längst upp
+
+Söka efter banor
+
+Liten karta vid alla banor
+eller adress till google maps
