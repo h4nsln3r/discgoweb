@@ -39,7 +39,7 @@ export default function AddCourseForm({
       setLongitude("");
       setImageUrl("");
       onCourseCreated();
-      alert("Fel vid skapande");
+      alert("Funkar!");
     }
   };
 

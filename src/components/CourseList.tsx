@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import AddScoreForm from "./AddScoreForm";
-import Map from "./Map";
 import CourseScores from "./CourseScores";
 
 export type Course = {
@@ -14,7 +13,7 @@ export type Course = {
   longitude?: number;
 };
 
-export default function CourseList({ refresh }: { refresh: boolean }) {
+export default function CourseList({ refresh }: { refresh?: boolean }) {
   const [courses, setCourses] = useState<Course[]>([]);
   const [openForms, setOpenForms] = useState<Record<string, boolean>>({});
 
@@ -80,8 +79,6 @@ export default function CourseList({ refresh }: { refresh: boolean }) {
           </div>
         ))}
       </div>
-
-      <Map courses={courses} />
     </>
   );
 }

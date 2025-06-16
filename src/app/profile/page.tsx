@@ -21,9 +21,16 @@ export default async function ProfilePage() {
   const { data: courses } = await supabase.from("courses").select("id, name");
 
   return (
-    <div className="p-6 max-w-xl mx-auto">
-      <h1 className="text-3xl font-bold mb-4">Min profil</h1>
-      <ProfileForm profile={profile} courses={courses || []} />
-    </div>
+    <main className="p-6 max-w-8xl mx-auto">
+      <div className="flex flex-col md:flex-row gap-6">
+        <div className="w-full md:w-1/3">
+          <h1 className="text-3xl font-bold mb-4">Min profil</h1>
+          <ProfileForm profile={profile} courses={courses || []} />
+        </div>
+        <div className="w-full md:w-2/2">
+          <h1>Boll</h1>
+        </div>
+      </div>
+    </main>
   );
 }

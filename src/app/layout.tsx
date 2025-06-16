@@ -1,20 +1,24 @@
 // src/app/layout.tsx
-import '../styles/global.scss';
-import './globals.css';
+import "../styles/global.scss";
+import "./globals.css";
 
-import type { Metadata } from 'next';
-// import TopbarWrapper from '../components/TopbarWrapper.server';
+import type { Metadata } from "next";
+import TopbarWrapper from "../components/TopbarWrapper.server";
 
 export const metadata: Metadata = {
-  title: 'Discgolf App',
-  description: 'Samla scores och tävla med vänner!',
+  title: "Discgolf App",
+  description: "Samla scores och tävla med vänner!",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="sv">
       <body>
-        {/* <TopbarWrapper /> */}
+        <TopbarWrapper />
         {children}
       </body>
     </html>
