@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
-import LogoutButton from "./LogoutButton";
+import LogoutButton from "../Buttons/LogoutButton";
 
 type SlimUser = {
   email?: string;
@@ -102,6 +102,25 @@ export default function Topbar({ user }: { user: SlimUser | null }) {
               🏠 Dashboard
             </Link>
           </li>
+          <li>
+            <Link
+              href="/results"
+              onClick={() => setMenuOpen(false)}
+              className="block hover:text-blue-600 transition"
+            >
+              🥏 Resultat
+            </Link>
+          </li>
+          <li>
+            <Link
+              href="/results/new"
+              onClick={() => setMenuOpen(false)}
+              className="block hover:text-blue-600 transition"
+            >
+              ➕ Lägg till resultat
+            </Link>
+          </li>
+
           <li>
             <Link
               href="/courses"

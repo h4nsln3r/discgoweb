@@ -3,7 +3,7 @@ import "../styles/global.scss";
 import "./globals.css";
 
 import type { Metadata } from "next";
-import TopbarWrapper from "../components/TopbarWrapper.server";
+import TopbarWrapper from "../components/Topbar/TopbarWrapper.server";
 
 export const metadata: Metadata = {
   title: "Discgolf App",

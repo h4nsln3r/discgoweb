@@ -1,7 +1,7 @@
 "use client";
 
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import type { Course } from "./CourseList";
+import type { Course } from "../CourseList";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

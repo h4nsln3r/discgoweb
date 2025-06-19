@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import type { Course } from "./CourseList";
+import type { Course } from "../CourseList";
 import { useEffect, useState } from "react";
 
 const LeafletMap = dynamic(() => import("./LeafletMap"), { ssr: false });
