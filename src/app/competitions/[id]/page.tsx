@@ -1,14 +1,15 @@
-// src/app/competitions/[id]/page.tsx
 import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { Database } from "@/types/supabase";
 
-export default async function CompetitionDetailPage({
-  params,
-}: {
-  params: { id: string };
-}) {
+type PageProps = {
+  params: {
+    id: string;
+  };
+};
+
+export default async function CompetitionDetailPage({ params }: PageProps) {
   const supabase = createServerComponentClient<Database>({ cookies });
 
   const { data: competition, error } = await supabase
