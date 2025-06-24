@@ -26,6 +26,7 @@ export async function POST(req: NextRequest) {
       latitude: latitude ? parseFloat(latitude) : null,
       longitude: longitude ? parseFloat(longitude) : null,
       image_url,
+      created_by: user.id,
     },
   ]);
 

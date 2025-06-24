@@ -3,6 +3,7 @@ import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { Database } from "@/types/supabase";
+import Link from "next/link";
 
 export default async function CourseDetailPage({
   params,
@@ -38,6 +39,12 @@ export default async function CourseDetailPage({
 
   return (
     <div className="max-w-3xl mx-auto p-6 space-y-6">
+      <Link
+        href={`/courses/${course.id}/edit`}
+        className="inline-block mt-4 text-sm text-blue-600 underline"
+      >
+        ✏️ Redigera denna bana
+      </Link>
       <h1 className="text-3xl font-bold">{course.name}</h1>
       <p className="text-gray-600">{course.location}</p>
 
