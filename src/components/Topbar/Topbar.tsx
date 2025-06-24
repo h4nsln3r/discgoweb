@@ -104,6 +104,16 @@ export default function Topbar({ user }: { user: SlimUser | null }) {
           </li>
           <li>
             <Link
+              href="/competitions"
+              onClick={() => setMenuOpen(false)}
+              className="block hover:text-blue-600 transition"
+            >
+              👑 Tävlingar
+            </Link>
+          </li>
+          <li></li>
+          <li>
+            <Link
               href="/results"
               onClick={() => setMenuOpen(false)}
               className="block hover:text-blue-600 transition"
