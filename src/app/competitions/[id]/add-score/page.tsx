@@ -26,11 +26,21 @@ export default function AddCompetitionScorePage() {
         .eq("competition_id", competitionId);
 
       if (data) {
-        const formatted = data.map((entry) => ({
-          id: entry.course_id,
-          name: entry.courses?.name || "Okänd",
-        }));
+        const formatted = data
+          .filter(
+            (
+              entry
+            ): entry is { course_id: string; courses: { name: string } } =>
+              !!entry.course_id
+          )
+          .map((entry) => ({
+            id: entry.course_id,
+            name: entry.courses?.name || "Okänd",
+          }));
         setCourses(formatted);
+      }
+      if (error) {
+        console.log("error", error);
       }
     };
     fetchCourses();

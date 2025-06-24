@@ -55,13 +55,13 @@ export default async function CompetitionResultsPage({
             </thead>
             <tbody>
               {courseScores
-                .sort((a, b) => a.total - b.total)
+                .sort((a, b) => a.score - b.score)
                 .map((score) => (
                   <tr key={score.id} className="border-t">
                     <td className="px-2 py-1">
                       {score.profiles?.alias ?? "Okänd spelare"}
                     </td>
-                    <td className="px-2 py-1 font-semibold">{score.total}</td>
+                    <td className="px-2 py-1 font-semibold">{score.score}</td>
                     <td className="px-2 py-1">
                       {new Date(score.created_at).toLocaleDateString("sv-SE")}
                     </td>

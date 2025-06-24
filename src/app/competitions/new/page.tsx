@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
+//TODO use Image from next
+// import Image from "next/image";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Database } from "@/types/supabase";
 
@@ -23,11 +24,13 @@ export default function NewCompetitionPage() {
     []
   );
 
-  // 🟡 Hämta banor från Supabase
   useEffect(() => {
     const fetchCourses = async () => {
       const { data, error } = await supabase.from("courses").select("id, name");
       if (data) setAllCourses(data);
+      if (error) {
+        console.log("error", error);
+      }
     };
     fetchCourses();
   }, []);
