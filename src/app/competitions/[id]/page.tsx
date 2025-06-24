@@ -1,16 +1,11 @@
-// src/app/competitions/[id]/page.tsx
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { notFound } from "next/navigation";
 
-type CompetitionPageProps = {
-  params: {
-    id: string;
-  };
-};
-
 export default async function CompetitionDetailPage({
   params,
-}: CompetitionPageProps) {
+}: {
+  params: { id: string };
+}) {
   const supabase = createServerSupabaseClient();
 
   const { data: competition, error } = await supabase
