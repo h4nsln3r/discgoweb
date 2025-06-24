@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import AddScoreForm from "./AddScoreForm";
 import CourseScores from "./CourseScores";
+import Link from "next/link";
 
 export type Course = {
   id: string;
@@ -62,6 +63,13 @@ export default function CourseList({ refresh }: { refresh?: boolean }) {
               </p>
             )}
 
+            <Link
+              href={`/courses/${course.id}`}
+              className="text-sm text-blue-600 hover:underline mt-2 block"
+            >
+              Visa detaljer
+            </Link>
+
             <button
               onClick={() => toggleForm(course.id)}
               className="mt-4 text-sm text-blue-600 underline"
@@ -75,6 +83,7 @@ export default function CourseList({ refresh }: { refresh?: boolean }) {
                 onClose={() => toggleForm(course.id)}
               />
             )}
+
             <CourseScores courseId={course.id} />
           </div>
         ))}
