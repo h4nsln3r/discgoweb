@@ -9,6 +9,42 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      competition_courses: {
+        Row: {
+          competition_id: string
+          course_id: string | null
+          created_at: string | null
+          id: string
+        }
+        Insert: {
+          competition_id: string
+          course_id?: string | null
+          created_at?: string | null
+          id?: string
+        }
+        Update: {
+          competition_id?: string
+          course_id?: string | null
+          created_at?: string | null
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competition_courses_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competition_courses_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       competitions: {
         Row: {
           created_at: string | null
@@ -100,6 +136,7 @@ export type Database = {
       }
       scores: {
         Row: {
+          competition_id: string | null
           course_id: string
           created_at: string
           date_played: string | null
@@ -110,6 +147,7 @@ export type Database = {
           with_friends: string | null
         }
         Insert: {
+          competition_id?: string | null
           course_id?: string
           created_at?: string
           date_played?: string | null
@@ -120,6 +158,7 @@ export type Database = {
           with_friends?: string | null
         }
         Update: {
+          competition_id?: string | null
           course_id?: string
           created_at?: string
           date_played?: string | null
@@ -130,6 +169,13 @@ export type Database = {
           with_friends?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "scores_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "scores_course_id_fkey"
             columns: ["course_id"]
