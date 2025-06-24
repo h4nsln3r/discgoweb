@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Database } from "@/types/supabase";
-import { Course } from "@/components/CourseList";
+// import { Course } from "@/components/CourseList";
 
 export default function EditCoursePage() {
   const supabase = createClientComponentClient<Database>();
@@ -13,7 +13,7 @@ export default function EditCoursePage() {
   const params = useParams();
   const courseId = params?.id as string;
 
-  const [courses, setCourses] = useState<Course[]>([]);
+  //   const [courses, setCourses] = useState<Course[]>([]);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -84,7 +84,7 @@ export default function EditCoursePage() {
       alert("Kunde inte radera banan.");
       console.error(error);
     } else {
-      setCourses((prev) => prev.filter((c) => c.id !== courseId));
+      //   setCourses((prev) => prev.filter((c) => c.id !== courseId));
     }
   };
 
