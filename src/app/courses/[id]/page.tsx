@@ -48,9 +48,9 @@ export default async function CourseDetailPage({
       <h1 className="text-3xl font-bold">{course.name}</h1>
       <p className="text-gray-600">{course.location}</p>
 
-      {course.image_url && (
+      {course.main_image_url && (
         <img
-          src={course.image_url}
+          src={course.main_image_url}
           alt={course.name}
           className="rounded w-full h-60 object-cover"
         />

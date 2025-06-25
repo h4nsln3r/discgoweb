@@ -80,27 +80,33 @@ export type Database = {
       }
       courses: {
         Row: {
+          created_by: string | null
           id: string
-          image_url: string | null
+          image_urls: string | null
           latitude: number | null
           location: string | null
           longitude: number | null
+          main_image_url: string | null
           name: string
         }
         Insert: {
+          created_by?: string | null
           id?: string
-          image_url?: string | null
+          image_urls?: string | null
           latitude?: number | null
           location?: string | null
           longitude?: number | null
+          main_image_url?: string | null
           name: string
         }
         Update: {
+          created_by?: string | null
           id?: string
-          image_url?: string | null
+          image_urls?: string | null
           latitude?: number | null
           location?: string | null
           longitude?: number | null
+          main_image_url?: string | null
           name?: string
         }
         Relationships: []

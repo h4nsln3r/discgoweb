@@ -9,7 +9,7 @@ export type Course = {
   id: string;
   name: string;
   location: string;
-  image_url?: string;
+  main_image_url?: string;
   latitude?: number;
   longitude?: number;
 };
@@ -49,9 +49,9 @@ export default function CourseList({ refresh }: { refresh?: boolean }) {
             <h3 className="text-lg font-semibold">{course.name}</h3>
             <p className="text-sm text-gray-600">{course.location}</p>
 
-            {course.image_url && (
+            {course.main_image_url && (
               <img
-                src={course.image_url}
+                src={course.main_image_url}
                 alt={course.name}
                 className="mt-2 rounded object-cover max-h-48 w-full"
               />
