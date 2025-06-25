@@ -35,7 +35,7 @@ export default function EditCoursePage() {
         setFormData({
           name: data.name || "",
           location: data.location || "",
-          image_url: data.image_url || "",
+          image_url: data.main_image_url || "",
           latitude: data.latitude?.toString() || "",
           longitude: data.longitude?.toString() || "",
         });
