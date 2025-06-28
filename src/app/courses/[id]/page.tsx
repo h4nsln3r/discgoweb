@@ -1,9 +1,11 @@
 // src/app/courses/[id]/page.tsx
+
 import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { Database } from "@/types/supabase";
 import Link from "next/link";
+import ImageGallery from "@/components/ImageGallery";
 
 export default async function CourseDetailPage({
   params,
@@ -35,7 +37,13 @@ export default async function CourseDetailPage({
     .order("score", { ascending: true })
     .limit(5);
 
-  console.log("topScores", topScores);
+  // Bygg alla bilder – main_image_url först
+  const parsedImageUrls = parseImageUrls(course.image_urls);
+  const allImages = [
+    ...(course.main_image_url ? [course.main_image_url] : []),
+    ...parsedImageUrls,
+  ];
+  console.log("allImages", allImages);
 
   return (
     <div className="max-w-3xl mx-auto p-6 space-y-6">
@@ -45,16 +53,11 @@ export default async function CourseDetailPage({
       >
         ✏️ Redigera denna bana
       </Link>
+
       <h1 className="text-3xl font-bold">{course.name}</h1>
       <p className="text-gray-600">{course.location}</p>
 
-      {course.main_image_url && (
-        <img
-          src={course.main_image_url}
-          alt={course.name}
-          className="rounded w-full h-60 object-cover"
-        />
-      )}
+      <ImageGallery images={allImages} />
 
       {/* 🏆 Tävlingar */}
       {competitions && competitions.length > 0 && (
@@ -99,4 +102,19 @@ function formatDate(date: string | null | undefined) {
     month: "short",
     day: "numeric",
   }).format(new Date(date));
+}
+
+function parseImageUrls(raw: unknown): string[] {
+  if (Array.isArray(raw)) return raw.filter((s) => typeof s === "string");
+  if (typeof raw === "string") {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        return parsed.filter((s) => typeof s === "string");
+      }
+    } catch {
+      return [];
+    }
+  }
+  return [];
 }
