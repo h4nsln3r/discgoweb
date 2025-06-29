@@ -6,6 +6,8 @@ import { notFound } from "next/navigation";
 import { Database } from "@/types/supabase";
 import Link from "next/link";
 import ImageGallery from "@/components/ImageGallery";
+import ScoresTable from "@/components/Tables/ScoresTable";
+import CompetitionsTable from "@/components/Tables/CompetitionsTable";
 
 export default async function CourseDetailPage({
   params,
@@ -23,85 +25,49 @@ export default async function CourseDetailPage({
 
   if (!course || error) notFound();
 
-  // Hämta relaterade tävlingar
+  // Hämta tävlingar
   const { data: competitions } = await supabase
     .from("competition_courses")
     .select("competition_id, competitions ( id, title, start_date, end_date )")
     .eq("course_id", params.id);
 
-  // Hämta toppresultat
-  const { data: topScores } = await supabase
+  // Hämta alla scores
+  const { data: allScores } = await supabase
     .from("scores")
     .select("score, created_at, profiles ( alias )")
-    .eq("course_id", params.id)
-    .order("score", { ascending: true })
-    .limit(5);
+    .eq("course_id", params.id);
 
-  // Bygg alla bilder – main_image_url först
+  // Robust parsing av image_urls
   const parsedImageUrls = parseImageUrls(course.image_urls);
+
+  // Main_image först
   const allImages = [
     ...(course.main_image_url ? [course.main_image_url] : []),
     ...parsedImageUrls,
   ];
-  console.log("allImages", allImages);
 
   return (
-    <div className="max-w-3xl mx-auto p-6 space-y-6">
-      <Link
-        href={`/courses/${course.id}/edit`}
-        className="inline-block mt-4 text-sm text-blue-600 underline"
-      >
-        ✏️ Redigera denna bana
-      </Link>
-
-      <h1 className="text-3xl font-bold">{course.name}</h1>
+    <div className="max-w-3xl mx-auto p-6 space-y-8">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold">{course.name}</h1>
+        <Link
+          href={`/courses/${course.id}/edit`}
+          className="text-sm text-blue-600 underline"
+        >
+          ✏️ Redigera denna bana
+        </Link>
+      </div>
       <p className="text-gray-600">{course.location}</p>
 
       <ImageGallery images={allImages} />
 
-      {/* 🏆 Tävlingar */}
       {competitions && competitions.length > 0 && (
-        <div>
-          <h2 className="text-xl font-semibold mt-6 mb-2">
-            🏆 Tävlingar på denna bana
-          </h2>
-          <ul className="list-disc pl-5 text-gray-800">
-            {competitions.map((c) => (
-              <li key={c.competition_id}>
-                {c.competitions?.title} (
-                {formatDate(c.competitions?.start_date)} –{" "}
-                {formatDate(c.competitions?.end_date)})
-              </li>
-            ))}
-          </ul>
-        </div>
+        <CompetitionsTable competitions={competitions} />
       )}
 
-      {/* 🥇 Toppscore */}
-      {topScores && topScores.length > 0 && (
-        <div>
-          <h2 className="text-xl font-semibold mt-6 mb-2">🥇 Toppscore</h2>
-          <ul className="divide-y">
-            {topScores.map((score, i) => (
-              <li key={i} className="py-2 text-sm">
-                {score.profiles?.alias ?? "Okänd"} – {score.score} kast (
-                {formatDate(score.created_at)})
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      {allScores && allScores.length > 0 && <ScoresTable scores={allScores} />}
     </div>
   );
-}
-
-function formatDate(date: string | null | undefined) {
-  if (!date) return "";
-  return new Intl.DateTimeFormat("sv-SE", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  }).format(new Date(date));
 }
 
 function parseImageUrls(raw: unknown): string[] {
