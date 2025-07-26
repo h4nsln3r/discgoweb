@@ -2,15 +2,32 @@ import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { Database } from "@/types/supabase";
+import Link from "next/link";
 
 type PageProps = {
-  params: {
-    id: string;
-  };
+  params: Promise<{ id: string }>;
+};
+
+type CompetitionWithCourses = {
+  id: string;
+  title: string;
+  description: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  image_url: string | null;
+  competition_courses: {
+    course_id: string;
+    courses: { name: string } | null;
+  }[];
 };
 
 export default async function CompetitionDetailPage({ params }: PageProps) {
-  const supabase = createServerComponentClient<Database>({ cookies });
+  const { id } = await params;
+
+  const cookieStore = cookies(); // INTE await här
+  const supabase = createServerComponentClient<Database>({
+    cookies: () => cookieStore,
+  });
 
   const { data: competition, error } = await supabase
     .from("competitions")
@@ -28,8 +45,8 @@ export default async function CompetitionDetailPage({ params }: PageProps) {
       )
     `
     )
-    .eq("id", params.id)
-    .single();
+    .eq("id", id as string) // Cast till rätt typ
+    .single<CompetitionWithCourses>(); // Typfix
 
   if (!competition || error) {
     console.error("[FETCH COMPETITION ERROR]", error);
@@ -38,6 +55,15 @@ export default async function CompetitionDetailPage({ params }: PageProps) {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold">{competition.title}</h1>
+        <Link
+          href={`/competitions/${id}/edit`}
+          className="text-sm text-blue-600 underline"
+        >
+          ✏️ Redigera denna bana
+        </Link>
+      </div>
       {competition.image_url && (
         <img
           src={competition.image_url}
@@ -45,8 +71,6 @@ export default async function CompetitionDetailPage({ params }: PageProps) {
           className="w-full h-60 object-cover rounded"
         />
       )}
-
-      <h1 className="text-3xl font-bold">{competition.title}</h1>
 
       <p className="text-gray-600">
         🗓️ {formatDate(competition.start_date)} –{" "}

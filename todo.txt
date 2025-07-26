@@ -1,15 +1,19 @@
-discgoweb nytt namn förslag
+Redigera tävligar
 
-Gömma menyn om man inte är inloggad
-eller bara byta inehållet?
-
-göra en tabell av banrekorden
-
+Redigare resultat
+Tagga personer i ett resultat för godkännande
 Lägga till bilder till sin runda banrekord
   - scorekort
   - miljöbild
 
 Kunna kommentera ett rekord
+
+discgoweb nytt namn förslag
+
+
+
+Gömma menyn om man inte är inloggad
+eller bara byta inehållet?
 
 PRofilbild
 
@@ -19,3 +23,11 @@ Söka efter banor
 
 Liten karta vid alla banor
 eller adress till google maps
+
+
+
+
+
+
+DONE
+göra en tabell av banrekorden
