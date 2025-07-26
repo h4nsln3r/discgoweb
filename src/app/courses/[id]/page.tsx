@@ -12,15 +12,15 @@ import CompetitionsTable from "@/components/Tables/CompetitionsTable";
 export default async function CourseDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
   const supabase = createServerComponentClient<Database>({ cookies });
-
+  const { id } = await params;
   // Hämta kursen
   const { data: course, error } = await supabase
     .from("courses")
     .select("*")
-    .eq("id", params.id)
+    .eq("id", id)
     .single();
 
   if (!course || error) notFound();
@@ -29,13 +29,13 @@ export default async function CourseDetailPage({
   const { data: competitions } = await supabase
     .from("competition_courses")
     .select("competition_id, competitions ( id, title, start_date, end_date )")
-    .eq("course_id", params.id);
+    .eq("course_id", id);
 
   // Hämta alla scores
   const { data: allScores } = await supabase
     .from("scores")
     .select("score, created_at, profiles ( alias )")
-    .eq("course_id", params.id);
+    .eq("course_id", id);
 
   // Robust parsing av image_urls
   const parsedImageUrls = parseImageUrls(course.image_urls);
