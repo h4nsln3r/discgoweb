@@ -11,7 +11,7 @@ export default function EditCompetitionPage() {
   const { id } = useParams<{ id: string }>();
 
   const [userId, setUserId] = useState<string | null>(null);
-  const [creatorId, setCreatorId] = useState<string | null>(null);
+  const [creatorId] = useState<string | null>(null);
 
   const [name, setName] = useState("");
   const [location, setLocation] = useState("");
