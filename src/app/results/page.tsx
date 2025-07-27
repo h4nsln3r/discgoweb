@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
   ColumnDef,
   flexRender,
@@ -9,6 +9,7 @@ import {
   getFilteredRowModel,
   SortingState,
   useReactTable,
+  ColumnFiltersState,
 } from "@tanstack/react-table";
 
 interface Score {
@@ -26,6 +27,7 @@ export default function ResultsPage() {
   const [loading, setLoading] = useState(true);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 
   useEffect(() => {
     const fetchScores = async () => {
@@ -42,29 +44,40 @@ export default function ResultsPage() {
     fetchScores();
   }, []);
 
-  // Kolumndefinitioner
+  // Unika banor och spelare för dropdowns
+  const uniqueCourses = useMemo(
+    () =>
+      Array.from(
+        new Set(data.map((item) => item.courses?.name).filter(Boolean))
+      ),
+    [data]
+  );
+
+  const uniquePlayers = useMemo(
+    () =>
+      Array.from(
+        new Set(data.map((item) => item.profiles?.alias).filter(Boolean))
+      ),
+    [data]
+  );
+
+  // Kolumndefinitioner med explicit id
   const columns: ColumnDef<Score>[] = [
     {
-      accessorKey: "courses.name",
+      id: "course",
+      accessorFn: (row) => row.courses?.name ?? "Okänd bana",
       header: "Bana",
-      cell: (info) =>
-        info.row.original.courses
-          ? info.row.original.courses.name
-          : "Okänd bana",
     },
     {
-      accessorKey: "profiles.alias",
+      id: "player",
+      accessorFn: (row) => row.profiles?.alias ?? "Okänd spelare",
       header: "Spelare",
-      cell: (info) =>
-        info.row.original.profiles
-          ? info.row.original.profiles.alias
-          : "Okänd spelare",
     },
     {
       accessorKey: "score",
       header: "Score",
       cell: (info) => (
-        <span className="font-semibold">{String(info.getValue())}</span>
+        <span className="font-semibold">{info.getValue() as number}</span>
       ),
     },
     {
@@ -86,7 +99,7 @@ export default function ResultsPage() {
             {comp.competitions.title}
           </a>
         ) : (
-          "Utanför tävling"
+          "-"
         );
       },
     },
@@ -99,13 +112,22 @@ export default function ResultsPage() {
     state: {
       sorting,
       globalFilter,
+      columnFilters,
     },
     onSortingChange: setSorting,
     onGlobalFilterChange: setGlobalFilter,
+    onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
   });
+
+  // Rensa filter-funktion
+  const resetFilters = () => {
+    setGlobalFilter("");
+    setColumnFilters([]);
+    table.resetColumnFilters();
+  };
 
   if (loading) return <p className="p-4">Laddar resultat...</p>;
 
@@ -120,6 +142,53 @@ export default function ResultsPage() {
         placeholder="Sök efter bana, spelare, score eller tävling..."
         className="mb-4 p-2 border rounded w-full max-w-sm"
       />
+
+      {/* Filter dropdowns */}
+      <div className="flex gap-4 mb-4">
+        {/* Filter för Bana */}
+        <select
+          value={(table.getColumn("course")?.getFilterValue() as string) ?? ""}
+          onChange={(e) =>
+            table
+              .getColumn("course")
+              ?.setFilterValue(e.target.value || undefined)
+          }
+          className="p-2 border rounded"
+        >
+          <option value="">Alla banor</option>
+          {uniqueCourses.map((course) => (
+            <option key={course} value={course}>
+              {course}
+            </option>
+          ))}
+        </select>
+
+        {/* Filter för Spelare */}
+        <select
+          value={(table.getColumn("player")?.getFilterValue() as string) ?? ""}
+          onChange={(e) =>
+            table
+              .getColumn("player")
+              ?.setFilterValue(e.target.value || undefined)
+          }
+          className="p-2 border rounded"
+        >
+          <option value="">Alla spelare</option>
+          {uniquePlayers.map((player) => (
+            <option key={player} value={player}>
+              {player}
+            </option>
+          ))}
+        </select>
+
+        {/* Rensa filter-knapp */}
+        <button
+          onClick={resetFilters}
+          className="p-2 bg-gray-200 rounded hover:bg-gray-300"
+        >
+          Rensa filter
+        </button>
+      </div>
 
       {/* Tabell */}
       <table className="min-w-full border border-gray-300">
