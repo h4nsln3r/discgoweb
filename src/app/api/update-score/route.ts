@@ -3,20 +3,26 @@ import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { NextResponse } from "next/server";
 import type { Database } from "@/types/supabase";
 
-export async function GET() {
+export async function PUT(req: Request) {
   const supabase = createRouteHandlerClient<Database>({
     cookies: () => cookies(),
   });
 
+  const body = await req.json();
+  const { id, score, date_played, course_id, competition_id } = body;
+
   const { data, error } = await supabase
     .from("scores")
-    .select(
-      "id, score, date_played, competition_id, courses ( id, name ), profiles(alias), competitions(title)"
-    )
-    .order("date_played", { ascending: false });
+    .update({
+      score,
+      date_played,
+      course_id,
+      competition_id,
+    })
+    .eq("id", id)
+    .select();
 
   if (error) {
-    console.error("[GET-ALL-SCORES ERROR]", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 

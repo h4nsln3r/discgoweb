@@ -11,6 +11,7 @@ import {
   useReactTable,
   ColumnFiltersState,
 } from "@tanstack/react-table";
+import Link from "next/link";
 
 interface Score {
   id: string;
@@ -133,7 +134,15 @@ export default function ResultsPage() {
 
   return (
     <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">Alla resultat</h1>
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold">Alla resultat</h1>
+        <Link
+          href="/results/new"
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        >
+          Lägg till resultat
+        </Link>
+      </div>
 
       {/* Globalt sökfält */}
       <input

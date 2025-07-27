@@ -8,15 +8,14 @@ export async function GET() {
     cookies: () => cookies(),
   });
 
+  // Hämta id och alias för alla profiler
   const { data, error } = await supabase
-    .from("scores")
-    .select(
-      "id, score, date_played, competition_id, courses ( id, name ), profiles(alias), competitions(title)"
-    )
-    .order("date_played", { ascending: false });
+    .from("profiles")
+    .select("id, alias")
+    .order("alias", { ascending: true });
 
   if (error) {
-    console.error("[GET-ALL-SCORES ERROR]", error);
+    console.error("[GET-PROFILES ERROR]", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
