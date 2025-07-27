@@ -27,12 +27,30 @@ export default function AddScoreForm({
   const [score, setScore] = useState("");
   const [datePlayed, setDatePlayed] = useState("");
   const [withFriends, setWithFriends] = useState<string[]>([]);
-  const [manualGuest, setManualGuest] = useState("");
   const [selectedCourse, setSelectedCourse] = useState("");
+  const [manualGuests, setManualGuests] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
   const [courses, setCourses] = useState<Course[]>([]);
   const [players, setPlayers] = useState<Player[]>([]);
+
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [currentUserAlias, setCurrentUserAlias] = useState<string>("");
+
+  // Hämta current user
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      const res = await fetch("/api/get-current-user");
+      const data = await res.json();
+      if (!data.error) {
+        setCurrentUserId(data.id);
+        setCurrentUserAlias(data.alias);
+        // Lägg till dig själv i withFriends direkt
+        setWithFriends([data.alias]);
+      }
+    };
+    fetchCurrentUser();
+  }, []);
 
   // Hämta kurser och spelare
   useEffect(() => {
@@ -50,14 +68,14 @@ export default function AddScoreForm({
 
       // Om vi redigerar → sätt selectedCourse direkt
       if (editingScore?.courses) {
-        setSelectedCourse(editingScore.courses.id); // viktigt: ID, inte namn
+        setSelectedCourse(editingScore.courses.id);
       }
     };
 
     fetchData();
   }, [editingScore]);
 
-  // Autofyll formuläret vid redigering
+  // Autofyll formulär vid redigering
   useEffect(() => {
     if (editingScore) {
       setScore(String(editingScore.score));
@@ -66,34 +84,46 @@ export default function AddScoreForm({
           ? new Date(editingScore.date_played).toISOString().split("T")[0]
           : ""
       );
-      setWithFriends(editingScore.with_friends ?? []);
-      setSelectedCourse(editingScore.courses.id); // Viktigt här också
+      setWithFriends(editingScore.with_friends ?? [currentUserAlias]);
+      setSelectedCourse(editingScore.courses.id);
     } else {
       setScore("");
       setDatePlayed("");
-      setWithFriends([]);
+      setWithFriends(currentUserAlias ? [currentUserAlias] : []);
       setSelectedCourse("");
+      setManualGuests([]);
     }
-  }, [editingScore]);
+  }, [editingScore, currentUserAlias]);
 
-  // Lägg till manuellt gästnamn
-  const addGuest = () => {
-    if (manualGuest.trim() !== "") {
-      setWithFriends([...withFriends, manualGuest.trim()]);
-      setManualGuest("");
-    }
+  // Lägg till gästfält
+  const addGuestField = () => {
+    setManualGuests([...manualGuests, ""]);
+  };
+
+  const handleGuestChange = (index: number, value: string) => {
+    const updated = [...manualGuests];
+    updated[index] = value;
+    setManualGuests(updated);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
+    // Kombinera medspelare och gäster
+    const combinedFriends = [
+      ...withFriends,
+      ...manualGuests.filter((g) => g.trim() !== "").map((g) => `Gäst:${g}`),
+    ];
+
     const payload = {
       course_id: selectedCourse,
       score: Number(score),
       date_played: datePlayed,
-      with_friends: withFriends,
+      with_friends: combinedFriends,
     };
+
+    console.log("payload", payload, editingScore?.id);
 
     let res;
     if (editingScore) {
@@ -113,7 +143,18 @@ export default function AddScoreForm({
     if (res.ok) {
       alert(editingScore ? "Resultat uppdaterat!" : "Resultat sparat!");
       onSuccess?.();
-      onClose();
+
+      if (editingScore) {
+        // Stäng vid redigering
+        onClose();
+      } else {
+        // Reset vid nytt resultat
+        setScore("");
+        setDatePlayed(new Date().toISOString().split("T")[0]);
+        setWithFriends(currentUserAlias ? [currentUserAlias] : []);
+        setManualGuests([]);
+        setSelectedCourse("");
+      }
     } else {
       alert("Något gick fel.");
     }
@@ -163,54 +204,72 @@ export default function AddScoreForm({
           value={datePlayed}
           onChange={(e) => setDatePlayed(e.target.value)}
         />
+        <button
+          type="button"
+          onClick={() => setDatePlayed(new Date().toISOString().split("T")[0])}
+          className="mt-2 px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 text-sm"
+        >
+          Välj idag
+        </button>
       </div>
 
       {/* Medspelare */}
       <div>
         <label className="block font-medium">Vilka var med?</label>
         <div className="flex flex-wrap gap-2 mb-2">
-          {players.map((player) => (
-            <label key={player.id} className="flex items-center gap-1">
-              <input
-                type="checkbox"
-                checked={withFriends?.includes(player.alias) ?? false}
-                onChange={(e) => {
-                  if (e.target.checked) {
-                    setWithFriends([...withFriends, player.alias]);
-                  } else {
-                    setWithFriends(
-                      withFriends.filter((name) => name !== player.alias)
-                    );
-                  }
-                }}
-              />
-              {player.alias}
-            </label>
+          {players.map((player) => {
+            const isCurrentUser = player.id === currentUserId;
+            const isSelected = withFriends.includes(player.alias);
+
+            return (
+              <label
+                key={player.id}
+                className={`flex items-center gap-1 px-2 py-1 rounded ${
+                  isCurrentUser
+                    ? "bg-green-200 font-semibold cursor-not-allowed"
+                    : ""
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={isCurrentUser || isSelected}
+                  disabled={isCurrentUser}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setWithFriends([...withFriends, player.alias]);
+                    } else {
+                      setWithFriends(
+                        withFriends.filter((name) => name !== player.alias)
+                      );
+                    }
+                  }}
+                />
+                {player.alias}
+              </label>
+            );
+          })}
+        </div>
+
+        {/* Gäst-fält */}
+        <div className="space-y-2">
+          {manualGuests.map((guest, index) => (
+            <input
+              key={index}
+              type="text"
+              className="border p-2 w-full"
+              placeholder="Gästnamn"
+              value={guest}
+              onChange={(e) => handleGuestChange(index, e.target.value)}
+            />
           ))}
         </div>
-        {/* Gäst */}
-        <div className="flex gap-2">
-          <input
-            type="text"
-            className="border p-2 flex-1"
-            placeholder="Lägg till gästnamn"
-            value={manualGuest}
-            onChange={(e) => setManualGuest(e.target.value)}
-          />
-          <button
-            type="button"
-            onClick={addGuest}
-            className="px-3 py-2 bg-gray-200 rounded hover:bg-gray-300"
-          >
-            Lägg till
-          </button>
-        </div>
-        {/* Lista med valda */}
-        {withFriends.length > 0 && (
-          <div className="mt-2 text-sm">
-            <p>Valda: {withFriends.join(", ")}</p>
-          </div>
-        )}
+        <button
+          type="button"
+          onClick={addGuestField}
+          className="mt-2 px-3 py-2 bg-gray-200 rounded hover:bg-gray-300"
+        >
+          Lägg till gäst
+        </button>
       </div>
 
       {/* Actions */}
