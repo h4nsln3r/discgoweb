@@ -85,7 +85,10 @@ export type Database = {
       }
       courses: {
         Row: {
+          city: string | null
+          country: string | null
           created_by: string | null
+          description: string | null
           id: string
           image_urls: string | null
           latitude: number | null
@@ -95,7 +98,10 @@ export type Database = {
           name: string
         }
         Insert: {
+          city?: string | null
+          country?: string | null
           created_by?: string | null
+          description?: string | null
           id?: string
           image_urls?: string | null
           latitude?: number | null
@@ -105,7 +111,10 @@ export type Database = {
           name: string
         }
         Update: {
+          city?: string | null
+          country?: string | null
           created_by?: string | null
+          description?: string | null
           id?: string
           image_urls?: string | null
           latitude?: number | null

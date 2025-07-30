@@ -1,10 +1,11 @@
-export type CourseData = {
-  created_by?: string | null;
-  id?: string;
-  image_urls: string[]; // nu är det alltid en array i komponenterna
-  location: string | null;
-  latitude: string | number | null;
-  longitude: string | number | null;
-  main_image_url: string | null;
+export type CourseFormData = {
   name: string;
+  location: string;
+  latitude: number | null;
+  longitude: number | null;
+  imageUrls: string[];
+  mainImageUrl: string;
+  description: string;
+  city: string;
+  country: string;
 };

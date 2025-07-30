@@ -16,6 +16,9 @@ export default function AddCoursePage() {
     longitude: number | null;
     imageUrls: string[];
     mainImageUrl: string;
+    description: string;
+    city: string;
+    country: string;
   }) => {
     const { error } = await supabase.from("courses").insert({
       name: data.name,
@@ -24,6 +27,9 @@ export default function AddCoursePage() {
       longitude: data.longitude,
       image_urls: JSON.stringify(data.imageUrls),
       main_image_url: data.mainImageUrl,
+      description: data.description,
+      city: data.city,
+      country: data.country,
     });
 
     if (error) {

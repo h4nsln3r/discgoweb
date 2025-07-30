@@ -58,24 +58,21 @@ export default async function CourseDetailPage({
 
       {/* Kart- och infosektion */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <MapEmbed
-          course={{
-            ...course,
-            image_urls: parseImageUrls(course.image_urls),
-          }}
-        />
-        {/* Info och topp 3 till höger */}
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h1 className="text-3xl font-bold">{course.name}</h1>
-            <Link
-              href={`/courses/${course.id}/edit`}
-              className="text-sm text-blue-600 underline"
-            >
-              ✏️ Redigera denna bana
-            </Link>
-          </div>
-          <p className="text-gray-600">{course.location}</p>
+        {/* Karta */}
+        <div className="space-y-2">
+          <MapEmbed
+            course={{
+              name: course.name,
+              location: course.location ?? "",
+              latitude: course.latitude,
+              longitude: course.longitude,
+              description: course.description ?? "",
+              city: course.city ?? "",
+              country: course.country ?? "",
+              imageUrls: parseImageUrls(course.image_urls),
+              mainImageUrl: course.main_image_url ?? "",
+            }}
+          />
 
           {/* Topp 3 resultat */}
           {top3.length > 0 && (
@@ -89,6 +86,42 @@ export default async function CourseDetailPage({
                   </li>
                 ))}
               </ul>
+            </div>
+          )}
+        </div>
+
+        {/* Info + topp 3 */}
+        <div className="space-y-4">
+          {/* Titel + redigera-länk */}
+          <div className="flex justify-between items-center">
+            <h1 className="text-3xl font-bold">{course.name}</h1>
+            <Link
+              href={`/courses/${course.id}/edit`}
+              className="text-sm text-blue-600 underline"
+            >
+              ✏️ Redigera denna bana
+            </Link>
+          </div>
+
+          {/* Stad och land */}
+          {(course.city || course.country) && (
+            <p className="text-gray-600">
+              {course.city && <span>{course.city}</span>}
+              {course.city && course.country && <span>, </span>}
+              {course.country && <span>{course.country}</span>}
+            </p>
+          )}
+
+          {/* Location */}
+          {course.location && (
+            <p className="text-gray-500 text-sm">{course.location}</p>
+          )}
+
+          {/* Beskrivning */}
+          {course.description && (
+            <div className="border-t pt-4">
+              <h2 className="text-xl font-semibold mb-2">Beskrivning</h2>
+              <p className="whitespace-pre-line">{course.description}</p>
             </div>
           )}
         </div>

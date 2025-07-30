@@ -1,6 +1,18 @@
 "use client";
-import { CourseData } from "@/types/util";
+
 import { useState } from "react";
+
+type CourseData = {
+  name: string;
+  location: string;
+  latitude: number | null;
+  longitude: number | null;
+  imageUrls: string[];
+  mainImageUrl: string;
+  description: string;
+  city: string;
+  country: string;
+};
 
 export default function MapEmbed({ course }: { course: CourseData }) {
   const [satellite, setSatellite] = useState(true); // Satellit som default
@@ -25,7 +37,7 @@ export default function MapEmbed({ course }: { course: CourseData }) {
         )}`;
 
   return (
-    <div className="space-y-2">
+    <>
       {/* Karta */}
       <iframe
         title="Google Maps"
@@ -55,6 +67,6 @@ export default function MapEmbed({ course }: { course: CourseData }) {
           Få vägbeskrivning
         </a>
       </div>
-    </div>
+    </>
   );
 }

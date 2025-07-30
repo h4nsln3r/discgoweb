@@ -5,7 +5,30 @@ import { useRouter, useParams } from "next/navigation";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Database } from "@/types/supabase";
 import CourseForm from "@/components/Forms/CourseForm";
-import { CourseData } from "@/types/util";
+
+type CourseDataFromDb = {
+  name: string;
+  location: string;
+  latitude: string;
+  longitude: string;
+  imageUrls: string[];
+  mainImageUrl: string;
+  description: string;
+  city: string;
+  country: string;
+};
+
+type CourseFormData = {
+  name: string;
+  location: string;
+  latitude: number | null;
+  longitude: number | null;
+  imageUrls: string[];
+  mainImageUrl: string;
+  description: string;
+  city: string;
+  country: string;
+};
 
 export default function EditCoursePage() {
   const supabase = createClientComponentClient<Database>();
@@ -13,37 +36,38 @@ export default function EditCoursePage() {
   const { id } = useParams<{ id: string }>();
 
   const [loading, setLoading] = useState(true);
-  const [courseData, setCourseData] = useState<CourseData | null>(null);
+  const [courseData, setCourseData] = useState<CourseDataFromDb | null>(null);
 
   useEffect(() => {
+    if (!id) return;
+
     const fetchCourse = async () => {
       const { data, error } = await supabase
         .from("courses")
         .select(
-          "name, location, latitude, longitude, image_urls, main_image_url"
+          "name, location, latitude, longitude, image_urls, main_image_url, description, city, country"
         )
-        .eq("id", id)
+        .eq("id", id as string)
         .single();
 
       if (error) {
         console.error(error);
         alert("Kunde inte hämta kursdata");
-      } else {
+      } else if (data) {
         setCourseData({
           name: data.name,
           location: data.location ?? "",
           latitude: data.latitude?.toString() || "",
           longitude: data.longitude?.toString() || "",
-          image_urls: Array.isArray(data.image_urls)
+          imageUrls: Array.isArray(data.image_urls)
             ? data.image_urls
-            : (() => {
-                try {
-                  return JSON.parse(data.image_urls ?? "") || [];
-                } catch {
-                  return [];
-                }
-              })(),
-          main_image_url: data.main_image_url || "",
+            : data.image_urls
+            ? JSON.parse(data.image_urls as string)
+            : [],
+          mainImageUrl: data.main_image_url || "",
+          description: data.description ?? "",
+          city: data.city ?? "",
+          country: data.country ?? "",
         });
       }
 
@@ -53,14 +77,7 @@ export default function EditCoursePage() {
     fetchCourse();
   }, [id, supabase]);
 
-  const handleUpdate = async (formData: {
-    name: string;
-    location: string;
-    latitude: number | null;
-    longitude: number | null;
-    imageUrls: string[];
-    mainImageUrl: string;
-  }) => {
+  const handleUpdate = async (formData: CourseFormData) => {
     const { error } = await supabase
       .from("courses")
       .update({
@@ -70,8 +87,11 @@ export default function EditCoursePage() {
         longitude: formData.longitude,
         image_urls: JSON.stringify(formData.imageUrls),
         main_image_url: formData.mainImageUrl,
+        description: formData.description,
+        city: formData.city,
+        country: formData.country,
       })
-      .eq("id", id);
+      .eq("id", id as string);
 
     if (error) {
       alert("Fel vid uppdatering av bana");
@@ -90,11 +110,14 @@ export default function EditCoursePage() {
       <h1 className="text-2xl font-bold">Redigera bana</h1>
       <CourseForm
         initialName={courseData.name}
-        initialLocation={courseData.location ?? ""}
-        initialLatitude={courseData.latitude ?? ""}
-        initialLongitude={courseData.longitude && courseData.longitude}
-        initialImageUrls={courseData.image_urls ?? [""]}
-        initialMainImageUrl={courseData.main_image_url ?? ""}
+        initialLocation={courseData.location}
+        initialLatitude={courseData.latitude}
+        initialLongitude={courseData.longitude}
+        initialImageUrls={courseData.imageUrls}
+        initialMainImageUrl={courseData.mainImageUrl}
+        initialDescription={courseData.description}
+        initialCity={courseData.city}
+        initialCountry={courseData.country}
         onSubmit={handleUpdate}
         submitText="Spara ändringar"
       />

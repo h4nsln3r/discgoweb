@@ -4,11 +4,14 @@ import { useState } from "react";
 
 type CourseFormProps = {
   initialName?: string;
-  initialLocation?: string | null;
-  initialLatitude?: string | number | null;
-  initialLongitude?: string | number | null;
-  initialImageUrls?: string[] | null;
+  initialLocation?: string;
+  initialLatitude?: string;
+  initialLongitude?: string;
+  initialImageUrls?: string[];
   initialMainImageUrl?: string;
+  initialDescription?: string;
+  initialCity?: string;
+  initialCountry?: string;
   onSubmit: (data: {
     name: string;
     location: string;
@@ -16,6 +19,9 @@ type CourseFormProps = {
     longitude: number | null;
     imageUrls: string[];
     mainImageUrl: string;
+    description: string;
+    city: string;
+    country: string;
   }) => Promise<void>;
   submitText: string;
 };
@@ -27,20 +33,20 @@ export default function CourseForm({
   initialLongitude = "",
   initialImageUrls = [],
   initialMainImageUrl = "",
+  initialDescription = "",
+  initialCity = "",
+  initialCountry = "",
   onSubmit,
   submitText,
 }: CourseFormProps) {
   const [name, setName] = useState(initialName);
-  const [location, setLocation] = useState(initialLocation ?? "");
-  const [latitude, setLatitude] = useState<string>(
-    initialLatitude?.toString() ?? ""
-  );
-  const [longitude, setLongitude] = useState<string>(
-    initialLongitude?.toString() ?? ""
-  );
-  const [imageUrls, setImageUrls] = useState<string[]>(
-    initialImageUrls ?? [""]
-  );
+  const [location, setLocation] = useState(initialLocation);
+  const [latitude, setLatitude] = useState(initialLatitude);
+  const [longitude, setLongitude] = useState(initialLongitude);
+  const [description, setDescription] = useState(initialDescription);
+  const [city, setCity] = useState(initialCity);
+  const [country, setCountry] = useState(initialCountry);
+  const [imageUrls, setImageUrls] = useState<string[]>(initialImageUrls);
   const [mainImageUrl, setMainImageUrl] = useState(initialMainImageUrl);
   const [loading, setLoading] = useState(false);
 
@@ -74,12 +80,16 @@ export default function CourseForm({
       longitude: longitude ? parseFloat(longitude) : null,
       imageUrls,
       mainImageUrl,
+      description,
+      city,
+      country,
     });
     setLoading(false);
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Name */}
       <div>
         <label htmlFor="name" className="block font-semibold mb-1">
           Namn
@@ -95,14 +105,15 @@ export default function CourseForm({
         />
       </div>
 
+      {/* Location */}
       <div>
         <label htmlFor="location" className="block font-semibold mb-1">
-          Plats
+          Plats (område eller park)
         </label>
         <input
           id="location"
           type="text"
-          value={location ?? ""}
+          value={location}
           onChange={(e) => setLocation(e.target.value)}
           placeholder="Plats"
           className="w-full border p-2 rounded"
@@ -110,6 +121,37 @@ export default function CourseForm({
         />
       </div>
 
+      {/* City & Country */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label htmlFor="city" className="block font-semibold mb-1">
+            Stad
+          </label>
+          <input
+            id="city"
+            type="text"
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+            placeholder="Stad"
+            className="w-full border p-2 rounded"
+          />
+        </div>
+        <div>
+          <label htmlFor="country" className="block font-semibold mb-1">
+            Land
+          </label>
+          <input
+            id="country"
+            type="text"
+            value={country}
+            onChange={(e) => setCountry(e.target.value)}
+            placeholder="Land"
+            className="w-full border p-2 rounded"
+          />
+        </div>
+      </div>
+
+      {/* Latitude & Longitude */}
       <div>
         <label htmlFor="latitude" className="block font-semibold mb-1">
           Latitud
@@ -117,7 +159,7 @@ export default function CourseForm({
         <input
           id="latitude"
           type="text"
-          value={latitude ?? ""}
+          value={latitude}
           onChange={(e) => setLatitude(e.target.value)}
           placeholder="Latitud"
           className="w-full border p-2 rounded"
@@ -131,13 +173,29 @@ export default function CourseForm({
         <input
           id="longitude"
           type="text"
-          value={longitude ?? ""}
+          value={longitude}
           onChange={(e) => setLongitude(e.target.value)}
           placeholder="Longitud"
           className="w-full border p-2 rounded"
         />
       </div>
 
+      {/* Description */}
+      <div>
+        <label htmlFor="description" className="block font-semibold mb-1">
+          Beskrivning
+        </label>
+        <textarea
+          id="description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Beskriv banan, använd radbrytningar och emojis"
+          rows={5}
+          className="w-full border p-2 rounded whitespace-pre-line"
+        />
+      </div>
+
+      {/* Bilder */}
       <div className="space-y-2">
         <div className="flex justify-between items-center">
           <span className="font-semibold">Bilder (max 5):</span>
@@ -197,6 +255,7 @@ export default function CourseForm({
         ))}
       </div>
 
+      {/* Main Image URL */}
       <div className="space-y-1">
         <label htmlFor="mainImageUrlInput" className="block font-semibold">
           Huvudbild-URL (redigera direkt)
@@ -211,6 +270,7 @@ export default function CourseForm({
         />
       </div>
 
+      {/* Submit */}
       <button
         type="submit"
         disabled={loading}
