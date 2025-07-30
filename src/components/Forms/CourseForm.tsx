@@ -4,10 +4,10 @@ import { useState } from "react";
 
 type CourseFormProps = {
   initialName?: string;
-  initialLocation?: string;
-  initialLatitude?: string;
-  initialLongitude?: string;
-  initialImageUrls?: string[];
+  initialLocation?: string | null;
+  initialLatitude?: string | number | null;
+  initialLongitude?: string | number | null;
+  initialImageUrls?: string[] | null;
   initialMainImageUrl?: string;
   onSubmit: (data: {
     name: string;
@@ -34,7 +34,9 @@ export default function CourseForm({
   const [location, setLocation] = useState(initialLocation);
   const [latitude, setLatitude] = useState(initialLatitude);
   const [longitude, setLongitude] = useState(initialLongitude);
-  const [imageUrls, setImageUrls] = useState<string[]>(initialImageUrls);
+  const [imageUrls, setImageUrls] = useState<string[]>(
+    initialImageUrls ?? [""]
+  );
   const [mainImageUrl, setMainImageUrl] = useState(initialMainImageUrl);
   const [loading, setLoading] = useState(false);
 
@@ -96,7 +98,7 @@ export default function CourseForm({
         <input
           id="location"
           type="text"
-          value={location}
+          value={location ?? ""}
           onChange={(e) => setLocation(e.target.value)}
           placeholder="Plats"
           className="w-full border p-2 rounded"
@@ -111,7 +113,7 @@ export default function CourseForm({
         <input
           id="latitude"
           type="text"
-          value={latitude}
+          value={latitude ?? ""}
           onChange={(e) => setLatitude(e.target.value)}
           placeholder="Latitud"
           className="w-full border p-2 rounded"
@@ -125,7 +127,7 @@ export default function CourseForm({
         <input
           id="longitude"
           type="text"
-          value={longitude}
+          value={longitude ?? ""}
           onChange={(e) => setLongitude(e.target.value)}
           placeholder="Longitud"
           className="w-full border p-2 rounded"

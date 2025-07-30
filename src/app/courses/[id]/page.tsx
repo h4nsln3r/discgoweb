@@ -6,6 +6,7 @@ import Link from "next/link";
 import ImageGallery from "@/components/ImageGallery";
 import ScoresTable from "@/components/Tables/ScoresTable";
 import CompetitionsTable from "@/components/Tables/CompetitionsTable";
+import MapEmbed from "@/components/Maps/MapEmbed";
 
 export default async function CourseDetailPage({
   params,
@@ -57,28 +58,7 @@ export default async function CourseDetailPage({
 
       {/* Kart- och infosektion */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Karta till vänster */}
-        <div className="space-y-4">
-          {course.latitude && course.longitude && (
-            <iframe
-              title="Google Maps"
-              width="100%"
-              height="300"
-              className="rounded-lg shadow"
-              src={`https://www.google.com/maps?q=${course.latitude},${course.longitude}&hl=sv&z=15&output=embed`}
-              allowFullScreen
-            ></iframe>
-          )}
-          <a
-            href={`https://www.google.com/maps/dir/?api=1&destination=${course.latitude},${course.longitude}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block bg-blue-600 text-white text-center py-2 rounded hover:bg-blue-700"
-          >
-            Få vägbeskrivning
-          </a>
-        </div>
-
+        <MapEmbed course={course} />
         {/* Info och topp 3 till höger */}
         <div className="space-y-4">
           <div className="flex justify-between items-center">

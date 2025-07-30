@@ -1,6 +1,6 @@
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { redirect } from "next/navigation";
-import Map from "@/components/Map/Map";
+import Map from "@/components/Maps/Map";
 
 export default async function Dashboard() {
   const supabase = createServerSupabaseClient();

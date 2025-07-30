@@ -5,15 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Database } from "@/types/supabase";
 import CourseForm from "@/components/Forms/CourseForm";
-
-type CourseData = {
-  name: string;
-  location: string;
-  latitude: string;
-  longitude: string;
-  imageUrls: string[];
-  mainImageUrl: string;
-};
+import { CourseData } from "@/types/util";
 
 export default function EditCoursePage() {
   const supabase = createClientComponentClient<Database>();
@@ -42,7 +34,7 @@ export default function EditCoursePage() {
           location: data.location ?? "",
           latitude: data.latitude?.toString() || "",
           longitude: data.longitude?.toString() || "",
-          imageUrls: Array.isArray(data.image_urls)
+          image_urls: Array.isArray(data.image_urls)
             ? data.image_urls
             : (() => {
                 try {
@@ -51,7 +43,7 @@ export default function EditCoursePage() {
                   return [];
                 }
               })(),
-          mainImageUrl: data.main_image_url || "",
+          main_image_url: data.main_image_url || "",
         });
       }
 
@@ -98,11 +90,11 @@ export default function EditCoursePage() {
       <h1 className="text-2xl font-bold">Redigera bana</h1>
       <CourseForm
         initialName={courseData.name}
-        initialLocation={courseData.location}
-        initialLatitude={courseData.latitude}
-        initialLongitude={courseData.longitude}
-        initialImageUrls={courseData.imageUrls}
-        initialMainImageUrl={courseData.mainImageUrl}
+        initialLocation={courseData.location ?? ""}
+        initialLatitude={courseData.latitude ?? ""}
+        initialLongitude={courseData.longitude && courseData.longitude}
+        initialImageUrls={courseData.image_urls ?? [""]}
+        initialMainImageUrl={courseData.main_image_url ?? ""}
         onSubmit={handleUpdate}
         submitText="Spara ändringar"
       />
