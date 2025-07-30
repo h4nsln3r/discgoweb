@@ -4,8 +4,12 @@ import { useState } from "react";
 
 function ImageGallery({ images }: { images: string[] }) {
   const [selected, setSelected] = useState(images[0] ?? null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   if (!images || images.length === 0) return null;
+
+  const openModal = () => setIsModalOpen(true);
+  const closeModal = () => setIsModalOpen(false);
 
   return (
     <div className="space-y-4">
@@ -14,7 +18,8 @@ function ImageGallery({ images }: { images: string[] }) {
         <img
           src={selected}
           alt="Vald bild"
-          className="rounded w-full h-72 object-cover border"
+          className="rounded w-full h-72 object-cover border cursor-pointer"
+          onClick={openModal}
         />
       )}
 
@@ -39,6 +44,28 @@ function ImageGallery({ images }: { images: string[] }) {
           </button>
         ))}
       </div>
+
+      {/* Modal */}
+      {isModalOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50"
+          onClick={closeModal}
+        >
+          <div className="relative max-w-4xl max-h-full w-full h-full flex items-center justify-center">
+            <img
+              src={selected ?? ""}
+              alt="Full screen"
+              className="max-h-full max-w-full object-contain cursor-zoom-in"
+            />
+            <button
+              onClick={closeModal}
+              className="absolute top-4 right-4 bg-white rounded-full px-3 py-1 text-black font-bold shadow"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

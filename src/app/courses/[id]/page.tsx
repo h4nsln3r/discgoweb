@@ -1,5 +1,3 @@
-// src/app/courses/[id]/page.tsx
-
 import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
@@ -16,6 +14,7 @@ export default async function CourseDetailPage({
 }) {
   const supabase = createServerComponentClient<Database>({ cookies });
   const { id } = await params;
+
   // Hämta kursen
   const { data: course, error } = await supabase
     .from("courses")
@@ -46,26 +45,85 @@ export default async function CourseDetailPage({
     ...parsedImageUrls,
   ];
 
+  // Sortera scores för topp 3
+  const top3 = allScores
+    ? [...allScores].sort((a, b) => a.score - b.score).slice(0, 3)
+    : [];
+
   return (
-    <div className="max-w-3xl mx-auto p-6 space-y-8">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">{course.name}</h1>
-        <Link
-          href={`/courses/${course.id}/edit`}
-          className="text-sm text-blue-600 underline"
-        >
-          ✏️ Redigera denna bana
-        </Link>
+    <div className="max-w-5xl mx-auto p-6 space-y-8">
+      {/* Huvudbild + galleri */}
+      {allImages.length > 0 && <ImageGallery images={allImages} />}
+
+      {/* Kart- och infosektion */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Karta till vänster */}
+        <div className="space-y-4">
+          {course.latitude && course.longitude && (
+            <iframe
+              title="Google Maps"
+              width="100%"
+              height="300"
+              className="rounded-lg shadow"
+              src={`https://www.google.com/maps?q=${course.latitude},${course.longitude}&hl=sv&z=15&output=embed`}
+              allowFullScreen
+            ></iframe>
+          )}
+          <a
+            href={`https://www.google.com/maps/dir/?api=1&destination=${course.latitude},${course.longitude}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block bg-blue-600 text-white text-center py-2 rounded hover:bg-blue-700"
+          >
+            Få vägbeskrivning
+          </a>
+        </div>
+
+        {/* Info och topp 3 till höger */}
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h1 className="text-3xl font-bold">{course.name}</h1>
+            <Link
+              href={`/courses/${course.id}/edit`}
+              className="text-sm text-blue-600 underline"
+            >
+              ✏️ Redigera denna bana
+            </Link>
+          </div>
+          <p className="text-gray-600">{course.location}</p>
+
+          {/* Topp 3 resultat */}
+          {top3.length > 0 && (
+            <div>
+              <h2 className="font-semibold text-lg mb-2">🏆 Topp 3 resultat</h2>
+              <ul className="space-y-1">
+                {top3.map((score, idx) => (
+                  <li key={idx} className="flex justify-between">
+                    <span>{score.profiles?.alias ?? "Okänd spelare"}</span>
+                    <span>{score.score}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
       </div>
-      <p className="text-gray-600">{course.location}</p>
 
-      <ImageGallery images={allImages} />
-
-      {competitions && competitions.length > 0 && (
-        <CompetitionsTable competitions={competitions} />
+      {/* Alla resultat */}
+      {allScores && allScores.length > 0 && (
+        <div>
+          <h2 className="text-2xl font-bold mb-4">Alla resultat</h2>
+          <ScoresTable scores={allScores} />
+        </div>
       )}
 
-      {allScores && allScores.length > 0 && <ScoresTable scores={allScores} />}
+      {/* Tävlingar */}
+      {competitions && competitions.length > 0 && (
+        <div>
+          <h2 className="text-2xl font-bold mb-4">Tävlingar på banan</h2>
+          <CompetitionsTable competitions={competitions} />
+        </div>
+      )}
     </div>
   );
 }
