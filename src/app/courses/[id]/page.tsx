@@ -58,7 +58,12 @@ export default async function CourseDetailPage({
 
       {/* Kart- och infosektion */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <MapEmbed course={course} />
+        <MapEmbed
+          course={{
+            ...course,
+            image_urls: parseImageUrls(course.image_urls),
+          }}
+        />
         {/* Info och topp 3 till höger */}
         <div className="space-y-4">
           <div className="flex justify-between items-center">

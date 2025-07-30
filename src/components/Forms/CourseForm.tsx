@@ -31,9 +31,13 @@ export default function CourseForm({
   submitText,
 }: CourseFormProps) {
   const [name, setName] = useState(initialName);
-  const [location, setLocation] = useState(initialLocation);
-  const [latitude, setLatitude] = useState(initialLatitude);
-  const [longitude, setLongitude] = useState(initialLongitude);
+  const [location, setLocation] = useState(initialLocation ?? "");
+  const [latitude, setLatitude] = useState<string>(
+    initialLatitude?.toString() ?? ""
+  );
+  const [longitude, setLongitude] = useState<string>(
+    initialLongitude?.toString() ?? ""
+  );
   const [imageUrls, setImageUrls] = useState<string[]>(
     initialImageUrls ?? [""]
   );
