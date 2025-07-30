@@ -5,12 +5,15 @@ import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import type { Database } from "@/types/supabase";
 
 export async function POST(req: NextRequest) {
+  const cookieStore = cookies();
   const supabase = createRouteHandlerClient<Database>({
-    cookies: () => cookies(),
+    cookies: () => cookieStore,
   });
 
   const body = await req.json();
   const { name, location, latitude, longitude, image_url } = body;
+
+  console.log("image_url", image_url);
 
   const {
     data: { user },

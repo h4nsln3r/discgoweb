@@ -61,7 +61,7 @@ export default async function CompetitionDetailPage({ params }: PageProps) {
           href={`/competitions/${id}/edit`}
           className="text-sm text-blue-600 underline"
         >
-          ✏️ Redigera denna bana
+          ✏️ Redigera Tävling
         </Link>
       </div>
       {competition.image_url && (
