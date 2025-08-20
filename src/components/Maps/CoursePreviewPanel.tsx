@@ -38,22 +38,21 @@ export default function CoursePreviewPanel({ course, onClose }: Props) {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="bg-white rounded-t-3xl md:rounded-2xl shadow-2xl md:shadow-none p-4">
-          {/* Mobile close */}
-          <div className="flex justify-end md:hidden -mt-2 -mr-2">
-            <button
-              className="p-2 rounded-full hover:bg-gray-100"
-              onClick={() => {
-                setOpenForm(false);
-                onClose();
-              }}
-              aria-label="Stäng"
-            >
-              <XMarkIcon className="h-6 w-6" />
-            </button>
-          </div>
-
-          {/* Card body (same vibe as CourseList.tsx) */}
+          {/* Card body */}
           <div className="border rounded-lg p-4 bg-white shadow-sm">
+            {/* Close button – both mobile & desktop now */}
+            <div className="flex justify-end -mt-2 -mr-2">
+              <button
+                className="p-2 rounded-full hover:bg-gray-100"
+                onClick={() => {
+                  setOpenForm(false);
+                  onClose();
+                }}
+                aria-label="Stäng"
+              >
+                <XMarkIcon className="h-6 w-6" />
+              </button>
+            </div>
             <h3 className="text-lg font-semibold">{course.name}</h3>
             <p className="text-sm text-gray-600">{course.location}</p>
 
@@ -75,7 +74,6 @@ export default function CoursePreviewPanel({ course, onClose }: Props) {
               href={`/courses/${course.id}`}
               className="text-sm text-blue-600 hover:underline mt-3 inline-block"
               onClick={() => {
-                // Close when navigating on mobile for better UX
                 setOpenForm(false);
                 onClose();
               }}
@@ -94,7 +92,6 @@ export default function CoursePreviewPanel({ course, onClose }: Props) {
 
             {openForm && (
               <div className="mt-3">
-                {/* Current AddScoreForm låter dig välja bana i dropdown */}
                 <AddScoreForm onClose={() => setOpenForm(false)} />
               </div>
             )}
