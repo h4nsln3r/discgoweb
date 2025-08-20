@@ -27,7 +27,7 @@ export async function GET() {
       .from("scores")
       .select("id, score, date_played, profiles(alias)")
       .eq("course_id", course.id)
-      .order("date_played", { ascending: true })
+      .order("date_played", { ascending: false })
       .limit(1);
 
     if (scoreError) {
