@@ -11,9 +11,11 @@ export default async function Dashboard() {
   if (!user) redirect("/auth");
 
   return (
-    <div className="">
-      {/* <h1 className="text-3xl font-bold mb-2">Välkommen {user.email} 👋</h1> */}
+    <div className="p-4">
       <Map />
+      <h2 className="mt-6 text-xl font-semibold">Nya banor</h2>
+      <h2 className="mt-2 text-xl font-semibold">Senaste resultat</h2>
+      <h2 className="mt-2 text-xl font-semibold">Senaste tävlingar</h2>
     </div>
   );
 }

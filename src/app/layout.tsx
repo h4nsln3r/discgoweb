@@ -1,6 +1,7 @@
 // src/app/layout.tsx
 import "../styles/global.scss";
 import "./globals.css";
+import "@biltema-ui/global/style.css";
 
 import type { Metadata } from "next";
 import TopbarWrapper from "../components/Topbar/TopbarWrapper.server";

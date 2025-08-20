@@ -4,6 +4,7 @@ import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import type { Course } from "../CourseList";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -13,7 +14,12 @@ L.Icon.Default.mergeOptions({
   shadowUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png",
 });
 
-export default function LeafletMap({ courses }: { courses: Course[] }) {
+type Props = {
+  courses: Course[];
+  onSelectCourse?: (course: Course) => void;
+};
+
+export default function LeafletMap({ courses, onSelectCourse }: Props) {
   const swedenCenter: [number, number] = [62.0, 15.0];
 
   return (
@@ -22,7 +28,7 @@ export default function LeafletMap({ courses }: { courses: Course[] }) {
       zoom={5}
       scrollWheelZoom={true}
       className="w-full z-0 rounded-lg shadow"
-      style={{ height: "500px" }} // ✅ fixar höjd
+      style={{ height: "500px" }} // ✅ fixed height
     >
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a>'
@@ -35,6 +41,9 @@ export default function LeafletMap({ courses }: { courses: Course[] }) {
           <Marker
             key={course.id}
             position={[course.latitude!, course.longitude!]}
+            eventHandlers={{
+              click: () => onSelectCourse?.(course),
+            }}
           >
             <Popup>
               <strong>{course.name}</strong>
