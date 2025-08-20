@@ -3,12 +3,14 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
+/* ---------- Shapes ---------- */
 type LatestCourse = {
   id: string;
   name: string;
   location?: string | null;
   created_at?: string | null;
 };
+
 type LatestScoreRow = {
   courseId: string;
   courseName: string;
@@ -19,6 +21,7 @@ type LatestScoreRow = {
     profiles?: { alias: string } | null;
   } | null;
 };
+
 type LatestCompetition = {
   id: string;
   title: string;
@@ -26,36 +29,88 @@ type LatestCompetition = {
   created_at?: string | null;
 };
 
+/* ---------- Type guards (no any) ---------- */
+function isLatestCourseArray(val: unknown): val is LatestCourse[] {
+  return (
+    Array.isArray(val) &&
+    val.every(
+      (v) => v !== null && typeof v === "object" && "id" in v && "name" in v
+    )
+  );
+}
+
+function isLatestScoreArray(val: unknown): val is LatestScoreRow[] {
+  return (
+    Array.isArray(val) &&
+    val.every(
+      (v) =>
+        v !== null &&
+        typeof v === "object" &&
+        "courseId" in v &&
+        "courseName" in v
+    )
+  );
+}
+
+function isLatestCompetitionArray(val: unknown): val is LatestCompetition[] {
+  return (
+    Array.isArray(val) &&
+    val.every(
+      (v) => v !== null && typeof v === "object" && "id" in v && "title" in v
+    )
+  );
+}
+
 export default function DashboardFeeds() {
-  // courses
+  /* courses */
   const [courses, setCourses] = useState<LatestCourse[] | null>(null);
   const [coursesLoading, setCoursesLoading] = useState(true);
   const [coursesError, setCoursesError] = useState<string | null>(null);
 
-  // scores
+  /* scores */
   const [scores, setScores] = useState<LatestScoreRow[] | null>(null);
   const [scoresLoading, setScoresLoading] = useState(true);
   const [scoresError, setScoresError] = useState<string | null>(null);
 
-  // competitions
+  /* competitions */
   const [comps, setComps] = useState<LatestCompetition[] | null>(null);
   const [compsLoading, setCompsLoading] = useState(true);
   const [compsError, setCompsError] = useState<string | null>(null);
 
-  // Courses
+  /* --- Fetch latest courses (no any, verbose errors) --- */
   useEffect(() => {
     (async () => {
+      setCoursesLoading(true);
+      setCoursesError(null);
       try {
         const res = await fetch("/api/latest-courses", { cache: "no-store" });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const json = await res.json();
+        const bodyText = await res.text();
 
-        // defensiv: acceptera både array och {data:[...]}
-        const list = Array.isArray(json) ? json : json?.data ?? [];
+        if (!res.ok) {
+          console.error("latest-courses response body:", bodyText);
+          throw new Error(`HTTP ${res.status}`);
+        }
+
+        let parsed: unknown;
+        try {
+          parsed = JSON.parse(bodyText);
+        } catch {
+          parsed = null;
+        }
+
+        const list =
+          parsed && isLatestCourseArray(parsed)
+            ? parsed
+            : parsed &&
+              typeof parsed === "object" &&
+              "data" in parsed &&
+              isLatestCourseArray((parsed as { data?: unknown }).data)
+            ? (parsed as { data: LatestCourse[] }).data
+            : [];
+
         setCourses(list);
-        setCoursesError(null);
-      } catch (e: any) {
-        console.error("latest-courses fetch failed:", e);
+      } catch (err: unknown) {
+        console.error("latest-courses fetch failed:", err);
         setCoursesError("Kunde inte hämta senaste banor.");
       } finally {
         setCoursesLoading(false);
@@ -63,43 +118,47 @@ export default function DashboardFeeds() {
     })();
   }, []);
 
+  /* --- Fetch latest scores (din befintliga route) --- */
   useEffect(() => {
-    // Courses
-    // (async () => {
-    //   try {
-    //     const res = await fetch("/api/latest-courses");
-    //     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    //     const json = await res.json();
-    //     setCourses(json ?? []);
-    //   } catch (e: any) {
-    //     setCoursesError("Kunde inte hämta senaste banor.");
-    //   } finally {
-    //     setCoursesLoading(false);
-    //   }
-    // })();
-
-    // Scores (din befintliga route)
     (async () => {
+      setScoresLoading(true);
+      setScoresError(null);
       try {
-        const res = await fetch("/api/get-latest-scores");
+        const res = await fetch("/api/get-latest-scores", {
+          cache: "no-store",
+        });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const json = await res.json();
-        setScores(json ?? []);
-      } catch (e: any) {
+        const data: unknown = await res.json();
+
+        const list = isLatestScoreArray(data) ? data : [];
+
+        setScores(list);
+      } catch (err: unknown) {
+        console.error("latest-scores fetch failed:", err);
         setScoresError("Kunde inte hämta senaste resultat.");
       } finally {
         setScoresLoading(false);
       }
     })();
+  }, []);
 
-    // Competitions
+  /* --- Fetch latest competitions --- */
+  useEffect(() => {
     (async () => {
+      setCompsLoading(true);
+      setCompsError(null);
       try {
-        const res = await fetch("/api/latest-competitions");
+        const res = await fetch("/api/latest-competitions", {
+          cache: "no-store",
+        });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const json = await res.json();
-        setComps(json ?? []);
-      } catch (e: any) {
+        const data: unknown = await res.json();
+
+        const list = isLatestCompetitionArray(data) ? data : [];
+
+        setComps(list);
+      } catch (err: unknown) {
+        console.error("latest-competitions fetch failed:", err);
         setCompsError("Kunde inte hämta senaste tävlingar.");
       } finally {
         setCompsLoading(false);
@@ -117,7 +176,6 @@ export default function DashboardFeeds() {
             Visa alla banor
           </Link>
         </CardHeader>
-
         <CardBody>
           <MiniTable
             headers={["Bana", "Plats", "Skapad"]}
@@ -157,7 +215,7 @@ export default function DashboardFeeds() {
             rows={
               scores?.map((r) => {
                 const alias = r.latestScore?.profiles?.alias ?? "—";
-                const score =
+                const scoreVal =
                   typeof r.latestScore?.score === "number"
                     ? r.latestScore.score
                     : "—";
@@ -175,7 +233,7 @@ export default function DashboardFeeds() {
                   >
                     {r.courseName}
                   </Link>,
-                  score,
+                  scoreVal,
                   date,
                 ];
               }) ?? null

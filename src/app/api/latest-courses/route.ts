@@ -1,4 +1,3 @@
-// src/app/api/latest-courses/route.ts
 import { NextResponse } from "next/server";
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
@@ -11,30 +10,56 @@ export async function GET() {
   });
 
   try {
-    // Start super-minimal to avoid column mismatches.
-    // If this works, add more columns step-by-step.
-    const { data, error, status } = await supabase
+    const { data, error } = await supabase
       .from("courses")
-      .select("id, name") // add ", location, created_at" when this works
-      .order("created_at", { ascending: false }) // safe to keep even if created_at exists
+      .select("id, name, location, created_at")
+      .order("created_at", { ascending: false })
       .limit(5);
 
     if (error) {
-      // Map common auth/RLS errors to 401/403 for clarity
-      const msg = `[latest-courses] Supabase error (${status}): ${error.message}`;
-      console.error(msg);
-      const authLike = /JWT|permission|policy|RLS|authenticated/i.test(
-        error.message
-      );
-      return NextResponse.json(
-        { error: msg },
-        { status: authLike ? 403 : 500 }
-      );
+      const msg = `[latest-courses] error primary query: ${error.message}`;
+      console.warn(msg);
+
+      const needsFallback =
+        /column .* created_at .* does not exist/i.test(error.message) ||
+        /invalid input/i.test(error.message);
+
+      if (!needsFallback) {
+        const authLike = /JWT|permission|policy|RLS|not authorized/i.test(
+          error.message
+        );
+        return NextResponse.json(
+          { error: msg },
+          { status: authLike ? 403 : 500 }
+        );
+      }
+
+      const fb = await supabase
+        .from("courses")
+        .select("id, name, location")
+        .order("id", { ascending: false })
+        .limit(5);
+
+      if (fb.error) {
+        const fbMsg = `[latest-courses] fallback error: ${fb.error.message}`;
+        console.error(fbMsg);
+        const authLike = /JWT|permission|policy|RLS|not authorized/i.test(
+          fb.error.message
+        );
+        return NextResponse.json(
+          { error: fbMsg },
+          { status: authLike ? 403 : 500 }
+        );
+      }
+
+      return NextResponse.json(fb.data ?? []);
     }
 
     return NextResponse.json(data ?? []);
-  } catch (e: any) {
-    const msg = `[latest-courses] Unhandled error: ${e?.message ?? e}`;
+  } catch (err: unknown) {
+    const msg = `[latest-courses] unhandled: ${
+      err instanceof Error ? err.message : String(err)
+    }`;
     console.error(msg);
     return NextResponse.json({ error: msg }, { status: 500 });
   }
