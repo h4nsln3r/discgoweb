@@ -8,6 +8,8 @@ Lägga till bilder till sin runda banrekord
 
 Kunna kommentera ett rekord
 
+
+
 discgoweb nytt namn förslag
 
 
@@ -21,8 +23,7 @@ Kartan med alla banor längst upp
 
 Söka efter banor
 
-Liten karta vid alla banor
-eller adress till google maps
+
 
 
 
@@ -31,3 +32,5 @@ eller adress till google maps
 
 DONE
 göra en tabell av banrekorden
+Liten karta vid alla banor
+eller adress till google maps
