@@ -121,7 +121,7 @@ export default function Topbar({ user }: { user: SlimUser | null }) {
               🥏 Resultat
             </Link>
           </li>
-          <li>
+          {/* <li>
             <Link
               href="/results/new"
               onClick={() => setMenuOpen(false)}
@@ -129,7 +129,7 @@ export default function Topbar({ user }: { user: SlimUser | null }) {
             >
               ➕ Lägg till resultat
             </Link>
-          </li>
+          </li> */}
 
           <li>
             <Link
@@ -140,7 +140,7 @@ export default function Topbar({ user }: { user: SlimUser | null }) {
               🏞️ Alla banor
             </Link>
           </li>
-          <li>
+          {/* <li>
             <Link
               href="/courses/new"
               onClick={() => setMenuOpen(false)}
@@ -148,7 +148,7 @@ export default function Topbar({ user }: { user: SlimUser | null }) {
             >
               ➕ Lägg till bana
             </Link>
-          </li>
+          </li> */}
           <li>
             <Link
               href="/profile"
