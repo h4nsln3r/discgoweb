@@ -21,7 +21,7 @@ export async function PUT(req: Request) {
 
   // Parse body
   const body = await req.json();
-  const { id, course_id, score, date_played, with_friends } = body;
+  const { id, course_id, score, throws, date_played, with_friends } = body;
 
   // Uppdatera endast egna resultat
   const { data, error } = await supabase
@@ -31,6 +31,7 @@ export async function PUT(req: Request) {
       score,
       date_played,
       with_friends,
+      throws,
     })
     .eq("id", id)
     .eq("user_id", user.id); // Säkerhetsfilter

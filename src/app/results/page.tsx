@@ -15,12 +15,14 @@ import Link from "next/link";
 
 interface Score {
   id: string;
+  throws: number | null;
   score: number;
   date_played: string;
   competition_id: string | null;
-  courses: { name: string } | null;
+  courses: { id: string; name: string };
   profiles: { alias: string } | null;
   competitions: { title: string } | null;
+  with_friends?: string[]; // 👈 add here
 }
 
 export default function ResultsPage() {
@@ -35,6 +37,7 @@ export default function ResultsPage() {
       try {
         const res = await fetch("/api/get-all-scores");
         const json = await res.json();
+        console.log("json", json);
         setData(json);
       } catch (error) {
         console.error("Error fetching scores:", error);
@@ -77,9 +80,35 @@ export default function ResultsPage() {
     {
       accessorKey: "score",
       header: "Score",
-      cell: (info) => (
-        <span className="font-semibold">{info.getValue() as number}</span>
-      ),
+      cell: (info) => {
+        const row = info.row.original;
+        return (
+          <Link
+            href={`/results/${row.id}/edit`}
+            className="font-semibold text-blue-600 hover:underline"
+            title="Redigera resultat"
+          >
+            {row.score}
+          </Link>
+        );
+      },
+    },
+    {
+      accessorKey: "throws",
+      header: "Kast",
+      cell: (info) => {
+        const row = info.row.original;
+        return (
+          // <Link
+          //   href={`/results/${row.id}/edit`}
+          //   className="font-semibold text-blue-600 hover:underline"
+          //   title="Redigera resultat"
+          // >
+          //   {row.score}
+          // </Link>
+          <p>{row.throws}</p>
+        );
+      },
     },
     {
       accessorKey: "date_played",

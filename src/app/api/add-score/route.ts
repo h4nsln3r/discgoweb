@@ -21,13 +21,14 @@ export async function POST(req: Request) {
 
   // Parse body
   const body = await req.json();
-  const { course_id, score, date_played, with_friends } = body;
+  const { course_id, score, throws, date_played, with_friends } = body;
 
   // Insert med user_id
   const { data, error } = await supabase.from("scores").insert([
     {
       course_id,
       score,
+      throws,
       date_played,
       with_friends,
       user_id: user.id,

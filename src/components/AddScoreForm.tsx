@@ -7,6 +7,7 @@ type Player = { id: string; alias: string };
 
 type EditingScore = {
   id: string;
+  throws: number | null;
   score: number;
   date_played: string;
   with_friends?: string[];
@@ -25,6 +26,7 @@ export default function AddScoreForm({
   editingScore,
 }: Props) {
   const [score, setScore] = useState("");
+  const [throws, setThrows] = useState("");
   const [datePlayed, setDatePlayed] = useState("");
   const [withFriends, setWithFriends] = useState<string[]>([]);
   const [selectedCourse, setSelectedCourse] = useState("");
@@ -79,6 +81,7 @@ export default function AddScoreForm({
   useEffect(() => {
     if (editingScore) {
       setScore(String(editingScore.score));
+      setThrows(String(editingScore.throws));
       setDatePlayed(
         editingScore.date_played
           ? new Date(editingScore.date_played).toISOString().split("T")[0]
@@ -88,6 +91,7 @@ export default function AddScoreForm({
       setSelectedCourse(editingScore.courses.id);
     } else {
       setScore("");
+      setThrows("");
       setDatePlayed("");
       setWithFriends(currentUserAlias ? [currentUserAlias] : []);
       setSelectedCourse("");
@@ -119,6 +123,7 @@ export default function AddScoreForm({
     const payload = {
       course_id: selectedCourse,
       score: Number(score),
+      throws: Number(throws),
       date_played: datePlayed,
       with_friends: combinedFriends,
     };
@@ -150,6 +155,7 @@ export default function AddScoreForm({
       } else {
         // Reset vid nytt resultat
         setScore("");
+        setThrows("");
         setDatePlayed(new Date().toISOString().split("T")[0]);
         setWithFriends(currentUserAlias ? [currentUserAlias] : []);
         setManualGuests([]);
@@ -185,12 +191,24 @@ export default function AddScoreForm({
 
       {/* Score */}
       <div>
-        <label className="block font-medium">Antal kast</label>
+        <label className="block font-medium">Poäng</label>
         <input
           type="number"
           className="border p-2 w-full"
           value={score}
           onChange={(e) => setScore(e.target.value)}
+          required
+        />
+      </div>
+
+      {/* thows */}
+      <div>
+        <label className="block font-medium">Antal kast</label>
+        <input
+          type="number"
+          className="border p-2 w-full"
+          value={throws}
+          onChange={(e) => setThrows(e.target.value)}
           required
         />
       </div>

@@ -5,12 +5,14 @@ import AddScoreForm from "@/components/AddScoreForm";
 
 interface Score {
   id: string;
+  throws: number | null;
   score: number;
   date_played: string;
-  with_friends?: string[];
   competition_id: string | null;
+  courses: { id: string; name: string };
   profiles: { alias: string } | null;
-  courses: { name: string; id: string };
+  competitions: { title: string } | null;
+  with_friends?: string[]; // 👈 add here
 }
 
 export default function AddResultPage() {
@@ -68,6 +70,7 @@ export default function AddResultPage() {
                 ? {
                     id: editingScore.id,
                     score: editingScore.score,
+                    throws: editingScore.throws,
                     date_played: editingScore.date_played,
                     with_friends: editingScore.with_friends ?? [],
                     courses: {
