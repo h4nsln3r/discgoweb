@@ -12,6 +12,7 @@ import {
   ColumnFiltersState,
 } from "@tanstack/react-table";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 interface Score {
   id: string;
@@ -26,11 +27,28 @@ interface Score {
 }
 
 export default function ResultsPage() {
+  const router = useRouter();
+
   const [data, setData] = useState<Score[]>([]);
   const [loading, setLoading] = useState(true);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+
+  const handleRowClick = (id: string) => {
+    router.push(`/results/${id}`);
+  };
+
+  const handleRowKeyDown = (
+    e: React.KeyboardEvent<HTMLTableRowElement>,
+    id: string
+  ) => {
+    // Make row accessible: Enter/Space navigates
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      router.push(`/results/${id}`);
+    }
+  };
 
   useEffect(() => {
     const fetchScores = async () => {
@@ -258,10 +276,23 @@ export default function ResultsPage() {
               key={row.id}
               className={`${
                 index % 2 === 0 ? "bg-white" : "bg-gray-50"
-              } hover:bg-gray-100`}
+              } hover:bg-gray-100 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-400`}
+              onClick={() => handleRowClick(row.original.id)}
+              onKeyDown={(e) => handleRowKeyDown(e, row.original.id)}
+              tabIndex={0} // accessible focus
+              role="button" // semantics
+              aria-label={`Öppna resultat ${row.original.id}`}
             >
               {row.getVisibleCells().map((cell) => (
-                <td key={cell.id} className="px-4 py-2 border">
+                <td
+                  key={cell.id}
+                  className="px-4 py-2 border"
+                  // If any cell contains its own Link/button, stop row navigation when clicking those
+                  onClick={(e) => {
+                    const target = e.target as HTMLElement;
+                    if (target.closest("a,button")) e.stopPropagation();
+                  }}
+                >
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
                 </td>
               ))}
