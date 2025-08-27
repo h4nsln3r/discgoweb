@@ -16,7 +16,8 @@ type Props = {
 
 type BestScore = {
   id: string;
-  score: number | null;
+  throws: number | null; // primary metric (casts)
+  score: number | null; // secondary metric (points)
   date_played: string | null;
   profiles: { alias: string | null } | null;
 };
@@ -29,34 +30,43 @@ export default function CoursePreviewPanel({ course, onClose }: Props) {
   const [loadingScore, setLoadingScore] = useState(false);
   const [scoreError, setScoreError] = useState<string | null>(null);
 
-  // Guard: nothing selected
-  if (!course) return null;
-
-  // Fetch only the course record (best/lowest score)
+  // Always declare hooks in the same order; guard *inside* the effect.
   useEffect(() => {
     let cancelled = false;
+
     (async () => {
+      // Guard inside the effect to keep hooks order stable
+      if (!course?.id) {
+        setBestScore(null);
+        return;
+      }
+
       setLoadingScore(true);
       setScoreError(null);
+
       try {
         const { data, error } = await supabase
           .from("scores")
-          // Select the minimal fields we need + player alias
-          .select("id, score, date_played, profiles(alias)")
+          // Need throws + score + player alias
+          .select("id, throws, score, date_played, profiles(alias)")
           .eq("course_id", course.id)
-          .order("score", { ascending: true }) // lowest score = course record
+          // Primary: lowest throws first (nulls last), then lowest score
+          .order("throws", { ascending: true, nullsFirst: false })
+          .order("score", { ascending: true, nullsFirst: false })
           .limit(1);
 
         if (!cancelled) {
           if (error) {
+            console.error("[COURSE RECORD ERROR]", error);
             setScoreError("Kunde inte hämta banrekord.");
             setBestScore(null);
           } else {
             setBestScore((data && data[0]) ?? null);
           }
         }
-      } catch {
+      } catch (e) {
         if (!cancelled) {
+          console.error("[COURSE RECORD ERROR]", e);
           setScoreError("Kunde inte hämta banrekord.");
           setBestScore(null);
         }
@@ -64,10 +74,19 @@ export default function CoursePreviewPanel({ course, onClose }: Props) {
         if (!cancelled) setLoadingScore(false);
       }
     })();
+
     return () => {
       cancelled = true;
     };
-  }, [course.id, supabase]);
+  }, [course?.id, supabase]);
+
+  // Early return placed AFTER all hooks are declared
+  if (!course) return null;
+
+  const recordValue =
+    typeof bestScore?.throws === "number"
+      ? bestScore?.throws
+      : bestScore?.score ?? null;
 
   return (
     <>
@@ -177,11 +196,9 @@ export default function CoursePreviewPanel({ course, onClose }: Props) {
                     </div>
                     <div className="text-right">
                       <div className="text-lg font-semibold">
-                        {typeof bestScore.score === "number"
-                          ? bestScore.score
-                          : "—"}
+                        {recordValue ?? "—"}
                       </div>
-                      <div className="text-xs text-gray-500">slag</div>
+                      <div className="text-xs text-gray-500">kast</div>
                     </div>
                   </div>
                 ) : (
@@ -226,8 +243,7 @@ export default function CoursePreviewPanel({ course, onClose }: Props) {
             {/* Inline add score form (optional reveal) */}
             {openForm && (
               <div className="mt-3">
-                {/* Your AddScoreForm currently lets you pick course in a dropdown. 
-                   If you want it preselected, we can add a `defaultCourseId={course.id}` prop to that form. */}
+                {/* If you want to preselect the course, extend AddScoreForm with defaultCourseId={course.id} */}
                 <AddScoreForm onClose={() => setOpenForm(false)} />
               </div>
             )}
