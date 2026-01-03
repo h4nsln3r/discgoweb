@@ -17,7 +17,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="sv">
-      <body>
+      <body
+        className="min-h-screen bg-cover bg-center relative"
+        style={{ backgroundImage: "url('/images/login-bg.png')" }}
+      >
         <TopbarWrapper />
         {children}
       </body>
