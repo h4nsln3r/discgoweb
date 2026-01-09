@@ -3,40 +3,45 @@ import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import type { Database } from "@/types/supabase";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function POST(req: NextRequest) {
-  const cookieStore = cookies();
-  const supabase = createRouteHandlerClient<Database>({
-    cookies: () => cookieStore,
+async function createSupabase() {
+  const cookieStore = await cookies();
+
+  return createRouteHandlerClient<Database>({
+    // ✅ din auth-helpers version vill ha Promise här
+    cookies: async () => cookieStore,
   });
+}
+
+export async function POST(req: NextRequest) {
+  const supabase = await createSupabase();
 
   const {
     data: { user },
+    error: userErr,
   } = await supabase.auth.getUser();
 
-  if (!user) {
+  if (userErr || !user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const {
-    alias,
-    avatar_url,
-    home_course,
-    phone,
-    favorite_disc,
-    city,
-    team,
-  } = await req.json();
+  const body = await req.json();
 
-  const { error } = await supabase.from("profiles").upsert({
-    id: user.id as string,
-    alias,
-    avatar_url,
-    home_course,
-    phone,
-    favorite_disc,
-    city,
-    team,
-  });
+  // ✅ exakt typ enligt din generated Database
+  type ProfilesUpsert = Database["public"]["Tables"]["profiles"]["Insert"];
+
+  const payload: ProfilesUpsert = {
+    id: user.id,
+    alias: body.alias ?? user.email?.split("@")[0] ?? "user",
+    avatar_url: body.avatar_url ?? "",
+    home_course: body.home_course ?? null,
+    phone: body.phone ?? null,
+    favorite_disc: body.favorite_disc ?? null,
+    city: body.city ?? null,
+    team: body.team ?? null,
+  };
+
+  // ⚠️ Typings kan bli "never" i vissa setups -> cast för att unblocka TS
+  const { error } = await (supabase as any).from("profiles").upsert(payload);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
