@@ -129,18 +129,30 @@ export type Database = {
         Row: {
           alias: string
           avatar_url: string
+          city: string | null
+          favorite_disc: string | null
+          phone: string | null
+          team: string | null
           home_course: string | null
           id: string
         }
         Insert: {
           alias: string
           avatar_url: string
+          city?: string | null
+          favorite_disc?: string | null
+          phone?: string | null
+          team?: string | null
           home_course?: string | null
           id?: string
         }
         Update: {
           alias?: string
           avatar_url?: string
+          city?: string | null
+          favorite_disc?: string | null
+          phone?: string | null
+          team?: string | null
           home_course?: string | null
           id?: string
         }
