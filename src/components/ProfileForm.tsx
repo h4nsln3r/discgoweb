@@ -5,7 +5,10 @@ import type { Database } from "@/types/supabase";
 import { createSupabaseClient } from "@/lib/supabase";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
-type Course = Pick<Database["public"]["Tables"]["courses"]["Row"], "id" | "name">;
+type Course = Pick<
+  Database["public"]["Tables"]["courses"]["Row"],
+  "id" | "name"
+>;
 
 export default function ProfileForm({
   profile,
@@ -17,9 +20,13 @@ export default function ProfileForm({
   const supabase = createSupabaseClient();
 
   const [alias, setAlias] = useState(profile?.alias ?? "");
-  const [homeCourse, setHomeCourse] = useState(profile?.home_course ?? "");
+  const [homeCourse, setHomeCourse] = useState<string>(
+    (profile?.home_course as string) ?? ""
+  );
   const [phone, setPhone] = useState(profile?.phone ?? "+46 ");
-  const [favoriteDisc, setFavoriteDisc] = useState(profile?.favorite_disc ?? "");
+  const [favoriteDisc, setFavoriteDisc] = useState(
+    profile?.favorite_disc ?? ""
+  );
   const [city, setCity] = useState(profile?.city ?? "");
   const [team, setTeam] = useState(profile?.team ?? "");
 
@@ -67,29 +74,40 @@ export default function ProfileForm({
     setSaving(true);
 
     try {
+      const {
+        data: { user },
+        error: userErr,
+      } = await supabase.auth.getUser();
+
+      if (userErr || !user) throw userErr ?? new Error("Inte inloggad.");
+
       const avatar_url = await uploadAvatar();
 
-      const res = await fetch("/api/update-profile", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          alias,
-          avatar_url,
-          home_course: homeCourse || null,
-          phone: phone?.trim() || null,
-          favorite_disc: favoriteDisc?.trim() || null,
-          city: city?.trim() || null,
-          team: team?.trim() || null,
-        }),
-      });
+      const payload: Database["public"]["Tables"]["profiles"]["Insert"] = {
+        id: user.id,
+        alias,
+        avatar_url,
+        home_course: homeCourse ? (homeCourse as any) : null,
+        phone: phone?.trim() || null,
+        favorite_disc: favoriteDisc?.trim() || null,
+        city: city?.trim() || null,
+        team: team?.trim() || null,
+      };
 
-      if (res.ok) {
-        alert("Profil uppdaterad!");
-        setAvatarFile(null);
-      } else {
-        const body = await res.json().catch(() => ({}));
-        alert(body?.error ?? "Något gick fel.");
+      console.log("[profile] saving payload:", payload);
+
+      const { error } = await supabase
+        .from("profiles")
+        .upsert(payload, { onConflict: "id" });
+
+      if (error) {
+        console.error("[profile] upsert error:", error);
+        alert(error.message);
+        return;
       }
+
+      alert("Profil uppdaterad!");
+      setAvatarFile(null);
     } catch (err: any) {
       alert(err?.message ?? "Något gick fel.");
     } finally {
@@ -202,7 +220,9 @@ export default function ProfileForm({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-800">Stad</label>
+          <label className="block text-sm font-medium text-gray-800">
+            Stad
+          </label>
           <input
             className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500"
             value={city}

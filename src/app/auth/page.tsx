@@ -5,36 +5,6 @@ import { useRouter } from "next/navigation";
 import { createSupabaseClient } from "@/lib/supabase";
 import { AnimatePresence, motion } from "framer-motion";
 
-type Course = { id: string; name: string };
-
-type PendingProfile = {
-  alias: string;
-  phone: string;
-  homeCourse: string;
-  favoriteDisc: string;
-  city: string;
-  team: string;
-  avatarDataUrl?: string | null;
-};
-
-function fileToDataUrl(file: File) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
-function dataUrlToBlob(dataUrl: string) {
-  const [meta, b64] = dataUrl.split(",");
-  const mime = /data:(.*);base64/.exec(meta)?.[1] ?? "application/octet-stream";
-  const bytes = atob(b64);
-  const arr = new Uint8Array(bytes.length);
-  for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
-  return new Blob([arr], { type: mime });
-}
-
 function CenterToast({
   open,
   title,
@@ -114,23 +84,6 @@ export default function AuthPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Rollgardin / extra signup fields
-  const [showSignupDetails, setShowSignupDetails] = useState(false);
-
-  // profile fields
-  const [alias, setAlias] = useState("");
-  const [phone, setPhone] = useState("+46");
-  const [homeCourse, setHomeCourse] = useState("");
-  const [favoriteDisc, setFavoriteDisc] = useState("");
-  const [city, setCity] = useState("");
-  const [team, setTeam] = useState("");
-
-  // avatar file (for immediate signup sessions)
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
-
-  // courses (if you later want to fill)
-  const [courses, setCourses] = useState<Course[]>([]);
-
   // toast
   const [toastOpen, setToastOpen] = useState(false);
   const [toastTitle, setToastTitle] = useState("");
@@ -146,83 +99,8 @@ export default function AuthPage() {
 
   const canSubmit = useMemo(() => {
     if (!email || !password) return false;
-    if (isLogin) return true;
-    // signup: first click opens details, second submits
-    if (!showSignupDetails) return true;
-    return alias.trim().length > 0;
-  }, [email, password, isLogin, showSignupDetails, alias]);
-
-  // Upload avatar for cases where we DO have a session immediately
-  async function uploadAvatarNow(userId: string) {
-    if (!avatarFile) return null;
-
-    const ext = avatarFile.type === "image/png" ? "png" : "jpg";
-    const filePath = `${userId}/avatar.${ext}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from("avatars")
-      .upload(filePath, avatarFile, { upsert: true });
-
-    if (uploadError) throw uploadError;
-
-    const { data } = supabase.storage.from("avatars").getPublicUrl(filePath);
-    return data.publicUrl ?? null;
-  }
-
-  async function applyPendingProfile(loginEmail: string) {
-    const key = `pending_profile:${loginEmail}`;
-    const raw = localStorage.getItem(key);
-    if (!raw) return;
-
-    let pending: PendingProfile | null = null;
-    try {
-      pending = JSON.parse(raw);
-    } catch {
-      localStorage.removeItem(key);
-      return;
-    }
-
-    // Upload avatar from dataUrl (after confirmation)
-    let avatarUrl = "";
-    if (pending?.avatarDataUrl) {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (user) {
-        const blob = dataUrlToBlob(pending.avatarDataUrl);
-        const ext = blob.type === "image/png" ? "png" : "jpg";
-        const filePath = `${user.id}/avatar.${ext}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from("avatars")
-          .upload(filePath, blob, { upsert: true, contentType: blob.type });
-
-        if (!uploadError) {
-          const { data } = supabase.storage
-            .from("avatars")
-            .getPublicUrl(filePath);
-          avatarUrl = data.publicUrl ?? "";
-        }
-      }
-    }
-
-    await fetch("/api/update-profile", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        alias: pending?.alias ?? "",
-        avatar_url: avatarUrl,
-        home_course: pending?.homeCourse || null,
-        phone: pending?.phone?.trim() || null,
-        favorite_disc: pending?.favoriteDisc?.trim() || null,
-        city: pending?.city?.trim() || null,
-        team: pending?.team?.trim() || null,
-      }),
-    });
-
-    localStorage.removeItem(key);
-  }
+    return true;
+  }, [email, password]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -231,99 +109,76 @@ export default function AuthPage() {
 
     try {
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
+        // LOGIN
+        const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
         if (error) throw error;
 
-        // ✅ After confirmed e-mail, first login → write pending profile to DB
-        try {
-          await applyPendingProfile(email);
-        } catch {
-          // ignore
+        const userId = data.user?.id;
+        if (!userId) {
+          router.push("/dashboard");
+          return;
+        }
+
+        // Check if profile exists / is "complete enough"
+        const { data: profile, error: pErr } = await supabase
+          .from("profiles")
+          .select("id, alias")
+          .eq("id", userId)
+          .maybeSingle();
+
+        if (pErr) {
+          // If RLS blocks SELECT you'll see it here.
+          // We'll still let user into dashboard for now.
+          console.warn("[auth] profile check error:", pErr);
+          router.push("/dashboard");
+          return;
+        }
+
+        const needsOnboarding = !profile || !profile.alias;
+
+        if (needsOnboarding) {
+          setToastTitle("Välkommen! 👋");
+          setToastMessage("Fyll i profilen så kör vi!");
+          setToastOpen(true);
+
+          // redirect to profile onboarding
+          router.push("/profile?onboarding=1");
+          return;
         }
 
         router.push("/dashboard");
         return;
       }
 
-      // SIGNUP: first click opens rollgardin
-      if (!showSignupDetails) {
-        setShowSignupDetails(true);
-        setLoading(false);
-        return;
-      }
-
-      // SIGNUP: actually create account
+      // SIGN UP
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
       });
       if (error) throw error;
 
-      // If e-mail confirmation is ON, session may be null here.
+      // With email verification ON, session is usually null -> show toast + switch to login
       if (!data.session) {
-        // Store the extra fields locally so the user can finish after verifying.
-        try {
-          const avatarDataUrl = avatarFile
-            ? await fileToDataUrl(avatarFile)
-            : null;
-
-          localStorage.setItem(
-            `pending_profile:${email}`,
-            JSON.stringify({
-              alias,
-              phone,
-              homeCourse,
-              favoriteDisc,
-              city,
-              team,
-              avatarDataUrl,
-            } satisfies PendingProfile)
-          );
-        } catch {
-          // ignore
-        }
-
-        // ✅ Center toast feedback
         setToastTitle("Konto skapat 🎉");
         setToastMessage(
-          "Kolla din e-post och bekräfta kontot. När du loggar in första gången sparas profilen automatiskt."
+          "Kolla mailen och bekräfta kontot, sen kan du logga in."
         );
         setToastOpen(true);
 
-        // switch view to login
         setIsLogin(true);
         setPassword("");
-        setLoading(false);
         return;
       }
 
-      // If session exists immediately, we can upsert now
-      const userId = data.session.user.id;
-      const avatarUrl = await uploadAvatarNow(userId);
-
-      const res = await fetch("/api/update-profile", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          alias,
-          avatar_url: avatarUrl ?? "",
-          home_course: homeCourse || null,
-          phone: phone?.trim() || null,
-          favorite_disc: favoriteDisc?.trim() || null,
-          city: city?.trim() || null,
-          team: team?.trim() || null,
-        }),
-      });
-
-      if (!res.ok) {
-        const j = await res.json().catch(() => null);
-        throw new Error(j?.error ?? "Kunde inte spara profilen.");
-      }
-
-      router.push("/dashboard");
+      // If session exists immediately (email verification OFF),
+      // push them straight into onboarding.
+      setToastTitle("Välkommen! 👋");
+      setToastMessage("Fyll i profilen så kör vi!");
+      setToastOpen(true);
+      router.push("/profile?onboarding=1");
     } catch (err: any) {
       setError(err.message ?? "Något gick fel.");
     } finally {
@@ -381,124 +236,6 @@ export default function AuthPage() {
                   />
                 </div>
 
-                <AnimatePresence initial={false}>
-                  {!isLogin && showSignupDetails && (
-                    <motion.div
-                      className="space-y-3 overflow-hidden rounded-xl border border-white/60 bg-white/50 p-4"
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.35, ease: "easeInOut" }}
-                    >
-                      <p className="text-sm text-gray-700">
-                        Fyll i din profil (du kan ändra allt senare).
-                      </p>
-
-                      <div className="space-y-2">
-                        <label className="text-xs font-medium text-gray-700">
-                          Namn / Alias
-                        </label>
-                        <input
-                          className="w-full rounded-lg border border-gray-300 bg-white/70 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                          value={alias}
-                          onChange={(e) => setAlias(e.target.value)}
-                          placeholder="t.ex. Hannes"
-                          required
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <label className="text-xs font-medium text-gray-700">
-                          Profilbild (valfritt)
-                        </label>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) =>
-                            setAvatarFile(e.target.files?.[0] ?? null)
-                          }
-                        />
-                        <p className="text-xs text-gray-500">
-                          Om du måste bekräfta mail så laddas bilden upp efter
-                          första inloggningen.
-                        </p>
-                      </div>
-
-                      <div className="space-y-2">
-                        <label className="text-xs font-medium text-gray-700">
-                          Telefonnummer
-                        </label>
-                        <input
-                          className="w-full rounded-lg border border-gray-300 bg-white/70 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                          value={phone}
-                          onChange={(e) => setPhone(e.target.value)}
-                          placeholder="+46..."
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <label className="text-xs font-medium text-gray-700">
-                          Hemmabana
-                        </label>
-                        <select
-                          className="w-full rounded-lg border border-gray-300 bg-white/70 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                          value={homeCourse}
-                          onChange={(e) => setHomeCourse(e.target.value)}
-                        >
-                          <option value="">Välj bana (valfritt)</option>
-                          {courses.map((c) => (
-                            <option key={c.id} value={c.name}>
-                              {c.name}
-                            </option>
-                          ))}
-                        </select>
-                        <p className="text-xs text-gray-500">
-                          Saknar du din bana? Lägg till den efter att kontot är
-                          skapat.
-                        </p>
-                      </div>
-
-                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                        <div className="space-y-2">
-                          <label className="text-xs font-medium text-gray-700">
-                            Favoritdisc
-                          </label>
-                          <input
-                            className="w-full rounded-lg border border-gray-300 bg-white/70 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                            value={favoriteDisc}
-                            onChange={(e) => setFavoriteDisc(e.target.value)}
-                            placeholder="t.ex. Destroyer"
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <label className="text-xs font-medium text-gray-700">
-                            Stad
-                          </label>
-                          <input
-                            className="w-full rounded-lg border border-gray-300 bg-white/70 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                            value={city}
-                            onChange={(e) => setCity(e.target.value)}
-                            placeholder="t.ex. Malmö"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <label className="text-xs font-medium text-gray-700">
-                          Lag
-                        </label>
-                        <input
-                          className="w-full rounded-lg border border-gray-300 bg-white/70 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                          value={team}
-                          onChange={(e) => setTeam(e.target.value)}
-                          placeholder="t.ex. Malmö DG"
-                        />
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
                 {error && <p className="text-sm text-red-600">{error}</p>}
 
                 <button
@@ -506,13 +243,7 @@ export default function AuthPage() {
                   disabled={loading || !canSubmit}
                   className="w-full rounded-lg bg-emerald-600 text-white py-2.5 font-medium hover:bg-emerald-700 transition disabled:opacity-50"
                 >
-                  {loading
-                    ? "Jobbar..."
-                    : isLogin
-                    ? "Logga in"
-                    : showSignupDetails
-                    ? "Skapa konto"
-                    : "Fortsätt →"}
+                  {loading ? "Jobbar..." : isLogin ? "Logga in" : "Skapa konto"}
                 </button>
               </form>
 
@@ -521,7 +252,6 @@ export default function AuthPage() {
                 onClick={() => {
                   setIsLogin(!isLogin);
                   setError(null);
-                  setShowSignupDetails(false);
                 }}
                 type="button"
               >
