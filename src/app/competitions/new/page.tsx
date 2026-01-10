@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 //TODO use Image from next
 // import Image from "next/image";
@@ -8,7 +8,7 @@ import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Database } from "@/types/supabase";
 
 export default function NewCompetitionPage() {
-  const supabase = createClientComponentClient<Database>();
+  const supabase = useMemo(() => createClientComponentClient<Database>(), []);
   const router = useRouter();
 
   const [loading, setLoading] = useState(false);
@@ -28,12 +28,10 @@ export default function NewCompetitionPage() {
     const fetchCourses = async () => {
       const { data, error } = await supabase.from("courses").select("id, name");
       if (data) setAllCourses(data);
-      if (error) {
-        console.log("error", error);
-      }
+      if (error) console.log("error", error);
     };
     fetchCourses();
-  }, []);
+  }, [supabase]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,7 +87,6 @@ export default function NewCompetitionPage() {
     setSuccessMessage("✅ Tävlingen har skapats!");
     setLoading(false);
 
-    // Delay innan redirect (valfritt)
     setTimeout(() => {
       router.push("/competitions");
     }, 1500);
@@ -100,6 +97,7 @@ export default function NewCompetitionPage() {
       <h1 className="text-2xl font-bold mb-4">Skapa ny tävling</h1>
       {loading && <p className="text-blue-600">⏳ Skapar tävling...</p>}
       {successMessage && <p className="text-green-600">{successMessage}</p>}
+
       <form onSubmit={handleSubmit} className="space-y-4">
         <input
           type="text"
@@ -123,51 +121,50 @@ export default function NewCompetitionPage() {
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
             required
-            className="border p-2 rounded w-full"
+            className="w-full border p-2 rounded"
           />
           <input
             type="date"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
             required
-            className="border p-2 rounded w-full"
+            className="w-full border p-2 rounded"
           />
         </div>
 
         <input
-          type="url"
-          placeholder="Bild-URL (valfri)"
+          type="text"
+          placeholder="Bild-URL"
           value={imageUrl}
           onChange={(e) => setImageUrl(e.target.value)}
           className="w-full border p-2 rounded"
         />
 
-        <label className="block font-semibold">Välj banor:</label>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {allCourses.map((course) => (
-            <label key={course.id} className="flex gap-2 items-center">
-              <input
-                type="checkbox"
-                value={course.id}
-                onChange={(e) => {
-                  const checked = e.target.checked;
-                  setCourses((prev) =>
-                    checked
-                      ? [...prev, course.id]
-                      : prev.filter((id) => id !== course.id)
-                  );
-                }}
-              />
-              {course.name}
-            </label>
-          ))}
+        <div>
+          <h2 className="font-semibold mb-2">Välj banor</h2>
+          <div className="space-y-2">
+            {allCourses.map((c) => (
+              <label key={c.id} className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={courses.includes(c.id)}
+                  onChange={(e) => {
+                    if (e.target.checked) setCourses((prev) => [...prev, c.id]);
+                    else setCourses((prev) => prev.filter((id) => id !== c.id));
+                  }}
+                />
+                {c.name}
+              </label>
+            ))}
+          </div>
         </div>
 
         <button
           type="submit"
-          className="bg-green-600 text-white py-2 px-4 rounded"
+          disabled={loading}
+          className="bg-blue-600 text-white py-2 px-4 rounded"
         >
-          Skapa tävling
+          {loading ? "Skapar..." : "Skapa tävling"}
         </button>
       </form>
     </div>

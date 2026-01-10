@@ -1,13 +1,12 @@
-// src/app/competitions/[id]/add-score/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Database } from "@/types/supabase";
 
 export default function AddCompetitionScorePage() {
-  const supabase = createClientComponentClient<Database>();
+  const supabase = useMemo(() => createClientComponentClient<Database>(), []);
   const router = useRouter();
   const params = useParams();
   const competitionId = params?.id as string;
@@ -17,7 +16,6 @@ export default function AddCompetitionScorePage() {
   const [score, setScore] = useState<number>(0);
   const [loading, setLoading] = useState(false);
 
-  // ⛳ Hämta tävlingens banor
   useEffect(() => {
     const fetchCourses = async () => {
       const { data, error } = await supabase
@@ -37,14 +35,15 @@ export default function AddCompetitionScorePage() {
             id: entry.course_id,
             name: entry.courses?.name || "Okänd",
           }));
+
         setCourses(formatted);
       }
-      if (error) {
-        console.log("error", error);
-      }
+
+      if (error) console.log("error", error);
     };
+
     fetchCourses();
-  }, [competitionId]);
+  }, [competitionId, supabase]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,6 +54,7 @@ export default function AddCompetitionScorePage() {
     } = await supabase.auth.getUser();
 
     if (!user) {
+      setLoading(false);
       alert("Du måste vara inloggad.");
       return;
     }
@@ -63,7 +63,7 @@ export default function AddCompetitionScorePage() {
       user_id: user.id,
       course_id: selectedCourse,
       competition_id: competitionId,
-      score: score,
+      score,
     });
 
     if (error) {

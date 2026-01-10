@@ -1,128 +1,48 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createSupabaseClient } from "@/lib/supabase";
-import { AnimatePresence, motion } from "framer-motion";
-
-function CenterToast({
-  open,
-  title,
-  message,
-  onClose,
-}: {
-  open: boolean;
-  title: string;
-  message?: string;
-  onClose: () => void;
-}) {
-  return (
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          className="fixed inset-0 z-[999] flex items-center justify-center"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-        >
-          <button
-            className="absolute inset-0 bg-black/35 backdrop-blur-[2px]"
-            onClick={onClose}
-            aria-label="Stäng"
-            type="button"
-          />
-
-          <motion.div
-            className="relative mx-4 w-full max-w-sm rounded-2xl bg-white shadow-2xl border border-white/60 p-5"
-            initial={{ y: 14, scale: 0.98, opacity: 0 }}
-            animate={{ y: 0, scale: 1, opacity: 1 }}
-            exit={{ y: 10, scale: 0.98, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 280, damping: 22 }}
-          >
-            <div className="flex items-start gap-3">
-              <div className="mt-0.5 h-10 w-10 rounded-full bg-emerald-600/10 flex items-center justify-center">
-                <span className="text-emerald-700 text-lg">✓</span>
-              </div>
-              <div className="flex-1">
-                <p className="font-semibold text-gray-900">{title}</p>
-                {message && (
-                  <p className="mt-1 text-sm text-gray-600">{message}</p>
-                )}
-              </div>
-              <button
-                onClick={onClose}
-                className="text-gray-400 hover:text-gray-700 transition"
-                aria-label="Stäng toast"
-                type="button"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="mt-4 h-1 w-full overflow-hidden rounded-full bg-gray-100">
-              <motion.div
-                className="h-full bg-emerald-600"
-                initial={{ width: "100%" }}
-                animate={{ width: "0%" }}
-                transition={{ duration: 4.5, ease: "linear" }}
-              />
-            </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-}
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import type { Database } from "@/types/supabase";
+import { CenterToast } from "@/components/Toasts/CenterToast";
 
 export default function AuthPage() {
-  const supabase = createSupabaseClient();
   const router = useRouter();
+  const supabase = useMemo(() => createClientComponentClient<Database>(), []);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLogin, setIsLogin] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
 
-  // toast
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   const [toastOpen, setToastOpen] = useState(false);
   const [toastTitle, setToastTitle] = useState("");
-  const [toastMessage, setToastMessage] = useState<string | undefined>(
-    undefined
-  );
-
-  useEffect(() => {
-    if (!toastOpen) return;
-    const t = setTimeout(() => setToastOpen(false), 5000);
-    return () => clearTimeout(t);
-  }, [toastOpen]);
-
-  const canSubmit = useMemo(() => {
-    if (!email || !password) return false;
-    return true;
-  }, [email, password]);
+  const [toastMessage, setToastMessage] = useState("");
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
     setLoading(true);
+    setError(null);
 
     try {
       if (isLogin) {
-        // LOGIN
+        // SIGN IN
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
+
         if (error) throw error;
 
+        // if session exists, check profile
         const userId = data.user?.id;
         if (!userId) {
           router.push("/dashboard");
           return;
         }
 
-        // Check if profile exists / is "complete enough"
         const { data: profile, error: pErr } = await supabase
           .from("profiles")
           .select("id, alias")
@@ -130,8 +50,6 @@ export default function AuthPage() {
           .maybeSingle();
 
         if (pErr) {
-          // If RLS blocks SELECT you'll see it here.
-          // We'll still let user into dashboard for now.
           console.warn("[auth] profile check error:", pErr);
           router.push("/dashboard");
           return;
@@ -143,8 +61,6 @@ export default function AuthPage() {
           setToastTitle("Välkommen! 👋");
           setToastMessage("Fyll i profilen så kör vi!");
           setToastOpen(true);
-
-          // redirect to profile onboarding
           router.push("/profile?onboarding=1");
           return;
         }
@@ -179,8 +95,8 @@ export default function AuthPage() {
       setToastMessage("Fyll i profilen så kör vi!");
       setToastOpen(true);
       router.push("/profile?onboarding=1");
-    } catch (err: any) {
-      setError(err.message ?? "Något gick fel.");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Något gick fel.");
     } finally {
       setLoading(false);
     }
@@ -219,6 +135,7 @@ export default function AuthPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
+                    autoComplete="email"
                   />
                 </div>
 
@@ -233,32 +150,37 @@ export default function AuthPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
+                    autoComplete={isLogin ? "current-password" : "new-password"}
                   />
                 </div>
 
-                {error && <p className="text-sm text-red-600">{error}</p>}
+                {error && (
+                  <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-2">
+                    {error}
+                  </p>
+                )}
 
                 <button
                   type="submit"
-                  disabled={loading || !canSubmit}
+                  disabled={loading}
                   className="w-full rounded-lg bg-emerald-600 text-white py-2.5 font-medium hover:bg-emerald-700 transition disabled:opacity-50"
                 >
                   {loading ? "Jobbar..." : isLogin ? "Logga in" : "Skapa konto"}
                 </button>
-              </form>
 
-              <button
-                className="mt-4 w-full text-center text-sm text-gray-700 hover:text-gray-900"
-                onClick={() => {
-                  setIsLogin(!isLogin);
-                  setError(null);
-                }}
-                type="button"
-              >
-                {isLogin
-                  ? "Har du inget konto? Skapa ett →"
-                  : "Redan medlem? Logga in →"}
-              </button>
+                <button
+                  type="button"
+                  className="w-full text-sm text-gray-700 hover:text-gray-900"
+                  onClick={() => {
+                    setIsLogin((v) => !v);
+                    setError(null);
+                  }}
+                >
+                  {isLogin
+                    ? "Har du inget konto? Skapa ett"
+                    : "Har du redan ett konto? Logga in"}
+                </button>
+              </form>
             </div>
           </div>
         </div>
