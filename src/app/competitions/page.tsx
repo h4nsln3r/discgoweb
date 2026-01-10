@@ -20,7 +20,7 @@ export default async function CompetitionsPage() {
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-3xl font-bold mb-6">🏆 Alla tävlingar</h1>
         <Link
-          href="/results/new"
+          href="/competitions/new"
           className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
         >
           Lägg till tävling
