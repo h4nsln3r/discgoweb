@@ -229,6 +229,7 @@ export default function CourseForm({
             </div>
 
             {url && (
+              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={url}
                 alt={`Preview ${index + 1}`}

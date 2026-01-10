@@ -21,7 +21,7 @@ export default function ProfileForm({
 
   const [alias, setAlias] = useState(profile?.alias ?? "");
   const [homeCourse, setHomeCourse] = useState<string>(
-    (profile?.home_course as string) ?? ""
+    profile?.home_course ?? ""
   );
   const [phone, setPhone] = useState(profile?.phone ?? "+46 ");
   const [favoriteDisc, setFavoriteDisc] = useState(
@@ -87,7 +87,7 @@ export default function ProfileForm({
         id: user.id,
         alias,
         avatar_url,
-        home_course: homeCourse ? (homeCourse as any) : null,
+        home_course: homeCourse || null,
         phone: phone?.trim() || null,
         favorite_disc: favoriteDisc?.trim() || null,
         city: city?.trim() || null,
@@ -108,8 +108,8 @@ export default function ProfileForm({
 
       alert("Profil uppdaterad!");
       setAvatarFile(null);
-    } catch (err: any) {
-      alert(err?.message ?? "Något gick fel.");
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Något gick fel.");
     } finally {
       setSaving(false);
     }

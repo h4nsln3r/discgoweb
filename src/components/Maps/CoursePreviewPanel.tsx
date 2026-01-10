@@ -117,6 +117,7 @@ export default function CoursePreviewPanel({ course, onClose }: Props) {
           {/* Header image */}
           {course.main_image_url ? (
             <div className="relative w-full aspect-[16/9] md:rounded-t-2xl overflow-hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={course.main_image_url}
                 alt={course.name}

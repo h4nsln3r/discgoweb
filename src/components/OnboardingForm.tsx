@@ -24,7 +24,9 @@ export default function OnboardingForm({
   const supabase = createSupabaseClient();
 
   const [alias, setAlias] = useState(profile?.alias ?? "");
-  const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url ?? "");
+  // We only need the current avatar url for preview when no new file is chosen.
+  // (Keeping the setter triggers a no-unused-vars error.)
+  const [avatarUrl] = useState(profile?.avatar_url ?? "");
   const [homeCourse, setHomeCourse] = useState(profile?.home_course ?? "");
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
@@ -111,8 +113,8 @@ export default function OnboardingForm({
         throw new Error(data.error || "Kunde inte spara profil");
       }
       router.push("/dashboard");
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Något gick fel");
     } finally {
       setLoading(false);
     }
@@ -143,6 +145,7 @@ export default function OnboardingForm({
           onChange={(e) => setFile(e.target.files?.[0] ?? null)}
         />
         {avatarUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={avatarUrl}
             alt="Preview"

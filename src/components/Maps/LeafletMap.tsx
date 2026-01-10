@@ -6,8 +6,10 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
 // Remove default loader to set custom URLs
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-delete (L.Icon.Default.prototype as any)._getIconUrl;
+const iconProto = L.Icon.Default.prototype as unknown as {
+  _getIconUrl?: unknown;
+};
+delete iconProto._getIconUrl;
 
 // Default (blue)
 const defaultIcon = new L.Icon({
@@ -21,7 +23,7 @@ const defaultIcon = new L.Icon({
   shadowSize: [41, 41],
 });
 
-// Active (green) – uses a green PNG (vanlig community‑ikon)
+// Active (green) – uses a green PNG (vanlig community-ikon)
 const activeIcon = new L.Icon({
   iconRetinaUrl:
     "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png",

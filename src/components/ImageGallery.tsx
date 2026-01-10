@@ -15,6 +15,7 @@ function ImageGallery({ images }: { images: string[] }) {
     <div className="space-y-4">
       {/* Main image */}
       {selected && (
+        // eslint-disable-next-line @next/next/no-img-element
         <img
           src={selected}
           alt="Vald bild"
@@ -36,6 +37,7 @@ function ImageGallery({ images }: { images: string[] }) {
                 : "border-gray-300"
             }`}
           >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={img}
               alt={`thumbnail-${idx}`}
@@ -52,6 +54,7 @@ function ImageGallery({ images }: { images: string[] }) {
           onClick={closeModal}
         >
           <div className="relative max-w-4xl max-h-full w-full h-full flex items-center justify-center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={selected ?? ""}
               alt="Full screen"
