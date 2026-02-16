@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import AddScoreForm from "./AddScoreForm";
 import CourseScores, { CourseScore } from "./CourseScores";
 import Link from "next/link";
+import PageLoading from "./ui/PageLoading";
 
 export type Course = {
   id: string;
@@ -17,13 +18,16 @@ export type Course = {
 
 export default function CourseList({ refresh }: { refresh?: boolean }) {
   const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
   const [openForms, setOpenForms] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const fetchCourses = async () => {
+      setLoading(true);
       const res = await fetch("/api/get-courses-with-scores");
       const data = await res.json();
       setCourses(data);
+      setLoading(false);
     };
 
     fetchCourses();
@@ -36,6 +40,7 @@ export default function CourseList({ refresh }: { refresh?: boolean }) {
     }));
   };
 
+  if (loading) return <PageLoading variant="courses" />;
   if (!courses.length)
     return <p className="text-gray-500">Inga banor tillagda än.</p>;
 

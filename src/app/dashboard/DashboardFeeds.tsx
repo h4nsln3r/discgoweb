@@ -77,90 +77,65 @@ export default function DashboardFeeds() {
   const [compsLoading, setCompsLoading] = useState(true);
   const [compsError, setCompsError] = useState<string | null>(null);
 
-  /* --- Fetch latest courses (no any, verbose errors) --- */
+  /* --- Fetch all dashboard data in one call --- */
   useEffect(() => {
     (async () => {
       setCoursesLoading(true);
-      setCoursesError(null);
-      try {
-        const res = await fetch("/api/latest-courses", { cache: "no-store" });
-        const bodyText = await res.text();
-
-        if (!res.ok) {
-          console.error("latest-courses response body:", bodyText);
-          throw new Error(`HTTP ${res.status}`);
-        }
-
-        let parsed: unknown;
-        try {
-          parsed = JSON.parse(bodyText);
-        } catch {
-          parsed = null;
-        }
-
-        const list =
-          parsed && isLatestCourseArray(parsed)
-            ? parsed
-            : parsed &&
-              typeof parsed === "object" &&
-              "data" in parsed &&
-              isLatestCourseArray((parsed as { data?: unknown }).data)
-            ? (parsed as { data: LatestCourse[] }).data
-            : [];
-
-        setCourses(list);
-      } catch (err: unknown) {
-        console.error("latest-courses fetch failed:", err);
-        setCoursesError("Kunde inte hämta senaste banor.");
-      } finally {
-        setCoursesLoading(false);
-      }
-    })();
-  }, []);
-
-  /* --- Fetch latest scores (din befintliga route) --- */
-  useEffect(() => {
-    (async () => {
       setScoresLoading(true);
-      setScoresError(null);
-      try {
-        const res = await fetch("/api/get-latest-scores", {
-          cache: "no-store",
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data: unknown = await res.json();
-
-        const list = isLatestScoreArray(data) ? data : [];
-
-        setScores(list);
-      } catch (err: unknown) {
-        console.error("latest-scores fetch failed:", err);
-        setScoresError("Kunde inte hämta senaste resultat.");
-      } finally {
-        setScoresLoading(false);
-      }
-    })();
-  }, []);
-
-  /* --- Fetch latest competitions --- */
-  useEffect(() => {
-    (async () => {
       setCompsLoading(true);
+      setCoursesError(null);
+      setScoresError(null);
       setCompsError(null);
       try {
-        const res = await fetch("/api/latest-competitions", {
-          cache: "no-store",
-        });
+        const res = await fetch("/api/dashboard-summary", { cache: "no-store" });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data: unknown = await res.json();
 
-        const list = isLatestCompetitionArray(data) ? data : [];
+        if (
+          data &&
+          typeof data === "object" &&
+          "courses" in data &&
+          isLatestCourseArray((data as { courses: unknown }).courses)
+        ) {
+          setCourses((data as { courses: LatestCourse[] }).courses);
+        } else {
+          setCourses([]);
+        }
 
-        setComps(list);
+        if (
+          data &&
+          typeof data === "object" &&
+          "latestScores" in data &&
+          isLatestScoreArray((data as { latestScores: unknown }).latestScores)
+        ) {
+          setScores((data as { latestScores: LatestScoreRow[] }).latestScores);
+        } else {
+          setScores([]);
+        }
+
+        if (
+          data &&
+          typeof data === "object" &&
+          "competitions" in data &&
+          isLatestCompetitionArray(
+            (data as { competitions: unknown }).competitions
+          )
+        ) {
+          setComps(
+            (data as { competitions: LatestCompetition[] }).competitions
+          );
+        } else {
+          setComps([]);
+        }
       } catch (err: unknown) {
-        console.error("latest-competitions fetch failed:", err);
-        setCompsError("Kunde inte hämta senaste tävlingar.");
+        console.error("dashboard-summary fetch failed:", err);
+        const msg = "Kunde inte hämta dashboard-data.";
+        setCoursesError(msg);
+        setScoresError(msg);
+        setCompsError(msg);
       } finally {
+        setCoursesLoading(false);
+        setScoresLoading(false);
         setCompsLoading(false);
       }
     })();

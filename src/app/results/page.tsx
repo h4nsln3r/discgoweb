@@ -13,6 +13,7 @@ import {
 } from "@tanstack/react-table";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import PageLoading from "@/components/ui/PageLoading";
 
 interface Score {
   id: string;
@@ -177,7 +178,7 @@ export default function ResultsPage() {
     table.resetColumnFilters();
   };
 
-  if (loading) return <p className="p-4">Laddar resultat...</p>;
+  if (loading) return <PageLoading variant="results" />;
 
   return (
     <div className="p-4">
