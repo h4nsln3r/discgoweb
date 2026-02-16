@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { Database } from "@/types/supabase";
 import { createSupabaseClient } from "@/lib/supabase";
+import { useToast } from "@/components/ui/ToastProvider";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 type Course = Pick<
@@ -18,6 +20,8 @@ export default function ProfileForm({
   courses: Course[];
 }) {
   const supabase = createSupabaseClient();
+  const router = useRouter();
+  const { showToast } = useToast();
 
   const [alias, setAlias] = useState(profile?.alias ?? "");
   const [homeCourse, setHomeCourse] = useState<string>(
@@ -102,14 +106,17 @@ export default function ProfileForm({
 
       if (error) {
         console.error("[profile] upsert error:", error);
-        alert(error.message);
+        showToast(error.message || "Kunde inte spara profilen.", "error");
         return;
       }
 
-      alert("Profil uppdaterad!");
+      showToast("Profilen har sparats!", "success");
       setAvatarFile(null);
+      router.back();
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : "Något gick fel.");
+      const message =
+        err instanceof Error ? err.message : "Något gick fel vid sparande.";
+      showToast(message, "error");
     } finally {
       setSaving(false);
     }

@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Database } from "@/types/supabase";
+import { useToast } from "@/components/ui/ToastProvider";
 
 export default function EditCompetitionPage() {
   const supabase = createClientComponentClient<Database>();
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
+  const { showToast } = useToast();
 
   const [userId, setUserId] = useState<string | null>(null);
   const [creatorId] = useState<string | null>(null);
@@ -103,10 +105,10 @@ export default function EditCompetitionPage() {
 
     if (error) {
       console.error("Delete error:", error);
-      alert("Fel vid borttagning");
+      showToast("Fel vid borttagning.", "error");
     } else {
-      alert("Banan har tagits bort.");
-      router.push("/courses");
+      showToast("Banan har tagits bort.", "success");
+      router.back();
     }
   };
 

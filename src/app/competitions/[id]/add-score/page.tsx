@@ -4,12 +4,14 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Database } from "@/types/supabase";
+import { useToast } from "@/components/ui/ToastProvider";
 
 export default function AddCompetitionScorePage() {
   const supabase = useMemo(() => createClientComponentClient<Database>(), []);
   const router = useRouter();
   const params = useParams();
   const competitionId = params?.id as string;
+  const { showToast } = useToast();
 
   const [courses, setCourses] = useState<{ id: string; name: string }[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<string>("");
@@ -55,7 +57,7 @@ export default function AddCompetitionScorePage() {
 
     if (!user) {
       setLoading(false);
-      alert("Du måste vara inloggad.");
+      showToast("Du måste vara inloggad.", "error");
       return;
     }
 
@@ -68,10 +70,10 @@ export default function AddCompetitionScorePage() {
 
     if (error) {
       console.error("[ADD SCORE ERROR]", error);
-      alert("Kunde inte spara score.");
+      showToast("Kunde inte spara score.", "error");
     } else {
-      alert("Score sparad!");
-      router.push(`/competitions/${competitionId}`);
+      showToast("Score sparad!", "success");
+      router.back();
     }
 
     setLoading(false);

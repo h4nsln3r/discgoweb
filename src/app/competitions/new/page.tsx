@@ -6,10 +6,12 @@ import { useRouter } from "next/navigation";
 // import Image from "next/image";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Database } from "@/types/supabase";
+import { useToast } from "@/components/ui/ToastProvider";
 
 export default function NewCompetitionPage() {
   const supabase = useMemo(() => createClientComponentClient<Database>(), []);
   const router = useRouter();
+  const { showToast } = useToast();
 
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
@@ -44,7 +46,8 @@ export default function NewCompetitionPage() {
 
     if (!user) {
       setLoading(false);
-      return alert("Du måste vara inloggad för att skapa tävlingar.");
+      showToast("Du måste vara inloggad för att skapa tävlingar.", "error");
+      return;
     }
 
     const { data: createdCompetition, error } = await supabase
@@ -63,7 +66,8 @@ export default function NewCompetitionPage() {
     if (error) {
       console.error("[CREATE COMPETITION ERROR]", error);
       setLoading(false);
-      return alert("Kunde inte skapa tävlingen.");
+      showToast("Kunde inte skapa tävlingen.", "error");
+      return;
     }
 
     if (createdCompetition && courses.length > 0) {
@@ -80,15 +84,18 @@ export default function NewCompetitionPage() {
         const { error } = await response.json();
         console.error("Failed to add competition courses:", error);
         setLoading(false);
-        return alert("Kunde inte koppla banor.");
+        showToast("Kunde inte koppla banor.", "error");
+        return;
       }
     }
 
     setSuccessMessage("✅ Tävlingen har skapats!");
+    showToast("Tävlingen har skapats!", "success");
     setLoading(false);
 
+    // Gå tillbaka till sidan du kom från
     setTimeout(() => {
-      router.push("/competitions");
+      router.back();
     }, 1500);
   };
 

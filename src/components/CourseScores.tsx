@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-type Score = {
+export type CourseScore = {
   id: string;
   score: number;
   date_played: string;
@@ -13,24 +13,13 @@ type Score = {
 };
 
 type Props = {
-  courseId: string;
+  scores: CourseScore[];
 };
 
-export default function CourseScores({ courseId }: Props) {
-  const [scores, setScores] = useState<Score[]>([]);
-  const [filtered, setFiltered] = useState<Score[]>([]);
+export default function CourseScores({ scores }: Props) {
+  const [filtered, setFiltered] = useState<CourseScore[]>([]);
   const [year, setYear] = useState("");
   const [month, setMonth] = useState("");
-
-  useEffect(() => {
-    const fetchScores = async () => {
-      const res = await fetch(`/api/get-scores?courseId=${courseId}`);
-      const data = await res.json();
-      setScores(data);
-    };
-
-    fetchScores();
-  }, [courseId]);
 
   useEffect(() => {
     const filtered = scores.filter((s) => {

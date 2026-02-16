@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useToast } from "@/components/ui/ToastProvider";
 
 type Course = { id: string; name: string };
 type Player = { id: string; alias: string };
@@ -25,6 +26,7 @@ export default function AddScoreForm({
   onSuccess,
   editingScore,
 }: Props) {
+  const { showToast } = useToast();
   const [score, setScore] = useState("");
   const [throws, setThrows] = useState("");
   const [datePlayed, setDatePlayed] = useState("");
@@ -146,7 +148,10 @@ export default function AddScoreForm({
     setLoading(false);
 
     if (res.ok) {
-      alert(editingScore ? "Resultat uppdaterat!" : "Resultat sparat!");
+      showToast(
+        editingScore ? "Resultatet har uppdaterats!" : "Resultatet har sparats!",
+        "success"
+      );
       onSuccess?.();
 
       if (editingScore) {
@@ -162,7 +167,7 @@ export default function AddScoreForm({
         setSelectedCourse("");
       }
     } else {
-      alert("Något gick fel.");
+      showToast("Något gick fel vid sparandet av resultatet.", "error");
     }
   };
 

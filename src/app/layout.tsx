@@ -4,6 +4,7 @@ import "./globals.css";
 
 import type { Metadata } from "next";
 import TopbarWrapper from "../components/Topbar/TopbarWrapper.server";
+import Providers from "../components/Providers";
 
 export const metadata: Metadata = {
   title: "Discgolf App",
@@ -22,7 +23,7 @@ export default function RootLayout({
         style={{ backgroundImage: "url('/images/login-bg.png')" }}
       >
         <TopbarWrapper />
-        {children}
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import AddScoreForm from "./AddScoreForm";
-import CourseScores from "./CourseScores";
+import CourseScores, { CourseScore } from "./CourseScores";
 import Link from "next/link";
 
 export type Course = {
@@ -12,6 +12,7 @@ export type Course = {
   main_image_url?: string;
   latitude?: number;
   longitude?: number;
+  scores?: CourseScore[];
 };
 
 export default function CourseList({ refresh }: { refresh?: boolean }) {
@@ -20,7 +21,7 @@ export default function CourseList({ refresh }: { refresh?: boolean }) {
 
   useEffect(() => {
     const fetchCourses = async () => {
-      const res = await fetch("/api/get-courses");
+      const res = await fetch("/api/get-courses-with-scores");
       const data = await res.json();
       setCourses(data);
     };
@@ -84,7 +85,7 @@ export default function CourseList({ refresh }: { refresh?: boolean }) {
               />
             )}
 
-            <CourseScores courseId={course.id} />
+            <CourseScores scores={course.scores ?? []} />
           </div>
         ))}
       </div>

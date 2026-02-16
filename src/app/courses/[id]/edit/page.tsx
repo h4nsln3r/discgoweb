@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Database } from "@/types/supabase";
 import CourseForm from "@/components/Forms/CourseForm";
+import { useToast } from "@/components/ui/ToastProvider";
 
 type CourseDataFromDb = {
   name: string;
@@ -35,6 +36,8 @@ export default function EditCoursePage() {
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
 
+  const { showToast } = useToast();
+
   const [loading, setLoading] = useState(true);
   const [courseData, setCourseData] = useState<CourseDataFromDb | null>(null);
 
@@ -52,7 +55,7 @@ export default function EditCoursePage() {
 
       if (error) {
         console.error(error);
-        alert("Kunde inte hämta kursdata");
+        showToast("Kunde inte hämta kursdata.", "error");
       } else if (data) {
         setCourseData({
           name: data.name,
@@ -94,11 +97,11 @@ export default function EditCoursePage() {
       .eq("id", id as string);
 
     if (error) {
-      alert("Fel vid uppdatering av bana");
       console.error(error);
+      showToast("Fel vid uppdatering av bana.", "error");
     } else {
-      alert("Banan uppdaterad!");
-      router.push(`/courses/${id}`);
+      showToast("Banan har uppdaterats!", "success");
+      router.back();
     }
   };
 

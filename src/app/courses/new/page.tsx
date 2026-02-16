@@ -4,10 +4,12 @@ import { useRouter } from "next/navigation";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Database } from "@/types/supabase";
 import CourseForm from "@/components/Forms/CourseForm";
+import { useToast } from "@/components/ui/ToastProvider";
 
 export default function AddCoursePage() {
   const supabase = createClientComponentClient<Database>();
   const router = useRouter();
+  const { showToast } = useToast();
 
   const handleCreate = async (data: {
     name: string;
@@ -33,11 +35,11 @@ export default function AddCoursePage() {
     });
 
     if (error) {
-      alert("Fel vid skapande av bana");
       console.error(error);
+      showToast("Fel vid skapande av bana.", "error");
     } else {
-      alert("Banan skapad!");
-      router.push("/courses");
+      showToast("Banan har skapats!", "success");
+      router.back();
     }
   };
 

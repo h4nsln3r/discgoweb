@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import type { Database } from "@/types/supabase";
 import AddScoreForm from "@/components/AddScoreForm";
+import { useToast } from "@/components/ui/ToastProvider";
 
 type ScoreFromDb = {
   id: string;
@@ -19,6 +20,8 @@ export default function EditScorePage() {
   const supabase = createClientComponentClient<Database>();
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+
+  const { showToast } = useToast();
 
   const [loading, setLoading] = useState(true);
   const [score, setScore] = useState<ScoreFromDb | null>(null);
@@ -38,7 +41,7 @@ export default function EditScorePage() {
 
       if (error) {
         console.error("[EDIT-SCORE LOAD ERROR]", error);
-        alert("Kunde inte hämta resultatet.");
+        showToast("Kunde inte hämta resultatet.", "error");
       } else {
         setScore(data as ScoreFromDb);
       }
@@ -50,7 +53,7 @@ export default function EditScorePage() {
 
   // 2) Handlers
   const handleSuccess = () => {
-    router.push("/results");
+    router.back();
   };
 
   const handleClose = () => {
@@ -61,7 +64,7 @@ export default function EditScorePage() {
     console.log("[DELETE] clicked"); // debug 1
     if (!id) {
       console.warn("[DELETE] no id");
-      alert("Saknar id för resultatet.");
+      showToast("Saknar id för resultatet.", "error");
       return;
     }
 
@@ -87,15 +90,16 @@ export default function EditScorePage() {
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
         console.error("[DELETE] server error", j);
-        alert(j?.error || "Kunde inte ta bort resultatet.");
+        showToast(j?.error || "Kunde inte ta bort resultatet.", "error");
         return;
       }
 
       // succé
-      router.push("/results");
+      showToast("Resultatet har tagits bort.", "success");
+      router.back();
     } catch (e) {
       console.error("[DELETE] fetch error", e);
-      alert("Nätverksfel vid borttagning.");
+      showToast("Nätverksfel vid borttagning.", "error");
     } finally {
       setDeleting(false);
     }
@@ -123,7 +127,7 @@ export default function EditScorePage() {
       </div>
 
       <button
-        onClick={() => router.push("/results")}
+        onClick={() => router.back()}
         className="mb-4 text-sm text-blue-600 hover:underline"
       >
         ← Tillbaka till alla resultat

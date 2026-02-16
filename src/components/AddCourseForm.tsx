@@ -2,12 +2,14 @@
 "use client";
 
 import { useState } from "react";
+import { useToast } from "@/components/ui/ToastProvider";
 
 export default function AddCourseForm({
   onCourseCreated,
 }: {
   onCourseCreated: () => void;
 }) {
+  const { showToast } = useToast();
   const [name, setName] = useState("");
   const [location, setLocation] = useState("");
   const [latitude, setLatitude] = useState("");
@@ -39,7 +41,9 @@ export default function AddCourseForm({
       setLongitude("");
       setImageUrl("");
       onCourseCreated();
-      alert("Funkar!");
+      showToast("Banan skapades!", "success");
+    } else {
+      showToast("Kunde inte skapa banan.", "error");
     }
   };
 
