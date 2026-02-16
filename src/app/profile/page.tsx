@@ -2,8 +2,19 @@
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { redirect } from "next/navigation";
 
+type ProfileRow = {
+  id: string;
+  alias: string | null;
+  avatar_url: string | null;
+  home_course: string | null;
+  phone: string | null;
+  favorite_disc: string | null;
+  city: string | null;
+  team: string | null;
+};
+
 export default async function ProfileHomePage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
 
   const {
     data: { user },
@@ -11,13 +22,17 @@ export default async function ProfileHomePage() {
 
   if (!user) redirect("/auth");
 
-  const { data: profile } = await supabase
+  const { data: profileData, error: profileError } = await supabase
     .from("profiles")
     .select(
       "id, alias, avatar_url, home_course, phone, favorite_disc, city, team"
     )
-    .eq("id", user.id)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .eq("id", user.id as any)
     .single();
+
+  const profile: ProfileRow | null =
+    profileError || !profileData ? null : (profileData as ProfileRow);
 
   let homeCourseName: string | null = null;
 
@@ -25,10 +40,14 @@ export default async function ProfileHomePage() {
     const { data: homeCourse } = await supabase
       .from("courses")
       .select("id, name")
-      .eq("id", profile.home_course)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .eq("id", profile.home_course as any)
       .single();
 
-    homeCourseName = homeCourse?.name ?? null;
+    homeCourseName =
+      homeCourse && typeof homeCourse === "object" && "name" in homeCourse
+        ? (homeCourse.name as string) ?? null
+        : null;
   }
 
   return (

@@ -24,7 +24,7 @@ type CompetitionWithCourses = {
 export default async function CompetitionDetailPage({ params }: PageProps) {
   const { id } = await params;
 
-  const cookieStore = cookies(); // INTE await här
+  const cookieStore = await cookies();
   const supabase = createServerComponentClient<Database>({
     cookies: () => cookieStore,
   });

@@ -39,7 +39,8 @@ export default function AddCoursePage() {
       showToast("Fel vid skapande av bana.", "error");
     } else {
       showToast("Banan har skapats!", "success");
-      router.back();
+      router.push("/courses");
+      router.refresh();
     }
   };
 

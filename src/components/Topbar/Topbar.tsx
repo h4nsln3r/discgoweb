@@ -140,13 +140,10 @@ export default function Topbar({ user }: { user: SlimUser | null }) {
             </Link>
           </li>
           <li>
-            <button
-              type="button"
-              onClick={() => setMenuOpen(false)}
-              className="block w-full text-left hover:text-red-600 transition"
-            >
-              <LogoutButton />
-            </button>
+            <LogoutButton
+              onAfterClick={() => setMenuOpen(false)}
+              className="block w-full text-left py-1 text-red-600 hover:text-red-700 font-medium transition"
+            />
           </li>
         </ul>
       </div>

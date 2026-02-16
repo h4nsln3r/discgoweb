@@ -4,7 +4,7 @@ import Map from "@/components/Maps/Map";
 import DashboardFeeds from "./DashboardFeeds";
 
 export default async function Dashboard() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

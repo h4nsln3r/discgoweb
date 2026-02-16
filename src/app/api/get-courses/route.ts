@@ -5,8 +5,9 @@ import type { Database } from "@/types/supabase";
 import { NextResponse } from "next/server";
 
 export async function GET() {
+  const cookieStore = await cookies();
   const supabase = createRouteHandlerClient<Database>({
-    cookies: () => cookies(),
+    cookies: () => cookieStore,
   });
 
   const { data, error } = await supabase.from("courses").select("*");

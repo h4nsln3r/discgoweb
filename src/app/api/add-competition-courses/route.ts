@@ -5,7 +5,10 @@ import { NextResponse } from "next/server";
 import { type Database } from "@/types/supabase";
 
 export async function POST(request: Request) {
-  const supabase = createRouteHandlerClient<Database>({ cookies });
+  const cookieStore = await cookies();
+  const supabase = createRouteHandlerClient<Database>({
+    cookies: () => cookieStore,
+  });
   const { competitionId, courseIds } = await request.json();
 
   const {

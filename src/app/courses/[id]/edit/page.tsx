@@ -101,7 +101,8 @@ export default function EditCoursePage() {
       showToast("Fel vid uppdatering av bana.", "error");
     } else {
       showToast("Banan har uppdaterats!", "success");
-      router.back();
+      router.push("/courses");
+      router.refresh();
     }
   };
 

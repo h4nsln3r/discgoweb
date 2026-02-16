@@ -93,9 +93,9 @@ export default function NewCompetitionPage() {
     showToast("Tävlingen har skapats!", "success");
     setLoading(false);
 
-    // Gå tillbaka till sidan du kom från
+    // Gå till tävlingslistan så att den laddas om med den nya tävlingen
     setTimeout(() => {
-      router.back();
+      router.push("/competitions");
     }, 1500);
   };
 

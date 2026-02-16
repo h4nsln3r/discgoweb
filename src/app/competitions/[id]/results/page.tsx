@@ -9,10 +9,14 @@ import Link from "next/link";
 export default async function CompetitionResultsPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const supabase = createServerComponentClient<Database>({ cookies });
-  const competitionId = params.id;
+  const cookieStore = await cookies();
+  const supabase = createServerComponentClient<Database>({
+    cookies: () => cookieStore,
+  });
+  const { id } = await params;
+  const competitionId = id;
 
   // 1. Fetch scores with user and course info
   const { data: scores, error } = await supabase

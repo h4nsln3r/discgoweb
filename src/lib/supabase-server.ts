@@ -3,8 +3,10 @@ import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import type { Database } from "@/types/supabase";
 
-export const createServerSupabaseClient = () => {
+/** Next 15: cookies() är async – måste awaitas så att session läses rätt. */
+export async function createServerSupabaseClient() {
+  const cookieStore = await cookies();
   return createServerComponentClient<Database>({
-    cookies: () => cookies(),
+    cookies: () => cookieStore,
   });
-};
+}

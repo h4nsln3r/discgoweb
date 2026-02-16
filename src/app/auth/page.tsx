@@ -40,6 +40,7 @@ export default function AuthPage() {
         const userId = data.user?.id;
         if (!userId) {
           router.push("/dashboard");
+          router.refresh();
           return;
         }
 
@@ -52,6 +53,7 @@ export default function AuthPage() {
         if (pErr) {
           console.warn("[auth] profile check error:", pErr);
           router.push("/dashboard");
+          router.refresh();
           return;
         }
 
@@ -62,10 +64,12 @@ export default function AuthPage() {
           setToastMessage("Fyll i profilen så kör vi!");
           setToastOpen(true);
           router.push("/profile?onboarding=1");
+          router.refresh();
           return;
         }
 
         router.push("/dashboard");
+        router.refresh();
         return;
       }
 
@@ -95,6 +99,7 @@ export default function AuthPage() {
       setToastMessage("Fyll i profilen så kör vi!");
       setToastOpen(true);
       router.push("/profile?onboarding=1");
+      router.refresh();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Något gick fel.");
     } finally {

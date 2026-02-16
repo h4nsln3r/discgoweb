@@ -13,7 +13,10 @@ export default async function CourseDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const supabase = createServerComponentClient<Database>({ cookies });
+  const cookieStore = await cookies();
+  const supabase = createServerComponentClient<Database>({
+    cookies: () => cookieStore,
+  });
   const { id } = await params;
 
   // Hämta kursen
