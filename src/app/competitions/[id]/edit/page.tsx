@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
+import Link from "next/link";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Database } from "@/types/supabase";
 import { useToast } from "@/components/ui/ToastProvider";
@@ -12,292 +13,269 @@ export default function EditCompetitionPage() {
   const { id } = useParams<{ id: string }>();
   const { showToast } = useToast();
 
-  const [userId, setUserId] = useState<string | null>(null);
-  const [creatorId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  const [name, setName] = useState("");
-  const [location, setLocation] = useState("");
-  const [latitude, setLatitude] = useState("");
-  const [longitude, setLongitude] = useState("");
-  const [imageUrls, setImageUrls] = useState<string[]>([]);
-  const [mainImageUrl, setMainImageUrl] = useState<string>("");
-  const [loading, setLoading] = useState(false);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
 
-  // Hämta inloggad användare
+  const [selectedCourseIds, setSelectedCourseIds] = useState<string[]>([]);
+  const [allCourses, setAllCourses] = useState<{ id: string; name: string }[]>(
+    []
+  );
+
+  // Hämta tävling + befintliga banor + alla banor
   useEffect(() => {
-    const getUser = async () => {
-      const { data } = await supabase.auth.getUser();
-      setUserId(data?.user?.id ?? null);
-    };
-    getUser();
-  }, [supabase]);
+    if (!id) return;
 
-  // Hämta kursdata
-  useEffect(() => {
-    const fetchCourse = async () => {
-      const { data, error } = await supabase
+    const fetch = async () => {
+      const { data: competition, error: compError } = await supabase
         .from("competitions")
-        .select("*")
+        .select("id, title, description, start_date, end_date, image_url")
         .eq("id", id)
         .single();
 
-      if (error) {
-        console.error("Fetch error:", error);
+      if (compError || !competition) {
+        console.error("Fetch competition error:", compError);
+        showToast("Kunde inte hämta tävlingen.", "error");
+        setLoading(false);
         return;
       }
 
-      if (data) {
-        setName("test");
+      setTitle(competition.title ?? "");
+      setDescription(competition.description ?? "");
+      setStartDate(
+        competition.start_date
+          ? new Date(competition.start_date).toISOString().slice(0, 10)
+          : ""
+      );
+      setEndDate(
+        competition.end_date
+          ? new Date(competition.end_date).toISOString().slice(0, 10)
+          : ""
+      );
+      setImageUrl(competition.image_url ?? "");
 
-        // let images: string[] = [];
-        // if (Array.isArray(data.image_urls)) {
-        //   images = data.image_urls;
-        // } else if (typeof data.image_urls === "string") {
-        //   try {
-        //     const parsed = JSON.parse(data.image_urls);
-        //     if (Array.isArray(parsed)) images = parsed;
-        //   } catch {
-        //     console.warn(
-        //       "Kunde inte parsa image_urls som JSON-sträng:",
-        //       data.image_urls
-        //     );
-        //   }
-        // }
-        // setImageUrls(images);
-        // setMainImageUrl(data.main_image_url || "");
-      }
+      const { data: compCourses } = await supabase
+        .from("competition_courses")
+        .select("course_id")
+        .eq("competition_id", id);
+
+      const ids = (compCourses ?? [])
+        .map((r) => r.course_id)
+        .filter((c): c is string => c != null);
+      setSelectedCourseIds(ids);
+
+      const { data: courses } = await supabase
+        .from("courses")
+        .select("id, name")
+        .order("name");
+      setAllCourses(courses ?? []);
+
+      setLoading(false);
     };
 
-    fetchCourse();
-  }, [id, supabase]);
+    fetch();
+  }, [id, supabase, showToast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    if (!id) return;
+    setSaving(true);
 
-    // const { error } = await supabase
-    //   .from("competitions")
-    //   .update({})
-    //   .eq("id", id);
+    const { error: updateError } = await supabase
+      .from("competitions")
+      .update({
+        title,
+        description: description || null,
+        start_date: startDate || null,
+        end_date: endDate || null,
+        image_url: imageUrl || null,
+      })
+      .eq("id", id);
 
-    setLoading(false);
+    if (updateError) {
+      console.error("Update error:", updateError);
+      showToast("Kunde inte spara tävlingen.", "error");
+      setSaving(false);
+      return;
+    }
 
-    // if (error) {
-    //   console.error("Update error:", error);
-    //   alert("Fel vid uppdatering");
-    // } else {
-    //   alert("Banan uppdaterad!");
-    //   router.push(`/courses/${id}`);
-    // }
+    // Ersätt kopplade banor: ta bort alla, lägg till valda
+    await supabase
+      .from("competition_courses")
+      .delete()
+      .eq("competition_id", id);
+
+    if (selectedCourseIds.length > 0) {
+      const res = await fetch("/api/add-competition-courses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          competitionId: id,
+          courseIds: selectedCourseIds,
+        }),
+      });
+      if (!res.ok) {
+        showToast("Tävlingen sparad, men koppling till banor kunde inte uppdateras.", "error");
+      }
+    }
+
+    showToast("Tävlingen har uppdaterats!", "success");
+    setSaving(false);
+    router.push(`/competitions/${id}`);
+    router.refresh();
   };
 
-  const handleDelete = async () => {
-    const confirmed = window.confirm(
-      "Är du säker på att du vill ta bort banan? Detta går inte att ångra."
-    );
-    if (!confirmed) return;
-
-    setLoading(true);
-
-    const { error } = await supabase.from("courses").delete().eq("id", id);
-
-    setLoading(false);
-
-    if (error) {
-      console.error("Delete error:", error);
-      showToast("Fel vid borttagning.", "error");
+  const toggleCourse = (courseId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedCourseIds((prev) => [...prev, courseId]);
     } else {
-      showToast("Banan har tagits bort.", "success");
-      router.back();
+      setSelectedCourseIds((prev) => prev.filter((c) => c !== courseId));
     }
   };
 
-  const handleAddImage = () => {
-    if (imageUrls.length >= 5) return;
-    setImageUrls([...imageUrls, ""]);
-  };
-
-  const handleImageChange = (index: number, url: string) => {
-    const updated = [...imageUrls];
-    updated[index] = url;
-    setImageUrls(updated);
-  };
-
-  const handleRemoveImage = (index: number) => {
-    const updated = [...imageUrls];
-    const [removed] = updated.splice(index, 1);
-    setImageUrls(updated);
-    if (mainImageUrl === removed) {
-      setMainImageUrl("");
-    }
-  };
+  if (loading) {
+    return (
+      <div className="max-w-2xl mx-auto p-6">
+        <p className="text-gray-500">Laddar...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto p-6 space-y-6">
-      <h1 className="text-2xl font-bold">Redigera bana</h1>
+      <div className="flex items-center gap-4">
+        <Link
+          href={`/competitions/${id}`}
+          className="text-gray-600 hover:text-gray-900 flex items-center gap-1 text-sm font-medium"
+        >
+          ← Tillbaka till tävlingen
+        </Link>
+      </div>
 
-      {mainImageUrl && (
-        <div className="space-y-2">
-          <h2 className="font-semibold">Huvudbild (förhandsgranskning):</h2>
-          <img
-            src={mainImageUrl}
-            alt="Main preview"
-            className="w-48 h-32 object-cover rounded border"
-          />
-        </div>
-      )}
+      <h1 className="text-2xl font-bold">Redigera tävling</h1>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label htmlFor="name" className="block font-semibold mb-1">
-            Namn
+          <label htmlFor="title" className="block font-semibold mb-1">
+            Tävlingstitel
           </label>
           <input
-            id="name"
+            id="title"
             type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Namn"
-            className="w-full border p-2 rounded"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Tävlingstitel"
+            className="w-full border border-gray-300 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
             required
           />
         </div>
 
         <div>
-          <label htmlFor="location" className="block font-semibold mb-1">
-            Plats
+          <label htmlFor="description" className="block font-semibold mb-1">
+            Beskrivning
           </label>
-          <input
-            id="location"
-            type="text"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            placeholder="Plats"
-            className="w-full border p-2 rounded"
-            required
+          <textarea
+            id="description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Beskrivning"
+            rows={4}
+            className="w-full border border-gray-300 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
           />
         </div>
 
-        <div>
-          <label htmlFor="latitude" className="block font-semibold mb-1">
-            Latitud
-          </label>
-          <input
-            id="latitude"
-            type="text"
-            value={latitude}
-            onChange={(e) => setLatitude(e.target.value)}
-            placeholder="Latitud"
-            className="w-full border p-2 rounded"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="longitude" className="block font-semibold mb-1">
-            Longitud
-          </label>
-          <input
-            id="longitude"
-            type="text"
-            value={longitude}
-            onChange={(e) => setLongitude(e.target.value)}
-            placeholder="Longitud"
-            className="w-full border p-2 rounded"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <div className="flex justify-between items-center">
-            <span className="font-semibold">Bilder (max 5):</span>
-            <button
-              type="button"
-              onClick={handleAddImage}
-              disabled={imageUrls.length >= 5}
-              className="text-sm text-blue-600"
-            >
-              Lägg till bild
-            </button>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="start_date" className="block font-semibold mb-1">
+              Startdatum
+            </label>
+            <input
+              id="start_date"
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="w-full border border-gray-300 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            />
           </div>
-
-          {Array.isArray(imageUrls) &&
-            imageUrls.map((url, index) => (
-              <div key={index} className="flex items-center gap-2">
-                <div className="flex-1">
-                  <label
-                    htmlFor={`imageUrl-${index}`}
-                    className="block text-sm font-medium mb-0.5"
-                  >
-                    Bild-URL {index + 1}
-                  </label>
-                  <input
-                    id={`imageUrl-${index}`}
-                    type="url"
-                    value={url}
-                    onChange={(e) => handleImageChange(index, e.target.value)}
-                    placeholder="Bild-URL"
-                    className="w-full border p-2 rounded"
-                  />
-                </div>
-
-                {url && (
-                  <img
-                    src={url}
-                    alt={`Preview ${index + 1}`}
-                    className="w-16 h-16 object-cover rounded border"
-                  />
-                )}
-
-                <button
-                  type="button"
-                  onClick={() => handleRemoveImage(index)}
-                  className="text-red-600 text-sm"
-                >
-                  Ta bort
-                </button>
-
-                <input
-                  type="radio"
-                  name="mainImage"
-                  checked={mainImageUrl === url}
-                  onChange={() => setMainImageUrl(url)}
-                  title="Ange som huvudbild"
-                />
-              </div>
-            ))}
+          <div>
+            <label htmlFor="end_date" className="block font-semibold mb-1">
+              Slutdatum
+            </label>
+            <input
+              id="end_date"
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="w-full border border-gray-300 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            />
+          </div>
         </div>
 
-        <div className="space-y-1">
-          <label htmlFor="mainImageUrlInput" className="block font-semibold">
-            Huvudbild-URL (redigera direkt)
+        <div>
+          <label htmlFor="image_url" className="block font-semibold mb-1">
+            Bild-URL
           </label>
           <input
-            id="mainImageUrlInput"
+            id="image_url"
             type="url"
-            value={mainImageUrl}
-            onChange={(e) => setMainImageUrl(e.target.value)}
-            placeholder="Ange eller klistra in URL för huvudbild"
-            className="w-full border p-2 rounded"
+            value={imageUrl}
+            onChange={(e) => setImageUrl(e.target.value)}
+            placeholder="https://..."
+            className="w-full border border-gray-300 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
           />
+          {imageUrl && (
+            <img
+              src={imageUrl}
+              alt="Förhandsgranskning"
+              className="mt-2 w-full max-h-40 object-cover rounded-lg border border-gray-200"
+            />
+          )}
         </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="bg-green-600 text-white px-4 py-2 rounded"
-        >
-          {loading ? "Sparar..." : "Spara ändringar"}
-        </button>
+        <div>
+          <h2 className="font-semibold mb-2">Banor i tävlingen</h2>
+          <div className="space-y-2 max-h-48 overflow-y-auto rounded-lg border border-gray-200 p-3 bg-gray-50">
+            {allCourses.length === 0 ? (
+              <p className="text-sm text-gray-500">Inga banor tillagda än.</p>
+            ) : (
+              allCourses.map((c) => (
+                <label
+                  key={c.id}
+                  className="flex items-center gap-2 cursor-pointer text-sm"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedCourseIds.includes(c.id)}
+                    onChange={(e) => toggleCourse(c.id, e.target.checked)}
+                    className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                  />
+                  {c.name}
+                </label>
+              ))
+            )}
+          </div>
+        </div>
 
-        {userId && creatorId && userId === creatorId && (
+        <div className="flex gap-3 pt-2">
           <button
-            type="button"
-            onClick={handleDelete}
-            disabled={loading}
-            className="mt-4 w-full bg-red-600 text-white px-4 py-2 rounded"
+            type="submit"
+            disabled={saving}
+            className="bg-emerald-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-emerald-700 disabled:opacity-50"
           >
-            Ta bort bana
+            {saving ? "Sparar..." : "Spara ändringar"}
           </button>
-        )}
+          <Link
+            href={`/competitions/${id}`}
+            className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+          >
+            Avbryt
+          </Link>
+        </div>
       </form>
     </div>
   );
