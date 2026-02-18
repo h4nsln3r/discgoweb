@@ -1,7 +1,6 @@
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { redirect } from "next/navigation";
-import Map from "@/components/Maps/Map";
-import DashboardFeeds from "./DashboardFeeds";
+import DashboardContent from "./DashboardContent";
 
 export default async function Dashboard() {
   const supabase = await createServerSupabaseClient();
@@ -16,10 +15,5 @@ export default async function Dashboard() {
     user.email ??
     "vän";
 
-  return (
-    <div className="p-4 space-y-6">
-      <Map userName={displayName} />
-      <DashboardFeeds />
-    </div>
-  );
+  return <DashboardContent userName={displayName} />;
 }

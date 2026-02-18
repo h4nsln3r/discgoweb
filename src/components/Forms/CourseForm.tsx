@@ -91,7 +91,7 @@ export default function CourseForm({
     <form onSubmit={handleSubmit} className="space-y-4">
       {/* Name */}
       <div>
-        <label htmlFor="name" className="block font-semibold mb-1">
+        <label htmlFor="name" className="block font-semibold mb-1 text-stone-200">
           Namn
         </label>
         <input
@@ -100,14 +100,14 @@ export default function CourseForm({
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Namn"
-          className="w-full border p-2 rounded"
+          className="w-full border border-retro-border bg-retro-surface text-stone-100 p-2 rounded focus:outline-none focus:ring-2 focus:ring-retro-accent placeholder:text-stone-500"
           required
         />
       </div>
 
       {/* Location */}
       <div>
-        <label htmlFor="location" className="block font-semibold mb-1">
+        <label htmlFor="location" className="block font-semibold mb-1 text-stone-200">
           Plats (område eller park)
         </label>
         <input
@@ -116,7 +116,7 @@ export default function CourseForm({
           value={location}
           onChange={(e) => setLocation(e.target.value)}
           placeholder="Plats"
-          className="w-full border p-2 rounded"
+          className="w-full border border-retro-border bg-retro-surface text-stone-100 p-2 rounded focus:outline-none focus:ring-2 focus:ring-retro-accent placeholder:text-stone-500"
           required
         />
       </div>
@@ -124,7 +124,7 @@ export default function CourseForm({
       {/* City & Country */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label htmlFor="city" className="block font-semibold mb-1">
+          <label htmlFor="city" className="block font-semibold mb-1 text-stone-200">
             Stad
           </label>
           <input
@@ -133,11 +133,11 @@ export default function CourseForm({
             value={city}
             onChange={(e) => setCity(e.target.value)}
             placeholder="Stad"
-            className="w-full border p-2 rounded"
+            className="w-full border border-retro-border bg-retro-surface text-stone-100 p-2 rounded focus:outline-none focus:ring-2 focus:ring-retro-accent placeholder:text-stone-500"
           />
         </div>
         <div>
-          <label htmlFor="country" className="block font-semibold mb-1">
+          <label htmlFor="country" className="block font-semibold mb-1 text-stone-200">
             Land
           </label>
           <input
@@ -146,14 +146,14 @@ export default function CourseForm({
             value={country}
             onChange={(e) => setCountry(e.target.value)}
             placeholder="Land"
-            className="w-full border p-2 rounded"
+            className="w-full border border-retro-border bg-retro-surface text-stone-100 p-2 rounded focus:outline-none focus:ring-2 focus:ring-retro-accent placeholder:text-stone-500"
           />
         </div>
       </div>
 
       {/* Latitude & Longitude */}
       <div>
-        <label htmlFor="latitude" className="block font-semibold mb-1">
+        <label htmlFor="latitude" className="block font-semibold mb-1 text-stone-200">
           Latitud
         </label>
         <input
@@ -162,12 +162,12 @@ export default function CourseForm({
           value={latitude}
           onChange={(e) => setLatitude(e.target.value)}
           placeholder="Latitud"
-          className="w-full border p-2 rounded"
+          className="w-full border border-retro-border bg-retro-surface text-stone-100 p-2 rounded focus:outline-none focus:ring-2 focus:ring-retro-accent placeholder:text-stone-500"
         />
       </div>
 
       <div>
-        <label htmlFor="longitude" className="block font-semibold mb-1">
+        <label htmlFor="longitude" className="block font-semibold mb-1 text-stone-200">
           Longitud
         </label>
         <input
@@ -176,13 +176,13 @@ export default function CourseForm({
           value={longitude}
           onChange={(e) => setLongitude(e.target.value)}
           placeholder="Longitud"
-          className="w-full border p-2 rounded"
+          className="w-full border border-retro-border bg-retro-surface text-stone-100 p-2 rounded focus:outline-none focus:ring-2 focus:ring-retro-accent placeholder:text-stone-500"
         />
       </div>
 
       {/* Description */}
       <div>
-        <label htmlFor="description" className="block font-semibold mb-1">
+        <label htmlFor="description" className="block font-semibold mb-1 text-stone-200">
           Beskrivning
         </label>
         <textarea
@@ -191,19 +191,19 @@ export default function CourseForm({
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Beskriv banan, använd radbrytningar och emojis"
           rows={5}
-          className="w-full border p-2 rounded whitespace-pre-line"
+          className="w-full border border-retro-border bg-retro-surface text-stone-100 p-2 rounded whitespace-pre-line focus:outline-none focus:ring-2 focus:ring-retro-accent placeholder:text-stone-500"
         />
       </div>
 
       {/* Bilder */}
       <div className="space-y-2">
         <div className="flex justify-between items-center">
-          <span className="font-semibold">Bilder (max 5):</span>
+          <span className="font-semibold text-stone-200">Bilder (max 5):</span>
           <button
             type="button"
             onClick={handleAddImage}
             disabled={imageUrls.length >= 5}
-            className="text-sm text-blue-600"
+            className="text-sm text-retro-accent hover:underline"
           >
             Lägg till bild
           </button>
@@ -214,7 +214,7 @@ export default function CourseForm({
             <div className="flex-1">
               <label
                 htmlFor={`imageUrl-${index}`}
-                className="block text-sm font-medium mb-0.5"
+                className="block text-sm font-medium mb-0.5 text-stone-300"
               >
                 Bild-URL {index + 1}
               </label>
@@ -224,7 +224,7 @@ export default function CourseForm({
                 value={url}
                 onChange={(e) => handleImageChange(index, e.target.value)}
                 placeholder="Bild-URL"
-                className="w-full border p-2 rounded"
+                className="w-full border border-retro-border bg-retro-surface text-stone-100 p-2 rounded focus:outline-none focus:ring-2 focus:ring-retro-accent placeholder:text-stone-500"
               />
             </div>
 
@@ -233,14 +233,14 @@ export default function CourseForm({
               <img
                 src={url}
                 alt={`Preview ${index + 1}`}
-                className="w-16 h-16 object-cover rounded border"
+                className="w-16 h-16 object-cover rounded border border-retro-border"
               />
             )}
 
             <button
               type="button"
               onClick={() => handleRemoveImage(index)}
-              className="text-red-600 text-sm"
+              className="text-amber-400 text-sm hover:underline"
             >
               Ta bort
             </button>
@@ -258,7 +258,7 @@ export default function CourseForm({
 
       {/* Main Image URL */}
       <div className="space-y-1">
-        <label htmlFor="mainImageUrlInput" className="block font-semibold">
+        <label htmlFor="mainImageUrlInput" className="block font-semibold text-stone-200">
           Huvudbild-URL (redigera direkt)
         </label>
         <input
@@ -267,7 +267,7 @@ export default function CourseForm({
           value={mainImageUrl}
           onChange={(e) => setMainImageUrl(e.target.value)}
           placeholder="Ange eller klistra in URL för huvudbild"
-          className="w-full border p-2 rounded"
+          className="w-full border border-retro-border bg-retro-surface text-stone-100 p-2 rounded focus:outline-none focus:ring-2 focus:ring-retro-accent placeholder:text-stone-500"
         />
       </div>
 
@@ -275,7 +275,7 @@ export default function CourseForm({
       <button
         type="submit"
         disabled={loading}
-        className="bg-green-600 text-white px-4 py-2 rounded"
+        className="bg-retro-accent text-stone-100 px-4 py-2 rounded-lg hover:bg-retro-accent-hover transition disabled:opacity-50"
       >
         {loading ? "Sparar..." : submitText}
       </button>

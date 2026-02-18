@@ -19,33 +19,33 @@ function CompetitionsTable({
 
   return (
     <div>
-      <h2 className="text-xl font-semibold mt-6 mb-2">
+      <h2 className="text-xl font-semibold mt-6 mb-2 text-stone-100">
         🏆 Tävlingar på denna bana
       </h2>
-      <div className="overflow-x-auto border rounded">
+      <div className="overflow-x-auto border border-retro-border rounded-lg">
         <table className="min-w-full text-sm text-left">
-          <thead className="bg-gray-100">
+          <thead className="bg-retro-surface">
             <tr>
-              <th className="px-4 py-2 border-b">Titel</th>
-              <th className="px-4 py-2 border-b">Startdatum</th>
-              <th className="px-4 py-2 border-b">Slutdatum</th>
+              <th className="px-4 py-2 border-b border-retro-border text-stone-200">Titel</th>
+              <th className="px-4 py-2 border-b border-retro-border text-stone-200">Startdatum</th>
+              <th className="px-4 py-2 border-b border-retro-border text-stone-200">Slutdatum</th>
             </tr>
           </thead>
           <tbody>
             {competitions.map((c, idx) => (
               <tr
                 key={idx}
-                className="hover:bg-gray-50 cursor-pointer"
+                className="hover:bg-retro-card cursor-pointer border-b border-retro-border last:border-b-0"
                 onClick={() =>
                   c.competitions?.id &&
                   router.push(`/competitions/${c.competitions.id}`)
                 }
               >
-                <td className="px-4 py-2 border-b">{c.competitions?.title}</td>
-                <td className="px-4 py-2 border-b">
+                <td className="px-4 py-2 text-stone-200">{c.competitions?.title}</td>
+                <td className="px-4 py-2 text-stone-200">
                   {formatDate(c.competitions?.start_date)}
                 </td>
-                <td className="px-4 py-2 border-b">
+                <td className="px-4 py-2 text-stone-200">
                   {formatDate(c.competitions?.end_date)}
                 </td>
               </tr>

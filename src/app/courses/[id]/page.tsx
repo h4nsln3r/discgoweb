@@ -56,12 +56,9 @@ export default async function CourseDetailPage({
 
   return (
     <div className="max-w-5xl mx-auto p-6 space-y-8">
-      {/* Huvudbild + galleri */}
       {allImages.length > 0 && <ImageGallery images={allImages} />}
 
-      {/* Kart- och infosektion */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Karta */}
         <div className="space-y-2">
           <MapEmbed
             course={{
@@ -77,11 +74,10 @@ export default async function CourseDetailPage({
             }}
           />
 
-          {/* Topp 3 resultat */}
           {top3.length > 0 && (
-            <div>
-              <h2 className="font-semibold text-lg mb-2">🏆 Topp 3 resultat</h2>
-              <ul className="space-y-1">
+            <div className="rounded-xl border border-retro-border bg-retro-surface p-4">
+              <h2 className="font-semibold text-lg mb-2 text-stone-100">🏆 Topp 3 resultat</h2>
+              <ul className="space-y-1 text-stone-200">
                 {top3.map((score, idx) => (
                   <li key={idx} className="flex justify-between">
                     <span>{score.profiles?.alias ?? "Okänd spelare"}</span>
@@ -93,55 +89,48 @@ export default async function CourseDetailPage({
           )}
         </div>
 
-        {/* Info + topp 3 */}
         <div className="space-y-4">
-          {/* Titel + redigera-länk */}
           <div className="flex justify-between items-center">
-            <h1 className="text-3xl font-bold">{course.name}</h1>
+            <h1 className="text-3xl font-bold text-stone-100">{course.name}</h1>
             <Link
               href={`/courses/${course.id}/edit`}
-              className="text-sm text-blue-600 underline"
+              className="text-sm text-retro-accent hover:underline"
             >
               ✏️ Redigera denna bana
             </Link>
           </div>
 
-          {/* Stad och land */}
           {(course.city || course.country) && (
-            <p className="text-gray-600">
+            <p className="text-stone-400">
               {course.city && <span>{course.city}</span>}
               {course.city && course.country && <span>, </span>}
               {course.country && <span>{course.country}</span>}
             </p>
           )}
 
-          {/* Location */}
           {course.location && (
-            <p className="text-gray-500 text-sm">{course.location}</p>
+            <p className="text-retro-muted text-sm">{course.location}</p>
           )}
 
-          {/* Beskrivning */}
           {course.description && (
-            <div className="border-t pt-4">
-              <h2 className="text-xl font-semibold mb-2">Beskrivning</h2>
-              <p className="whitespace-pre-line">{course.description}</p>
+            <div className="border-t border-retro-border pt-4">
+              <h2 className="text-xl font-semibold mb-2 text-stone-100">Beskrivning</h2>
+              <p className="whitespace-pre-line text-stone-200">{course.description}</p>
             </div>
           )}
         </div>
       </div>
 
-      {/* Alla resultat */}
       {allScores && allScores.length > 0 && (
         <div>
-          <h2 className="text-2xl font-bold mb-4">Alla resultat</h2>
+          <h2 className="text-2xl font-bold mb-4 text-stone-100">Alla resultat</h2>
           <ScoresTable scores={allScores} />
         </div>
       )}
 
-      {/* Tävlingar */}
       {competitions && competitions.length > 0 && (
         <div>
-          <h2 className="text-2xl font-bold mb-4">Tävlingar på banan</h2>
+          <h2 className="text-2xl font-bold mb-4 text-stone-100">Tävlingar på banan</h2>
           <CompetitionsTable competitions={competitions} />
         </div>
       )}

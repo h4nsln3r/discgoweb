@@ -10,20 +10,26 @@ const LeafletMap = dynamic(() => import("./LeafletMap"), { ssr: false });
 
 type Props = {
   userName: string;
+  /** Om satt används dessa istället för att hämta get-courses (t.ex. från dashboard-summary). */
+  initialCourses?: Course[] | null;
 };
 
-export default function Map({ userName }: Props) {
-  const [courses, setCourses] = useState<Course[]>([]);
+export default function Map({ userName, initialCourses }: Props) {
+  const [courses, setCourses] = useState<Course[]>(initialCourses ?? []);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   useEffect(() => {
+    if (initialCourses !== undefined && initialCourses !== null) {
+      setCourses(initialCourses);
+      return;
+    }
     const fetchCourses = async () => {
       const res = await fetch("/api/get-courses");
       const data = await res.json();
       setCourses(data);
     };
     fetchCourses();
-  }, []);
+  }, [initialCourses]);
 
   const selectedCourse = useMemo(
     () => courses.find((c) => c.id === selectedId) ?? null,

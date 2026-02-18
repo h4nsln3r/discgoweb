@@ -61,24 +61,46 @@ function isLatestCompetitionArray(val: unknown): val is LatestCompetition[] {
   );
 }
 
-export default function DashboardFeeds() {
-  /* courses */
-  const [courses, setCourses] = useState<LatestCourse[] | null>(null);
-  const [coursesLoading, setCoursesLoading] = useState(true);
+type InitialData = {
+  courses: LatestCourse[];
+  latestScores: LatestScoreRow[];
+  competitions: LatestCompetition[];
+};
+
+export default function DashboardFeeds({
+  initialData,
+}: {
+  /** Om satt används denna data och ingen egen fetch görs. */
+  initialData?: InitialData | null;
+} = {}) {
+  const [courses, setCourses] = useState<LatestCourse[] | null>(
+    initialData?.courses ?? null
+  );
+  const [coursesLoading, setCoursesLoading] = useState(!initialData);
   const [coursesError, setCoursesError] = useState<string | null>(null);
 
-  /* scores */
-  const [scores, setScores] = useState<LatestScoreRow[] | null>(null);
-  const [scoresLoading, setScoresLoading] = useState(true);
+  const [scores, setScores] = useState<LatestScoreRow[] | null>(
+    initialData?.latestScores ?? null
+  );
+  const [scoresLoading, setScoresLoading] = useState(!initialData);
   const [scoresError, setScoresError] = useState<string | null>(null);
 
-  /* competitions */
-  const [comps, setComps] = useState<LatestCompetition[] | null>(null);
-  const [compsLoading, setCompsLoading] = useState(true);
+  const [comps, setComps] = useState<LatestCompetition[] | null>(
+    initialData?.competitions ?? null
+  );
+  const [compsLoading, setCompsLoading] = useState(!initialData);
   const [compsError, setCompsError] = useState<string | null>(null);
 
-  /* --- Fetch all dashboard data in one call --- */
   useEffect(() => {
+    if (initialData) {
+      setCourses(initialData.courses);
+      setScores(initialData.latestScores);
+      setComps(initialData.competitions);
+      setCoursesLoading(false);
+      setScoresLoading(false);
+      setCompsLoading(false);
+      return;
+    }
     (async () => {
       setCoursesLoading(true);
       setScoresLoading(true);
@@ -139,15 +161,15 @@ export default function DashboardFeeds() {
         setCompsLoading(false);
       }
     })();
-  }, []);
+  }, [initialData]);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {/* Nya banor */}
       <Card>
         <CardHeader>
-          <h2 className="text-xl font-semibold">Nya banor</h2>
-          <Link href="/courses" className="text-sm text-emerald-700 underline">
+          <h2 className="text-xl font-semibold text-stone-100">Nya banor</h2>
+          <Link href="/courses" className="text-sm text-retro-accent hover:underline">
             Visa alla banor
           </Link>
         </CardHeader>
@@ -159,7 +181,7 @@ export default function DashboardFeeds() {
                 <Link
                   key={c.id}
                   href={`/courses/${c.id}`}
-                  className="hover:underline"
+                  className="text-retro-accent hover:underline"
                 >
                   {c.name}
                 </Link>,
@@ -179,8 +201,8 @@ export default function DashboardFeeds() {
       {/* Senaste resultat */}
       <Card>
         <CardHeader>
-          <h2 className="text-xl font-semibold">Senaste resultat</h2>
-          <Link href="/results" className="text-sm text-emerald-700 underline">
+          <h2 className="text-xl font-semibold text-stone-100">Senaste resultat</h2>
+          <Link href="/results" className="text-sm text-retro-accent hover:underline">
             Visa alla resultat
           </Link>
         </CardHeader>
@@ -204,7 +226,7 @@ export default function DashboardFeeds() {
                   <Link
                     key={r.courseId}
                     href={`/courses/${r.courseId}`}
-                    className="hover:underline"
+                    className="text-retro-accent hover:underline"
                   >
                     {r.courseName}
                   </Link>,
@@ -223,10 +245,10 @@ export default function DashboardFeeds() {
       {/* Senaste tävlingar (competitions) */}
       <Card>
         <CardHeader>
-          <h2 className="text-xl font-semibold">Senaste tävlingar</h2>
+          <h2 className="text-xl font-semibold text-stone-100">Senaste tävlingar</h2>
           <Link
             href="/competitions"
-            className="text-sm text-emerald-700 underline"
+            className="text-sm text-retro-accent hover:underline"
           >
             Visa alla tävlingar
           </Link>
@@ -239,7 +261,7 @@ export default function DashboardFeeds() {
                 <Link
                   key={t.id}
                   href={`/competitions/${t.id}`}
-                  className="hover:underline"
+                  className="text-retro-accent hover:underline"
                 >
                   {t.title}
                 </Link>,
@@ -264,12 +286,12 @@ export default function DashboardFeeds() {
 /* ------- UI helpers ------- */
 function Card({ children }: { children: React.ReactNode }) {
   return (
-    <div className="bg-white border rounded-2xl shadow-sm">{children}</div>
+    <div className="bg-retro-surface border border-retro-border rounded-2xl shadow-sm">{children}</div>
   );
 }
 function CardHeader({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between p-4 border-b">
+    <div className="flex items-center justify-between p-4 border-b border-retro-border">
       {children}
     </div>
   );
@@ -293,12 +315,12 @@ function MiniTable({
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full text-sm">
-        <thead className="bg-gray-50">
+        <thead className="bg-retro-card">
           <tr>
             {headers.map((h) => (
               <th
                 key={h}
-                className="px-4 py-2 text-left font-medium text-gray-600"
+                className="px-4 py-2 text-left font-medium text-stone-300"
               >
                 {h}
               </th>
@@ -308,25 +330,25 @@ function MiniTable({
         <tbody>
           {loading ? (
             [...Array(5)].map((_, i) => (
-              <tr key={i} className="border-t animate-pulse">
+              <tr key={i} className="border-t border-retro-border animate-pulse">
                 {headers.map((h) => (
                   <td key={h} className="px-4 py-3">
-                    <div className="h-3 bg-gray-200 rounded w-24" />
+                    <div className="h-3 bg-retro-border rounded w-24" />
                   </td>
                 ))}
               </tr>
             ))
           ) : error ? (
             <tr>
-              <td className="px-4 py-3 text-red-600" colSpan={headers.length}>
+              <td className="px-4 py-3 text-amber-400" colSpan={headers.length}>
                 {error}
               </td>
             </tr>
           ) : rows && rows.length ? (
             rows.map((r, i) => (
-              <tr key={i} className="border-t">
+              <tr key={i} className="border-t border-retro-border">
                 {r.map((cell, j) => (
-                  <td key={j} className="px-4 py-3 whitespace-nowrap">
+                  <td key={j} className="px-4 py-3 whitespace-nowrap text-stone-200">
                     {cell as React.ReactNode}
                   </td>
                 ))}
@@ -334,7 +356,7 @@ function MiniTable({
             ))
           ) : (
             <tr>
-              <td className="px-4 py-3 text-gray-500" colSpan={headers.length}>
+              <td className="px-4 py-3 text-retro-muted" colSpan={headers.length}>
                 {emptyText}
               </td>
             </tr>

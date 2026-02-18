@@ -18,10 +18,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="sv">
-      <body
-        className="min-h-screen bg-cover bg-center relative"
-        style={{ backgroundImage: "url('/images/login-bg.png')" }}
-      >
+      <body className="min-h-screen bg-retro-bg">
         <TopbarWrapper />
         <Providers>{children}</Providers>
       </body>

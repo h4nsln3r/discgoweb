@@ -99,11 +99,14 @@ export default function NewCompetitionPage() {
     }, 1500);
   };
 
+  const inputClass =
+    "w-full border border-retro-border bg-retro-surface text-stone-100 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-retro-accent placeholder:text-stone-500";
+
   return (
     <div className="max-w-2xl mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-4">Skapa ny tävling</h1>
-      {loading && <p className="text-blue-600">⏳ Skapar tävling...</p>}
-      {successMessage && <p className="text-green-600">{successMessage}</p>}
+      <h1 className="text-2xl font-bold mb-4 text-stone-100">Skapa ny tävling</h1>
+      {loading && <p className="text-retro-accent">⏳ Skapar tävling...</p>}
+      {successMessage && <p className="text-retro-accent">{successMessage}</p>}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <input
@@ -112,14 +115,14 @@ export default function NewCompetitionPage() {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           required
-          className="w-full border p-2 rounded"
+          className={inputClass}
         />
 
         <textarea
           placeholder="Beskrivning"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          className="w-full border p-2 rounded"
+          className={inputClass}
         />
 
         <div className="flex gap-4">
@@ -128,14 +131,14 @@ export default function NewCompetitionPage() {
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
             required
-            className="w-full border p-2 rounded"
+            className={inputClass}
           />
           <input
             type="date"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
             required
-            className="w-full border p-2 rounded"
+            className={inputClass}
           />
         </div>
 
@@ -144,14 +147,14 @@ export default function NewCompetitionPage() {
           placeholder="Bild-URL"
           value={imageUrl}
           onChange={(e) => setImageUrl(e.target.value)}
-          className="w-full border p-2 rounded"
+          className={inputClass}
         />
 
         <div>
-          <h2 className="font-semibold mb-2">Välj banor</h2>
-          <div className="space-y-2">
+          <h2 className="font-semibold mb-2 text-stone-200">Välj banor</h2>
+          <div className="space-y-2 rounded-lg border border-retro-border p-3 bg-retro-card">
             {allCourses.map((c) => (
-              <label key={c.id} className="flex items-center gap-2">
+              <label key={c.id} className="flex items-center gap-2 text-stone-200 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={courses.includes(c.id)}
@@ -159,6 +162,7 @@ export default function NewCompetitionPage() {
                     if (e.target.checked) setCourses((prev) => [...prev, c.id]);
                     else setCourses((prev) => prev.filter((id) => id !== c.id));
                   }}
+                  className="rounded border-retro-border bg-retro-surface text-retro-accent focus:ring-retro-accent"
                 />
                 {c.name}
               </label>
@@ -169,7 +173,7 @@ export default function NewCompetitionPage() {
         <button
           type="submit"
           disabled={loading}
-          className="bg-blue-600 text-white py-2 px-4 rounded"
+          className="bg-retro-accent text-stone-100 py-2 px-4 rounded-lg hover:bg-retro-accent-hover transition disabled:opacity-50"
         >
           {loading ? "Skapar..." : "Skapa tävling"}
         </button>

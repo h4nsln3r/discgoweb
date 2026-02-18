@@ -81,10 +81,20 @@ export async function GET() {
       );
     }
 
+    // Alla banor för kartan (en query – används av Map så vi slipper get-courses)
+    const { data: mapCourses, error: mapCoursesError } = await supabase
+      .from("courses")
+      .select("id, name, location, latitude, longitude, main_image_url");
+
+    if (mapCoursesError) {
+      console.error("[dashboard-summary] mapCourses error", mapCoursesError);
+    }
+
     return NextResponse.json({
       courses: courses ?? [],
       latestScores,
       competitions: competitions ?? [],
+      mapCourses: mapCourses ?? [],
     });
   } catch (err: unknown) {
     const msg = `[dashboard-summary] unhandled: ${

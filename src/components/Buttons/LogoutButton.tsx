@@ -28,7 +28,7 @@ export default function LogoutButton({ onAfterClick, className }: Props) {
       onClick={handleLogout}
       className={
         className ??
-        "bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm"
+        "bg-amber-700/80 hover:bg-amber-600 text-stone-100 px-3 py-1 rounded text-sm transition"
       }
     >
       Logga ut

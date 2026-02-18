@@ -53,20 +53,20 @@ function ScoresTable({
 
   return (
     <div className="space-y-4">
-      <div className="text-green-700 font-medium">
+      <div className="text-retro-accent font-medium">
         🥇 Banrekord: {record.score} kast – {record.profiles?.alias ?? "Okänd"}{" "}
         ({formatDate(record.created_at)})
       </div>
 
       <div className="flex items-center gap-2">
-        <label htmlFor="filter" className="text-sm">
+        <label htmlFor="filter" className="text-sm text-stone-300">
           Filtrera på spelare:
         </label>
         <select
           id="filter"
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          className="border rounded p-1 text-sm"
+          className="border border-retro-border bg-retro-surface text-stone-100 rounded-lg p-1 text-sm"
         >
           <option value="">Alla</option>
           {uniqueAliases.map((alias) => (
@@ -77,24 +77,24 @@ function ScoresTable({
         </select>
       </div>
 
-      <div className="overflow-x-auto border rounded">
+      <div className="overflow-x-auto border border-retro-border rounded-lg">
         <table className="min-w-full text-sm text-left">
-          <thead className="bg-gray-100">
+          <thead className="bg-retro-surface">
             <tr>
               <th
-                className="px-4 py-2 border-b cursor-pointer"
+                className="px-4 py-2 border-b border-retro-border cursor-pointer text-stone-200"
                 onClick={() => handleSort("alias")}
               >
                 Spelare {sortBy === "alias" ? (sortAsc ? "▲" : "▼") : ""}
               </th>
               <th
-                className="px-4 py-2 border-b cursor-pointer"
+                className="px-4 py-2 border-b border-retro-border cursor-pointer text-stone-200"
                 onClick={() => handleSort("score")}
               >
                 Score {sortBy === "score" ? (sortAsc ? "▲" : "▼") : ""}
               </th>
               <th
-                className="px-4 py-2 border-b cursor-pointer"
+                className="px-4 py-2 border-b border-retro-border cursor-pointer text-stone-200"
                 onClick={() => handleSort("created_at")}
               >
                 Datum {sortBy === "created_at" ? (sortAsc ? "▲" : "▼") : ""}
@@ -103,12 +103,12 @@ function ScoresTable({
           </thead>
           <tbody>
             {sortedAndFiltered.map((s, idx) => (
-              <tr key={idx} className="hover:bg-gray-50">
-                <td className="px-4 py-2 border-b">
+              <tr key={idx} className="hover:bg-retro-card border-b border-retro-border last:border-b-0">
+                <td className="px-4 py-2 text-stone-200">
                   {s.profiles?.alias ?? "Okänd"}
                 </td>
-                <td className="px-4 py-2 border-b">{s.score}</td>
-                <td className="px-4 py-2 border-b">
+                <td className="px-4 py-2 text-stone-200">{s.score}</td>
+                <td className="px-4 py-2 text-stone-200">
                   {formatDate(s.created_at)}
                 </td>
               </tr>

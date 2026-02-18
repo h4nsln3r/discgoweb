@@ -63,7 +63,7 @@ export default function CourseList({ refresh }: { refresh?: boolean }) {
   if (loading) return <PageLoading variant="courses" />;
   if (!courses.length)
     return (
-      <p className="rounded-xl border border-gray-200 bg-white p-6 text-center text-gray-500 shadow-sm">
+      <p className="rounded-xl border border-retro-border bg-retro-surface p-6 text-center text-retro-muted shadow-sm">
         Inga banor tillagda än.
       </p>
     );
@@ -71,11 +71,11 @@ export default function CourseList({ refresh }: { refresh?: boolean }) {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2 sm:gap-4">
-        <label className="text-sm font-medium text-gray-700">Sortering:</label>
+        <label className="text-sm font-medium text-stone-300">Sortering:</label>
         <select
           value={sort}
           onChange={(e) => setSort(e.target.value as SortValue)}
-          className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          className="rounded-lg border border-retro-border bg-retro-surface text-stone-100 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-retro-accent"
         >
           {SORT_OPTIONS.map((opt) => (
             <option key={opt.value} value={opt.value}>
@@ -89,7 +89,7 @@ export default function CourseList({ refresh }: { refresh?: boolean }) {
       {sortedCourses.map((course) => (
         <div
           key={course.id}
-          className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition"
+          className="rounded-xl border border-retro-border bg-retro-surface shadow-sm overflow-hidden hover:border-retro-muted/50 transition"
         >
           {course.main_image_url ? (
             <img
@@ -98,27 +98,27 @@ export default function CourseList({ refresh }: { refresh?: boolean }) {
               className="w-full h-40 object-cover"
             />
           ) : (
-            <div className="w-full h-40 bg-gray-100 flex items-center justify-center text-gray-400 text-sm">
+            <div className="w-full h-40 bg-retro-card flex items-center justify-center text-retro-muted text-sm">
               Ingen bild
             </div>
           )}
           <div className="p-4">
-            <h3 className="text-lg font-semibold text-gray-900">{course.name}</h3>
-            <p className="text-sm text-gray-600 mt-1">{course.location || "—"}</p>
+            <h3 className="text-lg font-semibold text-stone-100">{course.name}</h3>
+            <p className="text-sm text-stone-400 mt-1">{course.location || "—"}</p>
             {course.latitude && course.longitude && (
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-retro-muted mt-1">
                 📍 {course.latitude}, {course.longitude}
               </p>
             )}
             <Link
               href={`/courses/${course.id}`}
-              className="inline-block mt-2 text-sm text-emerald-600 font-medium hover:underline"
+              className="inline-block mt-2 text-sm text-retro-accent font-medium hover:underline"
             >
               Visa detaljer
             </Link>
             <button
               onClick={() => toggleForm(course.id)}
-              className="mt-3 block w-full text-left text-sm text-emerald-600 font-medium hover:underline"
+              className="mt-3 block w-full text-left text-sm text-retro-accent font-medium hover:underline"
             >
               {openForms[course.id] ? "Stäng formulär" : "Lägg till resultat"}
             </button>

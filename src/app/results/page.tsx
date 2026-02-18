@@ -99,12 +99,12 @@ export default function ResultsPage() {
     {
       accessorKey: "score",
       header: "Score",
-      cell: (info) => {
+          cell: (info) => {
         const row = info.row.original;
         return (
           <Link
             href={`/results/${row.id}/edit`}
-            className="font-semibold text-blue-600 hover:underline"
+            className="font-semibold text-retro-accent hover:underline"
             title="Redigera resultat"
           >
             {row.score}
@@ -143,7 +143,7 @@ export default function ResultsPage() {
         return comp.competitions ? (
           <a
             href={`/competitions/${comp.competition_id}`}
-            className="text-blue-600 hover:underline"
+            className="text-retro-accent hover:underline"
           >
             {comp.competitions.title}
           </a>
@@ -183,10 +183,10 @@ export default function ResultsPage() {
   return (
     <div className="p-4">
       <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">Alla resultat</h1>
+        <h1 className="text-2xl font-bold text-stone-100">Alla resultat</h1>
         <Link
           href="/results/new"
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          className="px-4 py-2 bg-retro-accent text-stone-100 rounded-lg hover:bg-retro-accent-hover transition"
         >
           Lägg till resultat
         </Link>
@@ -197,12 +197,11 @@ export default function ResultsPage() {
         value={globalFilter ?? ""}
         onChange={(e) => setGlobalFilter(e.target.value)}
         placeholder="Sök efter bana, spelare, score eller tävling..."
-        className="mb-4 p-2 border rounded w-full max-w-sm"
+        className="mb-4 p-2 border border-retro-border rounded-lg w-full max-w-sm bg-retro-surface text-stone-100 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-retro-accent"
       />
 
       {/* Filter dropdowns */}
-      <div className="flex gap-4 mb-4">
-        {/* Filter för Bana */}
+      <div className="flex flex-wrap gap-4 mb-4">
         <select
           value={(table.getColumn("course")?.getFilterValue() as string) ?? ""}
           onChange={(e) =>
@@ -210,7 +209,7 @@ export default function ResultsPage() {
               .getColumn("course")
               ?.setFilterValue(e.target.value || undefined)
           }
-          className="p-2 border rounded"
+          className="p-2 border border-retro-border rounded-lg bg-retro-surface text-stone-100"
         >
           <option value="">Alla banor</option>
           {uniqueCourses.map((course) => (
@@ -220,7 +219,6 @@ export default function ResultsPage() {
           ))}
         </select>
 
-        {/* Filter för Spelare */}
         <select
           value={(table.getColumn("player")?.getFilterValue() as string) ?? ""}
           onChange={(e) =>
@@ -228,7 +226,7 @@ export default function ResultsPage() {
               .getColumn("player")
               ?.setFilterValue(e.target.value || undefined)
           }
-          className="p-2 border rounded"
+          className="p-2 border border-retro-border rounded-lg bg-retro-surface text-stone-100"
         >
           <option value="">Alla spelare</option>
           {uniquePlayers.map((player) => (
@@ -238,24 +236,23 @@ export default function ResultsPage() {
           ))}
         </select>
 
-        {/* Rensa filter-knapp */}
         <button
           onClick={resetFilters}
-          className="p-2 bg-gray-200 rounded hover:bg-gray-300"
+          className="p-2 bg-retro-card border border-retro-border rounded-lg hover:bg-retro-surface text-stone-200 transition"
         >
           Rensa filter
         </button>
       </div>
 
       {/* Tabell */}
-      <table className="min-w-full border border-gray-300">
-        <thead className="bg-gray-100">
+      <table className="min-w-full border border-retro-border rounded-lg overflow-hidden">
+        <thead className="bg-retro-surface">
           {table.getHeaderGroups().map((headerGroup) => (
             <tr key={headerGroup.id}>
               {headerGroup.headers.map((header) => (
                 <th
                   key={header.id}
-                  className="px-4 py-2 border cursor-pointer select-none"
+                  className="px-4 py-2 border-b border-retro-border cursor-pointer select-none text-left text-stone-200 font-medium"
                   onClick={header.column.getToggleSortingHandler()}
                 >
                   {flexRender(
@@ -276,19 +273,18 @@ export default function ResultsPage() {
             <tr
               key={row.id}
               className={`${
-                index % 2 === 0 ? "bg-white" : "bg-gray-50"
-              } hover:bg-gray-100 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-400`}
+                index % 2 === 0 ? "bg-retro-surface" : "bg-retro-card"
+              } hover:bg-retro-border/30 cursor-pointer focus:outline-none focus:ring-2 focus:ring-retro-accent border-b border-retro-border last:border-b-0`}
               onClick={() => handleRowClick(row.original.id)}
               onKeyDown={(e) => handleRowKeyDown(e, row.original.id)}
-              tabIndex={0} // accessible focus
-              role="button" // semantics
+              tabIndex={0}
+              role="button"
               aria-label={`Öppna resultat ${row.original.id}`}
             >
               {row.getVisibleCells().map((cell) => (
                 <td
                   key={cell.id}
-                  className="px-4 py-2 border"
-                  // If any cell contains its own Link/button, stop row navigation when clicking those
+                  className="px-4 py-2 text-stone-200"
                   onClick={(e) => {
                     const target = e.target as HTMLElement;
                     if (target.closest("a,button")) e.stopPropagation();

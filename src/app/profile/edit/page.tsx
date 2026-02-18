@@ -24,7 +24,7 @@ export default async function EditProfilePage() {
 
   return (
     <main className="p-6 max-w-3xl mx-auto">
-      <h1 className="text-3xl font-bold mb-4">Redigera profil</h1>
+      <h1 className="text-3xl font-bold mb-4 text-stone-100">Redigera profil</h1>
       <ProfileForm profile={profile} courses={courses || []} />
     </main>
   );

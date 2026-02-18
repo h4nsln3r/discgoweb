@@ -1,102 +1,102 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
+import { useState } from "react";
+import { usePathname } from "next/navigation";
+import { Bars3Icon, XMarkIcon, UserCircleIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import LogoutButton from "../Buttons/LogoutButton";
+
+function navLinkClass(href: string, pathname: string, baseClass: string) {
+  const isActive =
+    href === "/dashboard"
+      ? pathname === "/dashboard"
+      : pathname === href || pathname.startsWith(href + "/");
+  return `${baseClass} ${isActive ? "bg-retro-card text-retro-accent font-semibold border-l-4 border-retro-accent pl-3 -ml-1 rounded-r" : ""}`.trim();
+}
 
 type SlimUser = {
   email?: string;
 };
 
-export default function Topbar({ user }: { user: SlimUser | null }) {
+export default function Topbar({
+  user,
+  displayName,
+}: {
+  user: SlimUser | null;
+  displayName: string | null;
+}) {
+  const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [showStickyIcon, setShowStickyIcon] = useState(false);
-  const lastScrollY = useRef(0);
 
-  // 🔽 Visa hamburgare när man scrollar ner, dölj när man scrollar upp
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
+  const linkClass = (href: string) =>
+    navLinkClass(
+      href,
+      pathname ?? "",
+      "block py-2 px-2 -mx-2 rounded hover:bg-retro-surface text-stone-200 transition"
+    );
 
-      if (currentScrollY > 100 && currentScrollY > lastScrollY.current) {
-        setShowStickyIcon(true); // Scrollar ner
-      } else if (currentScrollY < lastScrollY.current) {
-        setShowStickyIcon(false); // Scrollar upp
-      }
-
-      lastScrollY.current = currentScrollY;
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  // useEffect(() => {
-  //   window.location.reload();
-  // }, []);
+  const nameLabel = (displayName?.trim() ?? "") || "NAMN404";
 
   // Rendera inget alls om man inte är inloggad
   if (!user) return null;
 
   return (
     <>
-      {/* Toppbar (ej sticky) */}
-      <div className="flex items-center justify-between bg-gray-100 px-4 py-3 shadow-md">
-        <button onClick={() => setMenuOpen(true)} aria-label="Öppna meny">
-          <Bars3Icon className="w-7 h-7 text-gray-800" />
-        </button>
-
-        <div className="text-xl font-bold text-center">Discgolf App</div>
-
-        <div className="flex items-center gap-2 text-sm text-gray-700">
-          <span className="hidden sm:inline">
-            Inloggad som {user.email ?? "Okänd användare"}
-          </span>
-          <LogoutButton />
-        </div>
-      </div>
-
-      {/* 🧲 Sticky hamburgare som animeras in/ut */}
+      {/* Sticky topbar: meny-ikon vänster, profil + namn höger. Döljs när meny är öppen */}
       <div
-        className={`fixed top-0 left-4 z-50 bg-white p-2 rounded-full shadow-md transition-all duration-300 ${
-          showStickyIcon
-            ? "translate-y-4 opacity-100 pointer-events-auto"
-            : "-translate-y-20 opacity-0 pointer-events-none"
+        className={`fixed top-0 left-0 right-0 z-30 flex items-center justify-between bg-retro-surface/95 backdrop-blur-sm border-b border-retro-border px-4 py-2.5 shadow-lg transition-opacity duration-200 ${
+          menuOpen ? "opacity-0 pointer-events-none" : "opacity-100"
         }`}
       >
-        <button onClick={() => setMenuOpen(true)} aria-label="Öppna meny">
-          <Bars3Icon className="w-7 h-7 text-gray-800" />
+        <button
+          onClick={() => setMenuOpen(true)}
+          aria-label="Öppna meny"
+          className="p-1.5 rounded-lg hover:bg-retro-card transition"
+        >
+          <Bars3Icon className="w-6 h-6 text-stone-200" />
         </button>
+
+        <Link
+          href="/profile"
+          className="flex items-center gap-2 min-w-0 rounded-lg hover:bg-retro-card transition px-2 py-1.5"
+        >
+          <UserCircleIcon className="w-6 h-6 text-stone-300 shrink-0" />
+          <span className="text-sm font-medium text-stone-100 truncate max-w-[140px] sm:max-w-[200px]">
+            {nameLabel}
+          </span>
+        </Link>
       </div>
+
+      {/* Spacer så att innehåll inte hamnar under fixed topbar */}
+      <div className="h-12 shrink-0" aria-hidden />
 
       {/* 🔲 Overlay */}
       {menuOpen && (
         <div
-          className="fixed inset-0 bg-black/40 z-40"
+          className="fixed inset-0 bg-black/60 z-40"
           onClick={() => setMenuOpen(false)}
         />
       )}
 
       {/* 📋 Sidomeny */}
       <div
-        className={`fixed top-0 left-0 h-full w-64 max-w-[80%] sm:max-w-xs bg-white shadow-md z-50 transform transition-transform duration-300 overflow-y-auto ${
+        className={`fixed top-0 left-0 h-full w-64 max-w-[80%] sm:max-w-xs bg-retro-surface border-r border-retro-border shadow-xl z-50 transform transition-transform duration-300 overflow-y-auto ${
           menuOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="p-5 flex justify-between items-center border-b">
-          <h2 className="text-lg font-semibold">Meny</h2>
-          <button onClick={() => setMenuOpen(false)} aria-label="Stäng meny">
-            <XMarkIcon className="w-6 h-6 text-gray-800" />
+        <div className="p-5 flex justify-between items-center border-b border-retro-border">
+          <h2 className="text-lg font-semibold text-stone-100">Meny</h2>
+          <button onClick={() => setMenuOpen(false)} aria-label="Stäng meny" className="p-1 rounded hover:bg-retro-card">
+            <XMarkIcon className="w-6 h-6 text-stone-300" />
           </button>
         </div>
 
-        <ul className="p-5 space-y-4 text-base">
+        <ul className="p-5 space-y-1 text-base">
           <li>
             <Link
               href="/dashboard"
               onClick={() => setMenuOpen(false)}
-              className="block hover:text-blue-600 transition"
+              className={linkClass("/dashboard")}
             >
               🏠 Dashboard
             </Link>
@@ -105,7 +105,7 @@ export default function Topbar({ user }: { user: SlimUser | null }) {
             <Link
               href="/competitions"
               onClick={() => setMenuOpen(false)}
-              className="block hover:text-blue-600 transition"
+              className={linkClass("/competitions")}
             >
               👑 Tävlingar
             </Link>
@@ -115,7 +115,7 @@ export default function Topbar({ user }: { user: SlimUser | null }) {
             <Link
               href="/results"
               onClick={() => setMenuOpen(false)}
-              className="block hover:text-blue-600 transition"
+              className={linkClass("/results")}
             >
               🥏 Resultat
             </Link>
@@ -125,7 +125,7 @@ export default function Topbar({ user }: { user: SlimUser | null }) {
             <Link
               href="/courses"
               onClick={() => setMenuOpen(false)}
-              className="block hover:text-blue-600 transition"
+              className={linkClass("/courses")}
             >
               🏞️ Alla banor
             </Link>
@@ -134,7 +134,7 @@ export default function Topbar({ user }: { user: SlimUser | null }) {
             <Link
               href="/profile"
               onClick={() => setMenuOpen(false)}
-              className="block hover:text-blue-600 transition"
+              className={linkClass("/profile")}
             >
               👤 Min profil
             </Link>
@@ -142,7 +142,7 @@ export default function Topbar({ user }: { user: SlimUser | null }) {
           <li>
             <LogoutButton
               onAfterClick={() => setMenuOpen(false)}
-              className="block w-full text-left py-1 text-red-600 hover:text-red-700 font-medium transition"
+              className="block w-full text-left py-1 text-amber-400 hover:text-amber-300 font-medium transition"
             />
           </li>
         </ul>

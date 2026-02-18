@@ -8,5 +8,19 @@ export default async function TopbarWrapper() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  return <Topbar user={user} />;
+  let displayName: string | null = null;
+  if (user?.id) {
+    const userId = user.id;
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("alias")
+      .eq("id", userId as any)
+      .maybeSingle();
+    displayName =
+      profile && typeof profile === "object" && "alias" in profile
+        ? (profile as { alias: string }).alias
+        : null;
+  }
+
+  return <Topbar user={user} displayName={displayName} />;
 }

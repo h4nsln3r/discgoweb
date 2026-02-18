@@ -141,27 +141,30 @@ export default function EditCompetitionPage() {
   if (loading) {
     return (
       <div className="max-w-2xl mx-auto p-6">
-        <p className="text-gray-500">Laddar...</p>
+        <p className="text-stone-400">Laddar...</p>
       </div>
     );
   }
+
+  const inputClass =
+    "w-full border border-retro-border bg-retro-surface text-stone-100 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-retro-accent placeholder:text-stone-500";
 
   return (
     <div className="max-w-2xl mx-auto p-6 space-y-6">
       <div className="flex items-center gap-4">
         <Link
           href={`/competitions/${id}`}
-          className="text-gray-600 hover:text-gray-900 flex items-center gap-1 text-sm font-medium"
+          className="text-stone-400 hover:text-stone-100 flex items-center gap-1 text-sm font-medium transition"
         >
           ← Tillbaka till tävlingen
         </Link>
       </div>
 
-      <h1 className="text-2xl font-bold">Redigera tävling</h1>
+      <h1 className="text-2xl font-bold text-stone-100">Redigera tävling</h1>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label htmlFor="title" className="block font-semibold mb-1">
+          <label htmlFor="title" className="block font-semibold mb-1 text-stone-200">
             Tävlingstitel
           </label>
           <input
@@ -170,13 +173,13 @@ export default function EditCompetitionPage() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Tävlingstitel"
-            className="w-full border border-gray-300 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className={inputClass}
             required
           />
         </div>
 
         <div>
-          <label htmlFor="description" className="block font-semibold mb-1">
+          <label htmlFor="description" className="block font-semibold mb-1 text-stone-200">
             Beskrivning
           </label>
           <textarea
@@ -185,13 +188,13 @@ export default function EditCompetitionPage() {
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Beskrivning"
             rows={4}
-            className="w-full border border-gray-300 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className={inputClass}
           />
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label htmlFor="start_date" className="block font-semibold mb-1">
+            <label htmlFor="start_date" className="block font-semibold mb-1 text-stone-200">
               Startdatum
             </label>
             <input
@@ -199,11 +202,11 @@ export default function EditCompetitionPage() {
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="w-full border border-gray-300 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className={inputClass}
             />
           </div>
           <div>
-            <label htmlFor="end_date" className="block font-semibold mb-1">
+            <label htmlFor="end_date" className="block font-semibold mb-1 text-stone-200">
               Slutdatum
             </label>
             <input
@@ -211,13 +214,13 @@ export default function EditCompetitionPage() {
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="w-full border border-gray-300 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className={inputClass}
             />
           </div>
         </div>
 
         <div>
-          <label htmlFor="image_url" className="block font-semibold mb-1">
+          <label htmlFor="image_url" className="block font-semibold mb-1 text-stone-200">
             Bild-URL
           </label>
           <input
@@ -226,33 +229,33 @@ export default function EditCompetitionPage() {
             value={imageUrl}
             onChange={(e) => setImageUrl(e.target.value)}
             placeholder="https://..."
-            className="w-full border border-gray-300 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className={inputClass}
           />
           {imageUrl && (
             <img
               src={imageUrl}
               alt="Förhandsgranskning"
-              className="mt-2 w-full max-h-40 object-cover rounded-lg border border-gray-200"
+              className="mt-2 w-full max-h-40 object-cover rounded-lg border border-retro-border"
             />
           )}
         </div>
 
         <div>
-          <h2 className="font-semibold mb-2">Banor i tävlingen</h2>
-          <div className="space-y-2 max-h-48 overflow-y-auto rounded-lg border border-gray-200 p-3 bg-gray-50">
+          <h2 className="font-semibold mb-2 text-stone-200">Banor i tävlingen</h2>
+          <div className="space-y-2 max-h-48 overflow-y-auto rounded-lg border border-retro-border p-3 bg-retro-card">
             {allCourses.length === 0 ? (
-              <p className="text-sm text-gray-500">Inga banor tillagda än.</p>
+              <p className="text-sm text-retro-muted">Inga banor tillagda än.</p>
             ) : (
               allCourses.map((c) => (
                 <label
                   key={c.id}
-                  className="flex items-center gap-2 cursor-pointer text-sm"
+                  className="flex items-center gap-2 cursor-pointer text-sm text-stone-200"
                 >
                   <input
                     type="checkbox"
                     checked={selectedCourseIds.includes(c.id)}
                     onChange={(e) => toggleCourse(c.id, e.target.checked)}
-                    className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                    className="rounded border-retro-border bg-retro-surface text-retro-accent focus:ring-retro-accent"
                   />
                   {c.name}
                 </label>
@@ -265,13 +268,13 @@ export default function EditCompetitionPage() {
           <button
             type="submit"
             disabled={saving}
-            className="bg-emerald-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-emerald-700 disabled:opacity-50"
+            className="bg-retro-accent text-stone-100 px-4 py-2 rounded-lg font-medium hover:bg-retro-accent-hover disabled:opacity-50 transition"
           >
             {saving ? "Sparar..." : "Spara ändringar"}
           </button>
           <Link
             href={`/competitions/${id}`}
-            className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+            className="px-4 py-2 rounded-lg border border-retro-border text-stone-200 hover:bg-retro-surface transition"
           >
             Avbryt
           </Link>

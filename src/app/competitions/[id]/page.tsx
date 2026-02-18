@@ -56,10 +56,10 @@ export default async function CompetitionDetailPage({ params }: PageProps) {
   return (
     <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">{competition.title}</h1>
+        <h1 className="text-3xl font-bold text-stone-100">{competition.title}</h1>
         <Link
           href={`/competitions/${id}/edit`}
-          className="text-sm text-blue-600 underline"
+          className="text-sm text-retro-accent hover:underline"
         >
           ✏️ Redigera Tävling
         </Link>
@@ -68,24 +68,24 @@ export default async function CompetitionDetailPage({ params }: PageProps) {
         <img
           src={competition.image_url}
           alt={competition.title}
-          className="w-full h-60 object-cover rounded"
+          className="w-full h-60 object-cover rounded-lg border border-retro-border"
         />
       )}
 
-      <p className="text-gray-600">
+      <p className="text-stone-400">
         🗓️ {formatDate(competition.start_date)} –{" "}
         {formatDate(competition.end_date)}
       </p>
 
       {competition.description && (
-        <p className="text-gray-800 whitespace-pre-line">
+        <p className="text-stone-200 whitespace-pre-line">
           {competition.description}
         </p>
       )}
 
       <div>
-        <h2 className="text-xl font-semibold mb-2">🏞️ Banor</h2>
-        <ul className="list-disc pl-5">
+        <h2 className="text-xl font-semibold mb-2 text-stone-100">🏞️ Banor</h2>
+        <ul className="list-disc pl-5 text-stone-300 space-y-1">
           {competition.competition_courses.map((entry) => (
             <li key={entry.course_id}>{entry.courses?.name}</li>
           ))}

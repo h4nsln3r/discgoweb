@@ -122,11 +122,14 @@ export default function ProfileForm({
     }
   };
 
+  const inputClass =
+    "w-full rounded-xl border border-retro-border bg-retro-surface text-stone-100 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-retro-accent placeholder:text-stone-500";
+
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+      <div className="rounded-2xl border border-retro-border bg-retro-surface p-4 shadow-sm">
         <div className="flex items-center gap-4">
-          <div className="h-16 w-16 rounded-full bg-gray-100 border overflow-hidden flex items-center justify-center">
+          <div className="h-16 w-16 rounded-full bg-retro-card border border-retro-border overflow-hidden flex items-center justify-center">
             {avatarPreview ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -135,13 +138,13 @@ export default function ProfileForm({
                 className="h-full w-full object-cover"
               />
             ) : (
-              <span className="text-xs text-gray-500">Ingen</span>
+              <span className="text-xs text-retro-muted">Ingen</span>
             )}
           </div>
 
           <div className="flex items-center gap-3">
-            <label className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-300 bg-white cursor-pointer hover:bg-gray-50 transition">
-              <span className="text-sm">Byt profilbild</span>
+            <label className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-retro-border bg-retro-card cursor-pointer hover:bg-retro-surface transition text-stone-200 text-sm">
+              Byt profilbild
               <input
                 type="file"
                 accept="image/*"
@@ -154,7 +157,7 @@ export default function ProfileForm({
               <button
                 type="button"
                 onClick={() => setAvatarFile(null)}
-                className="text-sm text-gray-600 hover:text-gray-900"
+                className="text-sm text-stone-400 hover:text-stone-100"
               >
                 Ångra
               </button>
@@ -162,18 +165,18 @@ export default function ProfileForm({
           </div>
         </div>
 
-        <p className="text-xs text-gray-500 mt-3">
+        <p className="text-xs text-retro-muted mt-3">
           Profilbilden sparas i Supabase Storage (bucket:{" "}
           <span className="font-mono">avatars</span>).
         </p>
       </div>
 
       <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-800">
+        <label className="block text-sm font-medium text-stone-300">
           Name / Display name
         </label>
         <input
-          className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          className={inputClass}
           value={alias}
           onChange={(e) => setAlias(e.target.value)}
           required
@@ -181,11 +184,11 @@ export default function ProfileForm({
       </div>
 
       <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-800">
+        <label className="block text-sm font-medium text-stone-300">
           Hemmabana
         </label>
         <select
-          className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          className={inputClass}
           value={homeCourse}
           onChange={(e) => setHomeCourse(e.target.value)}
         >
@@ -200,24 +203,19 @@ export default function ProfileForm({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-800">
-            Telefon
-          </label>
+          <label className="block text-sm font-medium text-stone-300">Telefon</label>
           <input
-            className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className={inputClass}
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             inputMode="tel"
             placeholder="+46 70 123 45 67"
           />
         </div>
-
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-800">
-            Favorit disc
-          </label>
+          <label className="block text-sm font-medium text-stone-300">Favorit disc</label>
           <input
-            className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className={inputClass}
             value={favoriteDisc}
             onChange={(e) => setFavoriteDisc(e.target.value)}
             placeholder="t.ex. Destroyer"
@@ -227,21 +225,18 @@ export default function ProfileForm({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-800">
-            Stad
-          </label>
+          <label className="block text-sm font-medium text-stone-300">Stad</label>
           <input
-            className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className={inputClass}
             value={city}
             onChange={(e) => setCity(e.target.value)}
             placeholder="Malmö"
           />
         </div>
-
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-800">Lag</label>
+          <label className="block text-sm font-medium text-stone-300">Lag</label>
           <input
-            className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className={inputClass}
             value={team}
             onChange={(e) => setTeam(e.target.value)}
             placeholder="Ditt lag"
@@ -251,7 +246,7 @@ export default function ProfileForm({
 
       <button
         disabled={saving}
-        className="w-full rounded-xl bg-emerald-600 text-white py-2.5 font-medium hover:bg-emerald-700 transition disabled:opacity-50"
+        className="w-full rounded-xl bg-retro-accent text-stone-100 py-2.5 font-medium hover:bg-retro-accent-hover transition disabled:opacity-50"
       >
         {saving ? "Sparar..." : "Spara"}
       </button>

@@ -46,7 +46,7 @@ export default function AddCoursePage() {
 
   return (
     <div className="max-w-2xl mx-auto p-6 space-y-6">
-      <h1 className="text-2xl font-bold">Lägg till ny bana</h1>
+      <h1 className="text-2xl font-bold text-stone-100">Lägg till ny bana</h1>
       <CourseForm onSubmit={handleCreate} submitText="Skapa bana" />
     </div>
   );

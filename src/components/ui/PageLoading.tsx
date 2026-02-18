@@ -22,8 +22,8 @@ export default function PageLoading({ variant, title }: Props) {
   const text = title ?? (variant ? LOADING_TITLES[variant] : "Laddar...");
   return (
     <div className="min-h-[50vh] flex flex-col items-center justify-center gap-4">
-      <div className="h-12 w-12 rounded-full border-4 border-emerald-500/30 border-t-emerald-600 animate-spin" />
-      <p className="text-base font-medium text-gray-700">{text}</p>
+      <div className="h-12 w-12 rounded-full border-4 border-retro-accent/30 border-t-retro-accent animate-spin" />
+      <p className="text-base font-medium text-stone-300">{text}</p>
     </div>
   );
 }

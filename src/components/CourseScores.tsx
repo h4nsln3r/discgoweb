@@ -35,7 +35,7 @@ export default function CourseScores({ scores }: Props) {
   }, [scores, year, month]);
 
   if (!scores.length)
-    return <p className="text-sm text-gray-500 mt-2">Inga resultat ännu.</p>;
+    return <p className="text-sm text-retro-muted mt-2">Inga resultat ännu.</p>;
 
   const best = filtered.reduce(
     (acc, curr) => (curr.score < acc.score ? curr : acc),
@@ -48,7 +48,7 @@ export default function CourseScores({ scores }: Props) {
         <select
           value={year}
           onChange={(e) => setYear(e.target.value)}
-          className="border px-2 py-1 rounded"
+          className="border border-retro-border bg-retro-surface text-stone-100 px-2 py-1 rounded-lg text-sm"
         >
           <option value="">Alla år</option>
           {[
@@ -65,7 +65,7 @@ export default function CourseScores({ scores }: Props) {
         <select
           value={month}
           onChange={(e) => setMonth(e.target.value)}
-          className="border px-2 py-1 rounded"
+          className="border border-retro-border bg-retro-surface text-stone-100 px-2 py-1 rounded-lg text-sm"
         >
           <option value="">Alla månader</option>
           {[...Array(12)].map((_, i) => (
@@ -76,13 +76,13 @@ export default function CourseScores({ scores }: Props) {
         </select>
       </div>
 
-      <ul className="space-y-1 text-sm">
+      <ul className="space-y-1 text-sm text-stone-200">
         {filtered
           .sort((a, b) => a.score - b.score)
           .map((s) => (
             <li
               key={s.id}
-              className={s.id === best.id ? "font-bold text-green-700" : ""}
+              className={s.id === best.id ? "font-bold text-retro-accent" : ""}
             >
               🥏 {s.score} kast —{" "}
               {new Date(s.date_played).toLocaleDateString("sv-SE")} — av:{" "}

@@ -106,12 +106,12 @@ export default function EditCoursePage() {
     }
   };
 
-  if (loading) return <div>Laddar...</div>;
-  if (!courseData) return <div>Ingen kurs hittad</div>;
+  if (loading) return <div className="max-w-2xl mx-auto p-6 text-stone-400">Laddar...</div>;
+  if (!courseData) return <div className="max-w-2xl mx-auto p-6 text-amber-400">Ingen kurs hittad</div>;
 
   return (
     <div className="max-w-2xl mx-auto p-6 space-y-6">
-      <h1 className="text-2xl font-bold">Redigera bana</h1>
+      <h1 className="text-2xl font-bold text-stone-100">Redigera bana</h1>
       <CourseForm
         initialName={courseData.name}
         initialLocation={courseData.location}

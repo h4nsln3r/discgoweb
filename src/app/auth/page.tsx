@@ -120,21 +120,21 @@ export default function AuthPage() {
         className="min-h-screen bg-cover bg-center relative"
         style={{ backgroundImage: "url('/images/login-bg.png')" }}
       >
-        <div className="absolute inset-0 bg-black/35" />
+        <div className="absolute inset-0 bg-retro-bg/85" />
         <div className="relative z-10 flex items-center justify-center min-h-screen p-4">
           <div className="w-full max-w-md">
-            <div className="bg-white/70 backdrop-blur-md rounded-2xl shadow-xl p-8 border border-white/40">
-              <h1 className="text-2xl font-semibold text-gray-900 text-center mb-6">
+            <div className="bg-retro-surface backdrop-blur-md rounded-2xl shadow-xl p-8 border border-retro-border">
+              <h1 className="text-2xl font-semibold text-stone-100 text-center mb-6">
                 {isLogin ? "Logga in" : "Skapa konto"}
               </h1>
 
               <form onSubmit={handleAuth} className="space-y-4">
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-800">
+                  <label className="block text-sm font-medium text-stone-300">
                     E-post
                   </label>
                   <input
-                    className="w-full rounded-lg border border-gray-300 bg-white/70 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full rounded-lg border border-retro-border bg-retro-card text-stone-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-retro-accent placeholder:text-stone-500"
                     type="email"
                     placeholder="E-post"
                     value={email}
@@ -145,11 +145,11 @@ export default function AuthPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-800">
+                  <label className="block text-sm font-medium text-stone-300">
                     Lösenord
                   </label>
                   <input
-                    className="w-full rounded-lg border border-gray-300 bg-white/70 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full rounded-lg border border-retro-border bg-retro-card text-stone-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-retro-accent placeholder:text-stone-500"
                     type="password"
                     placeholder="Lösenord"
                     value={password}
@@ -160,7 +160,7 @@ export default function AuthPage() {
                 </div>
 
                 {error && (
-                  <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-2">
+                  <p className="text-sm text-amber-300 bg-amber-900/30 border border-amber-700/50 rounded-lg p-2">
                     {error}
                   </p>
                 )}
@@ -168,14 +168,14 @@ export default function AuthPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full rounded-lg bg-emerald-600 text-white py-2.5 font-medium hover:bg-emerald-700 transition disabled:opacity-50"
+                  className="w-full rounded-lg bg-retro-accent text-stone-100 py-2.5 font-medium hover:bg-retro-accent-hover transition disabled:opacity-50"
                 >
                   {loading ? "Jobbar..." : isLogin ? "Logga in" : "Skapa konto"}
                 </button>
 
                 <button
                   type="button"
-                  className="w-full text-sm text-gray-700 hover:text-gray-900"
+                  className="w-full text-sm text-stone-400 hover:text-stone-200"
                   onClick={() => {
                     setIsLogin((v) => !v);
                     setError(null);
