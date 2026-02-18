@@ -52,18 +52,21 @@ export default function DashboardContent({ userName }: { userName: string }) {
     };
   }, []);
 
+  const initialData = useMemo(
+    () =>
+      data
+        ? {
+            courses: data.courses,
+            latestScores: data.latestScores,
+            competitions: data.competitions,
+          }
+        : undefined,
+    [data]
+  );
+
   if (loading) return <PageLoading title="Laddar dashboard..." />;
   if (error) return <p className="text-amber-400 p-4">{error}</p>;
   if (!data) return null;
-
-  const initialData = useMemo(
-    () => ({
-      courses: data.courses,
-      latestScores: data.latestScores,
-      competitions: data.competitions,
-    }),
-    [data.courses, data.latestScores, data.competitions]
-  );
 
   return (
     <div className="p-4 space-y-6">

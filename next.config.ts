@@ -6,8 +6,9 @@ const nextConfig: NextConfig = {
   },
   webpack: (config) => {
     // Tysta Supabase realtime-js "Critical dependency" (dynamisk require som webpack inte kan analysera)
-    config.module ??= {};
-    config.module.exprContextCritical = false;
+    if (typeof config.module !== "undefined") {
+      config.module.exprContextCritical = false;
+    }
     return config;
   },
 };
