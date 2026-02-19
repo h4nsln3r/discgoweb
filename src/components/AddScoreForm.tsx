@@ -174,16 +174,16 @@ export default function AddScoreForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-4 mt-4 border p-4 rounded bg-gray-50"
+      className="space-y-5 mt-4 rounded-xl border border-retro-border bg-retro-surface p-4 md:p-5"
     >
       {/* Dropdown för bana */}
       <div>
-        <label className="block font-medium">Välj bana</label>
+        <label className="block font-medium text-stone-200 mb-1">Välj bana</label>
         <select
           value={selectedCourse}
           onChange={(e) => setSelectedCourse(e.target.value)}
           required
-          className="border p-2 w-full"
+          className="w-full rounded-lg border border-retro-border bg-retro-card px-3 py-2 text-stone-100 focus:outline-none focus:ring-2 focus:ring-retro-accent"
         >
           <option value="">-- Välj bana --</option>
           {courses.map((course) => (
@@ -196,22 +196,22 @@ export default function AddScoreForm({
 
       {/* Score */}
       <div>
-        <label className="block font-medium">Poäng</label>
+        <label className="block font-medium text-stone-200 mb-1">Poäng</label>
         <input
           type="number"
-          className="border p-2 w-full"
+          className="w-full rounded-lg border border-retro-border bg-retro-card px-3 py-2 text-stone-100 focus:outline-none focus:ring-2 focus:ring-retro-accent"
           value={score}
           onChange={(e) => setScore(e.target.value)}
           required
         />
       </div>
 
-      {/* thows */}
+      {/* Kast */}
       <div>
-        <label className="block font-medium">Antal kast</label>
+        <label className="block font-medium text-stone-200 mb-1">Antal kast</label>
         <input
           type="number"
-          className="border p-2 w-full"
+          className="w-full rounded-lg border border-retro-border bg-retro-card px-3 py-2 text-stone-100 focus:outline-none focus:ring-2 focus:ring-retro-accent"
           value={throws}
           onChange={(e) => setThrows(e.target.value)}
           required
@@ -220,17 +220,17 @@ export default function AddScoreForm({
 
       {/* Datum */}
       <div>
-        <label className="block font-medium">Datum</label>
+        <label className="block font-medium text-stone-200 mb-1">Datum</label>
         <input
           type="date"
-          className="border p-2 w-full"
+          className="w-full rounded-lg border border-retro-border bg-retro-card px-3 py-2 text-stone-100 focus:outline-none focus:ring-2 focus:ring-retro-accent"
           value={datePlayed}
           onChange={(e) => setDatePlayed(e.target.value)}
         />
         <button
           type="button"
           onClick={() => setDatePlayed(new Date().toISOString().split("T")[0])}
-          className="mt-2 px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 text-sm"
+          className="mt-2 px-3 py-1.5 rounded-lg border border-retro-border bg-retro-card text-sm text-stone-200 hover:bg-retro-border/30 transition"
         >
           Välj idag
         </button>
@@ -238,7 +238,7 @@ export default function AddScoreForm({
 
       {/* Medspelare */}
       <div>
-        <label className="block font-medium">Vilka var med?</label>
+        <label className="block font-medium text-stone-200 mb-2">Vilka var med?</label>
         <div className="flex flex-wrap gap-2 mb-2">
           {players.map((player) => {
             const isCurrentUser = player.id === currentUserId;
@@ -247,10 +247,10 @@ export default function AddScoreForm({
             return (
               <label
                 key={player.id}
-                className={`flex items-center gap-1 px-2 py-1 rounded ${
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition ${
                   isCurrentUser
-                    ? "bg-green-200 font-semibold cursor-not-allowed"
-                    : ""
+                    ? "border-retro-accent/50 bg-retro-accent/15 text-stone-100 font-medium cursor-not-allowed"
+                    : "border-retro-border bg-retro-card text-stone-200 hover:border-retro-accent/50"
                 }`}
               >
                 <input
@@ -266,6 +266,7 @@ export default function AddScoreForm({
                       );
                     }
                   }}
+                  className="rounded border-retro-border text-retro-accent focus:ring-retro-accent"
                 />
                 {player.alias}
               </label>
@@ -279,7 +280,7 @@ export default function AddScoreForm({
             <input
               key={index}
               type="text"
-              className="border p-2 w-full"
+              className="w-full rounded-lg border border-retro-border bg-retro-card px-3 py-2 text-stone-100 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-retro-accent"
               placeholder="Gästnamn"
               value={guest}
               onChange={(e) => handleGuestChange(index, e.target.value)}
@@ -289,18 +290,18 @@ export default function AddScoreForm({
         <button
           type="button"
           onClick={addGuestField}
-          className="mt-2 px-3 py-2 bg-gray-200 rounded hover:bg-gray-300"
+          className="mt-2 px-3 py-2 rounded-lg border border-retro-border bg-retro-card text-stone-200 hover:bg-retro-border/30 transition"
         >
           Lägg till gäst
         </button>
       </div>
 
       {/* Actions */}
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-3 pt-2">
         <button
           type="submit"
           disabled={loading}
-          className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+          className="px-4 py-2.5 rounded-lg bg-retro-accent text-stone-100 font-medium hover:bg-retro-accent-hover transition focus:outline-none focus:ring-2 focus:ring-retro-accent focus:ring-offset-2 focus:ring-offset-retro-bg disabled:opacity-50"
         >
           {loading
             ? "Sparar..."
@@ -312,7 +313,7 @@ export default function AddScoreForm({
           <button
             type="button"
             onClick={onClose}
-            className="text-sm text-gray-500 underline"
+            className="text-sm text-stone-400 hover:text-stone-200 underline transition"
           >
             Avbryt redigering
           </button>

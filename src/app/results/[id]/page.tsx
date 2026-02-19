@@ -3,6 +3,16 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import {
+  ArrowLeftIcon,
+  MapPinIcon,
+  UserCircleIcon,
+  TrophyIcon,
+  CalendarDaysIcon,
+  FlagIcon,
+  PencilSquareIcon,
+  UserGroupIcon,
+} from "@heroicons/react/24/outline";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import type { Database } from "@/types/supabase";
 
@@ -42,10 +52,11 @@ function normalizeFriends(input: unknown): string[] {
 
 type ScoreDetail = {
   id: string;
+  user_id: string;
   throws: number | null;
   score: number | null;
   date_played: string | null;
-  with_friends: unknown; // normalize later
+  with_friends: unknown;
   competition_id: string | null;
   courses: { id: string; name: string } | null;
   profiles: { alias: string } | null;
@@ -59,8 +70,16 @@ export default function ScoreDetailPage() {
 
   const [loading, setLoading] = useState(true);
   const [item, setItem] = useState<ScoreDetail | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
-  // Load one score by id
+  useEffect(() => {
+    const loadUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUserId(user?.id ?? null);
+    };
+    loadUser();
+  }, [supabase]);
+
   useEffect(() => {
     const load = async () => {
       setLoading(true);
@@ -69,6 +88,7 @@ export default function ScoreDetailPage() {
         .select(
           `
           id,
+          user_id,
           throws,
           score,
           date_played,
@@ -92,108 +112,149 @@ export default function ScoreDetailPage() {
     if (id) load();
   }, [id, supabase]);
 
-  if (loading) return <div className="p-6">Laddar...</div>;
-  if (!item) return <div className="p-6">Hittade inte resultatet.</div>;
+  if (loading) {
+    return (
+      <main className="p-4 md:p-6 max-w-3xl mx-auto">
+        <div className="text-stone-400 animate-pulse">Laddar...</div>
+      </main>
+    );
+  }
+  if (!item) {
+    return (
+      <main className="p-4 md:p-6 max-w-3xl mx-auto">
+        <p className="text-stone-400">Hittade inte resultatet.</p>
+        <Link
+          href="/results"
+          className="inline-flex items-center gap-2 mt-3 text-retro-accent hover:underline"
+        >
+          <ArrowLeftIcon className="h-4 w-4" />
+          Tillbaka till alla resultat
+        </Link>
+      </main>
+    );
+  }
 
-  // Robust handling for with_friends + throws fallback
   const friends = normalizeFriends(item.with_friends);
   const throwsValue = item.throws ?? item.score ?? null;
 
   return (
-    <main className="p-6 max-w-3xl mx-auto space-y-6">
-      {/* Top bar actions */}
-      <div className="flex items-center justify-between">
+    <main className="p-4 md:p-6 max-w-3xl mx-auto space-y-6">
+      <div>
         <button
           onClick={() => router.push("/results")}
-          className="text-sm text-blue-600 hover:underline"
+          className="inline-flex items-center gap-2 text-sm text-stone-400 hover:text-stone-200 transition"
         >
-          ← Tillbaka till alla resultat
+          <ArrowLeftIcon className="h-4 w-4" />
+          Tillbaka till alla resultat
         </button>
-
-        <Link
-          href={`/results/${item.id}/edit`}
-          className="px-3 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
-        >
-          Redigera resultat
-        </Link>
       </div>
 
-      <h1 className="text-2xl font-bold">Resultat</h1>
+      <h1 className="text-2xl font-bold text-stone-100">Resultat</h1>
+
+      {/* Tävling – synlig högst upp om det finns */}
+      {item.competitions && (
+        <div className="flex items-center gap-2 rounded-xl bg-amber-500/15 border border-amber-500/30 px-4 py-3">
+          <FlagIcon className="h-5 w-5 text-amber-400 shrink-0" />
+          <span className="text-stone-400">Tävling:</span>
+          <Link
+            href={`/competitions/${item.competition_id}`}
+            className="font-medium text-amber-400 hover:text-amber-300 hover:underline"
+          >
+            {item.competitions.title}
+          </Link>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Course */}
-        <div className="rounded border p-4 bg-white">
-          <div className="text-sm text-gray-500">Bana</div>
-          <div className="text-lg font-semibold">
+        {/* Bana */}
+        <div className="rounded-xl border border-retro-border p-4 bg-retro-surface">
+          <div className="flex items-center gap-2 text-sm text-stone-500 mb-1">
+            <MapPinIcon className="h-4 w-4 text-retro-accent" />
+            Bana
+          </div>
+          <div className="text-lg font-semibold text-stone-100">
             {item.courses?.name ?? "Okänd bana"}
           </div>
         </div>
 
-        {/* Player */}
-        <div className="rounded border p-4 bg-white">
-          <div className="text-sm text-gray-500">Spelare</div>
-          <div className="text-lg font-semibold">
+        {/* Spelare */}
+        <div className="rounded-xl border border-retro-border p-4 bg-retro-surface">
+          <div className="flex items-center gap-2 text-sm text-stone-500 mb-1">
+            <UserCircleIcon className="h-4 w-4" />
+            Spelare
+          </div>
+          <div className="text-lg font-semibold text-stone-100">
             {item.profiles?.alias ?? "Okänd spelare"}
           </div>
         </div>
 
-        {/* Throws (primary) */}
-        <div className="rounded border p-4 bg-white">
-          <div className="text-sm text-gray-500">Kast</div>
-          <div className="text-lg font-semibold">
+        {/* Kast */}
+        <div className="rounded-xl border border-retro-border p-4 bg-retro-surface">
+          <div className="flex items-center gap-2 text-sm text-stone-500 mb-1">
+            <TrophyIcon className="h-4 w-4" />
+            Kast
+          </div>
+          <div className="text-lg font-semibold text-stone-100">
             {throwsValue !== null ? `${throwsValue} kast` : "—"}
           </div>
         </div>
 
-        {/* Score (points) */}
-        <div className="rounded border p-4 bg-white">
-          <div className="text-sm text-gray-500">Poäng</div>
-          <div className="text-lg font-semibold">
+        {/* Poäng */}
+        <div className="rounded-xl border border-retro-border p-4 bg-retro-surface">
+          <div className="flex items-center gap-2 text-sm text-stone-500 mb-1">
+            <TrophyIcon className="h-4 w-4" />
+            Poäng
+          </div>
+          <div className="text-lg font-semibold text-stone-100">
             {item.score !== null && item.score !== undefined ? item.score : "—"}
           </div>
         </div>
 
-        {/* Date */}
-        <div className="rounded border p-4 bg-white">
-          <div className="text-sm text-gray-500">Datum</div>
-          <div className="text-lg font-semibold">
+        {/* Datum */}
+        <div className="rounded-xl border border-retro-border p-4 bg-retro-surface">
+          <div className="flex items-center gap-2 text-sm text-stone-500 mb-1">
+            <CalendarDaysIcon className="h-4 w-4" />
+            Datum
+          </div>
+          <div className="text-lg font-semibold text-stone-100">
             {item.date_played
               ? new Date(item.date_played).toLocaleDateString("sv-SE")
               : "—"}
           </div>
         </div>
 
-        {/* Competition */}
-        <div className="rounded border p-4 bg-white">
-          <div className="text-sm text-gray-500">Tävling</div>
-          <div className="text-lg font-semibold">
-            {item.competitions ? (
-              <Link
-                href={`/competitions/${item.competition_id}`}
-                className="text-blue-600 hover:underline"
-              >
-                {item.competitions.title}
-              </Link>
-            ) : (
-              "—"
-            )}
+        {/* Spelade med */}
+        <div className="rounded-xl border border-retro-border p-4 bg-retro-surface md:col-span-2">
+          <div className="flex items-center gap-2 text-sm text-stone-500 mb-2">
+            <UserGroupIcon className="h-4 w-4" />
+            Spelade med
           </div>
-        </div>
-
-        {/* With friends */}
-        <div className="rounded border p-4 bg-white md:col-span-2">
-          <div className="text-sm text-gray-500">Spelade med</div>
           {friends.length > 0 ? (
-            <ul className="list-disc list-inside">
+            <ul className="space-y-1 text-stone-200">
               {friends.map((f, i) => (
-                <li key={`${f}-${i}`}>{f}</li>
+                <li key={`${f}-${i}`} className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-retro-accent shrink-0" />
+                  {f}
+                </li>
               ))}
             </ul>
           ) : (
-            <div className="text-lg font-semibold">—</div>
+            <p className="text-stone-400">—</p>
           )}
         </div>
       </div>
+
+      {currentUserId != null && item.user_id === currentUserId && (
+        <div className="pt-2">
+          <Link
+            href={`/results/${item.id}/edit`}
+            className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-2.5 rounded-lg bg-retro-accent text-stone-100 font-medium hover:bg-retro-accent-hover transition focus:outline-none focus:ring-2 focus:ring-retro-accent focus:ring-offset-2 focus:ring-offset-retro-bg"
+          >
+            <PencilSquareIcon className="h-4 w-4" />
+            Redigera resultat
+          </Link>
+        </div>
+      )}
     </main>
   );
 }

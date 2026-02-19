@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeftIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import type { Database } from "@/types/supabase";
 import AddScoreForm from "@/components/AddScoreForm";
@@ -9,6 +11,7 @@ import { useToast } from "@/components/ui/ToastProvider";
 
 type ScoreFromDb = {
   id: string;
+  user_id: string;
   score: number | null;
   throws: number | null;
   date_played: string | null;
@@ -25,16 +28,26 @@ export default function EditScorePage() {
 
   const [loading, setLoading] = useState(true);
   const [score, setScore] = useState<ScoreFromDb | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [userChecked, setUserChecked] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  // 1) Load score by id
+  useEffect(() => {
+    const loadUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUserId(user?.id ?? null);
+      setUserChecked(true);
+    };
+    loadUser();
+  }, [supabase]);
+
   useEffect(() => {
     const fetchScore = async () => {
       setLoading(true);
       const { data, error } = await supabase
         .from("scores")
         .select(
-          "id, score, throws, date_played, with_friends, courses ( id, name )"
+          "id, user_id, score, throws, date_played, with_friends, courses ( id, name )"
         )
         .eq("id", id)
         .single();
@@ -96,7 +109,7 @@ export default function EditScorePage() {
 
       // succé
       showToast("Resultatet har tagits bort.", "success");
-      router.back();
+      router.push("/results");
     } catch (e) {
       console.error("[DELETE] fetch error", e);
       showToast("Nätverksfel vid borttagning.", "error");
@@ -105,33 +118,66 @@ export default function EditScorePage() {
     }
   };
 
-  if (loading) return <div className="p-6">Laddar resultat...</div>;
-  if (!score) return <div className="p-6">Hittade inte resultat.</div>;
-
-  // 3) Render AddScoreForm in "edit mode" + Delete button
-  return (
-    <main className="p-6 max-w-3xl mx-auto">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-bold">✏️ Redigera resultat</h1>
-
-        <button
-          onClick={handleDelete}
-          disabled={deleting}
-          className={`px-3 py-2 rounded ${
-            deleting ? "bg-gray-400" : "bg-red-600 hover:bg-red-700"
-          } text-white`}
-          title="Ta bort resultat"
+  if (loading) {
+    return (
+      <main className="p-4 md:p-6 max-w-3xl mx-auto">
+        <div className="text-stone-400 animate-pulse">Laddar resultat...</div>
+      </main>
+    );
+  }
+  if (!score) {
+    return (
+      <main className="p-4 md:p-6 max-w-3xl mx-auto">
+        <p className="text-stone-400">Hittade inte resultat.</p>
+        <Link
+          href="/results"
+          className="inline-flex items-center gap-2 mt-3 text-retro-accent hover:underline"
         >
-          {deleting ? "Tar bort..." : "Ta bort resultat"}
+          <ArrowLeftIcon className="h-4 w-4" />
+          Tillbaka till resultat
+        </Link>
+      </main>
+    );
+  }
+
+  const isOwner = currentUserId != null && score.user_id === currentUserId;
+  const notOwner = userChecked && currentUserId != null && score.user_id !== currentUserId;
+  if (notOwner) {
+    return (
+      <main className="p-4 md:p-6 max-w-3xl mx-auto space-y-4">
+        <p className="text-stone-400">Du kan bara redigera och ta bort resultat som du själv lagt in.</p>
+        <Link
+          href={`/results/${id}`}
+          className="inline-flex items-center gap-2 text-retro-accent hover:underline"
+        >
+          <ArrowLeftIcon className="h-4 w-4" />
+          Tillbaka till resultatet
+        </Link>
+      </main>
+    );
+  }
+
+  if (!userChecked) {
+    return (
+      <main className="p-4 md:p-6 max-w-3xl mx-auto">
+        <div className="text-stone-400 animate-pulse">Kontrollerar behörighet...</div>
+      </main>
+    );
+  }
+
+  return (
+    <main className="p-4 md:p-6 max-w-3xl mx-auto space-y-6">
+      <div>
+        <button
+          onClick={() => router.back()}
+          className="inline-flex items-center gap-2 text-sm text-stone-400 hover:text-stone-200 transition"
+        >
+          <ArrowLeftIcon className="h-4 w-4" />
+          Tillbaka
         </button>
       </div>
 
-      <button
-        onClick={() => router.back()}
-        className="mb-4 text-sm text-blue-600 hover:underline"
-      >
-        ← Tillbaka till alla resultat
-      </button>
+      <h1 className="text-2xl font-bold text-stone-100">Redigera resultat</h1>
 
       <AddScoreForm
         editingScore={{
@@ -148,6 +194,19 @@ export default function EditScorePage() {
         onClose={handleClose}
         onSuccess={handleSuccess}
       />
+
+      <div className="pt-4 border-t border-retro-border">
+        <button
+          type="button"
+          onClick={handleDelete}
+          disabled={deleting}
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-red-500/50 text-red-400 hover:bg-red-500/15 hover:border-red-500/70 disabled:opacity-50 disabled:cursor-not-allowed transition focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:ring-offset-2 focus:ring-offset-retro-bg"
+          title="Ta bort resultat"
+        >
+          <TrashIcon className="h-4 w-4" />
+          {deleting ? "Tar bort..." : "Ta bort resultat"}
+        </button>
+      </div>
     </main>
   );
 }

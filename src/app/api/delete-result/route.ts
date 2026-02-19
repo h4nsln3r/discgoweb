@@ -6,12 +6,9 @@ import type { Database } from "@/types/supabase";
 import type { PostgrestError } from "@supabase/supabase-js";
 
 async function createSupabase() {
-  // Next 14.2+/15: cookies() is async – resolve it once
   const cookieStore = await cookies();
-
-  // auth-helpers expects: cookies: () => Promise<ReadonlyRequestCookies>
   return createRouteHandlerClient<Database>({
-    cookies: async () => cookieStore,
+    cookies: () => cookieStore,
   });
 }
 
@@ -57,16 +54,26 @@ async function doDelete(id: string) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { error } = await supabase
+  // .select() so we get back deleted row(s) – if empty, nothing was deleted (e.g. RLS or wrong user)
+  const { data: deleted, error } = await supabase
     .from("scores")
     .delete()
     .eq("id", id)
-    .eq("user_id", user.id);
+    .eq("user_id", user.id)
+    .select("id");
 
   if (error) {
     const payload = toErrorPayload(error);
     console.error("[DELETE-RESULT ERROR]", payload);
     return NextResponse.json(payload, { status: 500 });
+  }
+
+  if (!deleted || deleted.length === 0) {
+    console.warn("[DELETE-RESULT] No row deleted for id=%s user_id=%s (RLS or row not found)", id, user.id);
+    return NextResponse.json(
+      { error: "Resultatet kunde inte tas bort. Kontrollera att du äger resultatet och att RLS tillåter borttagning." },
+      { status: 404 }
+    );
   }
 
   return NextResponse.json({ ok: true });

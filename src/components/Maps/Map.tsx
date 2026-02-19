@@ -37,45 +37,24 @@ export default function Map({ userName, initialCourses }: Props) {
   );
 
   return (
-    <div className="md:grid md:grid-cols-[420px_1fr] gap-4">
-      {/* Left side panel on desktop */}
-      <div className="hidden md:block">
-        {selectedCourse ? (
-          <CoursePreviewPanel
-            course={selectedCourse}
-            onClose={() => setSelectedId(null)}
-          />
-        ) : (
-          // Welcome card when nothing is selected
-          <div className="bg-white border rounded-2xl shadow-sm p-6">
-            <h3 className="text-xl font-semibold">Välkommen {userName}!</h3>
-            <p className="text-gray-700 mt-2">
-              Tryck på kartan för att välja din bana.
-            </p>
-            <Link
-              href="/courses"
-              className="inline-flex mt-4 rounded-xl bg-emerald-600 text-white px-4 py-2 hover:bg-emerald-700 transition"
-            >
-              Gå till alla banor
-            </Link>
-          </div>
-        )}
-      </div>
-
-      {/* Map area */}
-      <div className="relative">
-        {/* Small hint on mobile when nothing is selected */}
+    <>
+      {/* Kartan – hela bredden. Välkomstkort med z-index under menyn (z-50). */}
+      <div className="relative w-full rounded-xl overflow-hidden border border-retro-border bg-retro-card">
+        {/* Välkomstkort (syns under menyn: z-20 < topbar z-30, meny z-50) */}
         {!selectedCourse && (
-          <div className="md:hidden absolute z-[400] top-3 left-3 right-3">
-            <div className="bg-white/95 backdrop-blur border rounded-xl shadow p-3">
-              <p className="text-sm">
-                Välkommen {userName}! Tryck på en markör för att visa banan.
+          <div className="absolute top-3 left-3 right-3 z-20 max-w-sm">
+            <div className="bg-retro-surface/95 backdrop-blur border border-retro-border rounded-xl shadow-lg p-4">
+              <h3 className="text-lg font-semibold text-stone-100">
+                Välkommen {userName}!
+              </h3>
+              <p className="text-stone-400 text-sm mt-1">
+                Tryck på en markör för att välja bana.
               </p>
               <Link
                 href="/courses"
-                className="text-sm text-emerald-700 underline mt-1 inline-block"
+                className="inline-flex mt-3 rounded-xl bg-retro-accent text-stone-100 px-4 py-2 text-sm font-medium hover:bg-retro-accent-hover transition"
               >
-                Eller visa alla banor
+                Gå till alla banor
               </Link>
             </div>
           </div>
@@ -86,15 +65,27 @@ export default function Map({ userName, initialCourses }: Props) {
           onSelectCourse={(c) => setSelectedId(c.id)}
           selectedCourseId={selectedId}
         />
-
-        {/* Mobile overlay panel → only on small screens */}
-        <div className="md:hidden">
-          <CoursePreviewPanel
-            course={selectedCourse}
-            onClose={() => setSelectedId(null)}
-          />
-        </div>
       </div>
-    </div>
+
+      {/* Vald bana → hela sidan (overlay under menyn z-50) */}
+      {selectedCourse && (
+        <div
+          className="fixed inset-0 z-40 bg-retro-bg overflow-y-auto"
+          onClick={() => setSelectedId(null)}
+          aria-label="Stäng bana"
+        >
+          <div
+            className="min-h-full max-w-3xl mx-auto p-4 md:p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <CoursePreviewPanel
+              course={selectedCourse}
+              onClose={() => setSelectedId(null)}
+              embedded
+            />
+          </div>
+        </div>
+      )}
+    </>
   );
 }
