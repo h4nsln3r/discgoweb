@@ -9,6 +9,9 @@ import Providers from "../components/Providers";
 export const metadata: Metadata = {
   title: "Discgolf App",
   description: "Samla scores och tävla med vänner!",
+  icons: {
+    icon: "/favicon.png",
+  },
 };
 
 export default function RootLayout({

@@ -97,6 +97,7 @@ export default function CompetitionList({
             className="block rounded-xl border border-retro-border bg-retro-surface shadow-sm overflow-hidden hover:border-retro-muted/50 transition"
           >
             {comp.image_url ? (
+              // eslint-disable-next-line @next/next/no-img-element -- external image URL
               <img
                 src={comp.image_url}
                 alt={comp.title}

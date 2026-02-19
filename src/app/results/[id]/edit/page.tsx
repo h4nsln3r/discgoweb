@@ -62,7 +62,7 @@ export default function EditScorePage() {
     };
 
     if (id) fetchScore();
-  }, [id, supabase]);
+  }, [id, supabase, showToast]);
 
   // 2) Handlers
   const handleSuccess = () => {
@@ -140,7 +140,6 @@ export default function EditScorePage() {
     );
   }
 
-  const isOwner = currentUserId != null && score.user_id === currentUserId;
   const notOwner = userChecked && currentUserId != null && score.user_id !== currentUserId;
   if (notOwner) {
     return (

@@ -326,6 +326,7 @@ export default function ResultsPage() {
                   {/* Rad 2: Användare (avatar + alias) + kast */}
                   <div className="flex items-center gap-2 text-sm text-stone-400">
                     {score.profiles?.avatar_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- external avatar URL
                       <img
                         src={score.profiles.avatar_url}
                         alt=""

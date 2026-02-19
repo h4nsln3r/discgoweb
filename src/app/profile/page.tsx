@@ -1,4 +1,5 @@
 // app/profile/page.tsx
+import Link from "next/link";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { redirect } from "next/navigation";
 
@@ -54,12 +55,12 @@ export default async function ProfileHomePage() {
     <main className="p-6 max-w-3xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold text-stone-100">Min profil</h1>
-        <a
+        <Link
           href="/profile/edit"
           className="px-4 py-2 rounded-xl bg-retro-accent text-stone-100 text-sm font-medium hover:bg-retro-accent-hover transition"
         >
           Redigera profil
-        </a>
+        </Link>
       </div>
 
       <div className="rounded-2xl border border-retro-border bg-retro-surface p-6 shadow-sm space-y-6">

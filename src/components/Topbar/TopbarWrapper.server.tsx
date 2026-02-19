@@ -14,7 +14,7 @@ export default async function TopbarWrapper() {
     const { data: profile } = await supabase
       .from("profiles")
       .select("alias")
-      .eq("id", userId as any)
+      .eq("id", userId)
       .maybeSingle();
     displayName =
       profile && typeof profile === "object" && "alias" in profile

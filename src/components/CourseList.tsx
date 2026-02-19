@@ -92,6 +92,7 @@ export default function CourseList({ refresh }: { refresh?: boolean }) {
           className="rounded-xl border border-retro-border bg-retro-surface shadow-sm overflow-hidden hover:border-retro-muted/50 transition"
         >
           {course.main_image_url ? (
+            // eslint-disable-next-line @next/next/no-img-element -- external image URL
             <img
               src={course.main_image_url}
               alt={course.name}
