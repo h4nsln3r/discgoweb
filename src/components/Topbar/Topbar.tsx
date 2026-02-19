@@ -1,17 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { Bars3Icon, XMarkIcon, UserCircleIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import LogoutButton from "../Buttons/LogoutButton";
 
-function navLinkClass(href: string, pathname: string, baseClass: string) {
+function navLinkClass(href: string, pathname: string, baseClass: string, highlight?: boolean) {
   const isActive =
     href === "/dashboard"
       ? pathname === "/dashboard"
       : pathname === href || pathname.startsWith(href + "/");
-  return `${baseClass} ${isActive ? "bg-retro-card text-retro-accent font-semibold border-l-4 border-retro-accent pl-3 -ml-1 rounded-r" : ""}`.trim();
+  const activeClass = isActive ? "bg-retro-card text-retro-accent font-semibold border-l-4 border-retro-accent pl-3 -ml-1 rounded-r" : "";
+  const highlightClass = highlight ? "ring-2 ring-retro-accent ring-offset-2 ring-offset-retro-surface animate-pulse" : "";
+  return `${baseClass} ${activeClass} ${highlightClass}`.trim();
 }
 
 type SlimUser = {
@@ -26,13 +28,16 @@ export default function Topbar({
   displayName: string | null;
 }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [menuOpen, setMenuOpen] = useState(false);
+  const isProfileWelcome = (pathname === "/profile" || pathname?.startsWith("/profile")) && searchParams.get("welcome") != null;
 
-  const linkClass = (href: string) =>
+  const linkClass = (href: string, highlight = false) =>
     navLinkClass(
       href,
       pathname ?? "",
-      "block py-2 px-2 -mx-2 rounded hover:bg-retro-surface text-stone-200 transition"
+      "block py-2 px-2 -mx-2 rounded hover:bg-retro-surface text-stone-200 transition",
+      highlight
     );
 
   const nameLabel = (displayName?.trim() ?? "") || "NAMN404";
@@ -134,7 +139,7 @@ export default function Topbar({
             <Link
               href="/profile"
               onClick={() => setMenuOpen(false)}
-              className={linkClass("/profile")}
+              className={linkClass("/profile", isProfileWelcome)}
             >
               👤 Min profil
             </Link>

@@ -63,7 +63,7 @@ export default function AuthPage() {
           setToastTitle("Välkommen! 👋");
           setToastMessage("Fyll i profilen så kör vi!");
           setToastOpen(true);
-          router.push("/profile?onboarding=1");
+          router.push("/profile/edit");
           router.refresh();
           return;
         }
@@ -94,11 +94,11 @@ export default function AuthPage() {
       }
 
       // If session exists immediately (email verification OFF),
-      // push them straight into onboarding.
+      // push them straight to edit profile.
       setToastTitle("Välkommen! 👋");
       setToastMessage("Fyll i profilen så kör vi!");
       setToastOpen(true);
-      router.push("/profile?onboarding=1");
+      router.push("/profile/edit");
       router.refresh();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Något gick fel.");

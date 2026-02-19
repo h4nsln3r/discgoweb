@@ -1,7 +1,9 @@
 // app/profile/page.tsx
 import Link from "next/link";
+import { Suspense } from "react";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { redirect } from "next/navigation";
+import ProfileWelcomeToast from "@/components/profile/ProfileWelcomeToast";
 
 type ProfileRow = {
   id: string;
@@ -53,6 +55,9 @@ export default async function ProfileHomePage() {
 
   return (
     <main className="p-6 max-w-3xl mx-auto">
+      <Suspense fallback={null}>
+        <ProfileWelcomeToast displayName={profile?.alias ?? null} />
+      </Suspense>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold text-stone-100">Min profil</h1>
         <Link

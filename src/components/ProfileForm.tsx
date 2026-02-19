@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Database } from "@/types/supabase";
 import { createSupabaseClient } from "@/lib/supabase";
@@ -11,6 +11,9 @@ type Course = Pick<
   Database["public"]["Tables"]["courses"]["Row"],
   "id" | "name"
 >;
+
+const CROP_SIZE = 320;
+const PREVIEW_SIZE = 96;
 
 export default function ProfileForm({
   profile,
@@ -35,6 +38,12 @@ export default function ProfileForm({
   const [team, setTeam] = useState(profile?.team ?? "");
 
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [fileToCrop, setFileToCrop] = useState<File | null>(null);
+  const [cropPreviewUrl, setCropPreviewUrl] = useState<string | null>(null);
+  const [cropZoom, setCropZoom] = useState(1);
+  const [cropOffset, setCropOffset] = useState({ x: 0, y: 0 });
+  const [cropDrag, setCropDrag] = useState<{ startX: number; startY: number; startOffset: { x: number; y: number } } | null>(null);
+  const imgRef = useRef<HTMLImageElement | null>(null);
   const [saving, setSaving] = useState(false);
 
   const avatarPreview = useMemo(() => {
@@ -43,12 +52,82 @@ export default function ProfileForm({
   }, [avatarFile, profile?.avatar_url]);
 
   useEffect(() => {
+    if (!fileToCrop) return;
+    const url = URL.createObjectURL(fileToCrop);
+    setCropPreviewUrl(url);
+    setCropZoom(1);
+    setCropOffset({ x: 0, y: 0 });
+    return () => URL.revokeObjectURL(url);
+  }, [fileToCrop]);
+
+  useEffect(() => {
     return () => {
       if (avatarFile && avatarPreview?.startsWith("blob:")) {
         URL.revokeObjectURL(avatarPreview);
       }
     };
   }, [avatarFile, avatarPreview]);
+
+  const getCroppedFile = useCallback(async (): Promise<File | null> => {
+    if (!fileToCrop || !imgRef.current) return null;
+    const img = imgRef.current;
+    const nw = img.naturalWidth;
+    const nh = img.naturalHeight;
+    const zoom = Math.max(0.3, Math.min(3, cropZoom));
+    const scale = Math.min(CROP_SIZE / nw, CROP_SIZE / nh);
+    const side = CROP_SIZE / (zoom * scale);
+    const half = side / 2;
+    const sx = nw / 2 - cropOffset.x / scale - half;
+    const sy = nh / 2 - cropOffset.y / scale - half;
+    const sw = side;
+    const sh = side;
+    const canvas = document.createElement("canvas");
+    canvas.width = CROP_SIZE;
+    canvas.height = CROP_SIZE;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    ctx.beginPath();
+    ctx.arc(CROP_SIZE / 2, CROP_SIZE / 2, CROP_SIZE / 2, 0, Math.PI * 2);
+    ctx.closePath();
+    ctx.clip();
+    ctx.drawImage(img, sx, sy, sw, sh, 0, 0, CROP_SIZE, CROP_SIZE);
+    return new Promise((resolve) => {
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            resolve(null);
+            return;
+          }
+          const f = new File([blob], fileToCrop.name.replace(/\.[^.]+$/, ".jpg") || "avatar.jpg", { type: "image/jpeg" });
+          resolve(f);
+        },
+        "image/jpeg",
+        0.92
+      );
+    });
+  }, [fileToCrop, cropZoom, cropOffset]);
+
+  const handleCropConfirm = useCallback(async () => {
+    const f = await getCroppedFile();
+    if (f) {
+      setAvatarFile(f);
+      setFileToCrop(null);
+      setCropPreviewUrl(null);
+    }
+  }, [getCroppedFile]);
+
+  const handleCropCancel = useCallback(() => {
+    setFileToCrop(null);
+    setCropPreviewUrl(null);
+  }, []);
+
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type.startsWith("image/")) {
+      setFileToCrop(file);
+    }
+    e.target.value = "";
+  }, []);
 
   async function uploadAvatar() {
     if (!avatarFile) return profile?.avatar_url ?? "";
@@ -110,9 +189,8 @@ export default function ProfileForm({
         return;
       }
 
-      showToast("Profilen har sparats!", "success");
       setAvatarFile(null);
-      router.back();
+      router.push(`/profile?welcome=1`);
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "Något gick fel vid sparande.";
@@ -127,9 +205,105 @@ export default function ProfileForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
+      {/* Crop-modal när användaren valt en bild */}
+      {fileToCrop && cropPreviewUrl && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70">
+          <div className="bg-retro-surface border border-retro-border rounded-2xl shadow-xl max-w-lg w-full overflow-hidden">
+            <div className="p-4 border-b border-retro-border">
+              <h3 className="text-lg font-semibold text-stone-100">Beskär profilbild</h3>
+              <p className="text-sm text-stone-400 mt-1">Zooma och dra för att placera. Cirkeln visar utsnittet.</p>
+            </div>
+            <div className="p-4">
+              <div
+                className="mx-auto rounded-full overflow-hidden bg-retro-card border-2 border-retro-border select-none touch-none"
+                style={{ width: CROP_SIZE, height: CROP_SIZE }}
+                onMouseDown={(e) => {
+                  if (e.button !== 0) return;
+                  setCropDrag({ startX: e.clientX, startY: e.clientY, startOffset: { ...cropOffset } });
+                }}
+                onMouseMove={(e) => {
+                  if (!cropDrag) return;
+                  setCropOffset({
+                    x: cropDrag.startOffset.x + (e.clientX - cropDrag.startX),
+                    y: cropDrag.startOffset.y + (e.clientY - cropDrag.startY),
+                  });
+                }}
+                onMouseUp={() => setCropDrag(null)}
+                onMouseLeave={() => setCropDrag(null)}
+                onTouchStart={(e) => {
+                  const t = e.touches[0];
+                  setCropDrag({ startX: t.clientX, startY: t.clientY, startOffset: { ...cropOffset } });
+                }}
+                onTouchMove={(e) => {
+                  if (!cropDrag) return;
+                  const t = e.touches[0];
+                  setCropOffset({
+                    x: cropDrag.startOffset.x + (t.clientX - cropDrag.startX),
+                    y: cropDrag.startOffset.y + (t.clientY - cropDrag.startY),
+                  });
+                }}
+                onTouchEnd={() => setCropDrag(null)}
+              >
+                <div
+                  className="w-full h-full flex items-center justify-center"
+                  style={{
+                    transform: `scale(${cropZoom}) translate(${cropOffset.x}px, ${cropOffset.y}px)`,
+                  }}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    ref={imgRef}
+                    src={cropPreviewUrl}
+                    alt="Beskär"
+                    className="max-w-none select-none"
+                    style={{
+                      width: CROP_SIZE,
+                      height: CROP_SIZE,
+                      objectFit: "contain",
+                    }}
+                    draggable={false}
+                  />
+                </div>
+              </div>
+              <div className="mt-4">
+                <label className="block text-sm text-stone-400 mb-1">Zoom</label>
+                <input
+                  type="range"
+                  min={0.3}
+                  max={2.5}
+                  step={0.05}
+                  value={cropZoom}
+                  onChange={(e) => setCropZoom(Number(e.target.value))}
+                  className="w-full h-2 rounded-lg appearance-none bg-retro-card border border-retro-border accent-retro-accent"
+                />
+              </div>
+            </div>
+            <div className="p-4 flex gap-3 border-t border-retro-border">
+              <button
+                type="button"
+                onClick={handleCropCancel}
+                className="flex-1 py-2.5 rounded-xl border border-retro-border text-stone-200 hover:bg-retro-card transition"
+              >
+                Avbryt
+              </button>
+              <button
+                type="button"
+                onClick={handleCropConfirm}
+                className="flex-1 py-2.5 rounded-xl bg-retro-accent text-stone-100 font-medium hover:bg-retro-accent-hover transition"
+              >
+                Använd bild
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="rounded-2xl border border-retro-border bg-retro-surface p-4 shadow-sm">
         <div className="flex items-center gap-4">
-          <div className="h-16 w-16 rounded-full bg-retro-card border border-retro-border overflow-hidden flex items-center justify-center">
+          <div
+            className="rounded-full bg-retro-card border border-retro-border overflow-hidden flex items-center justify-center shrink-0"
+            style={{ width: PREVIEW_SIZE, height: PREVIEW_SIZE }}
+          >
             {avatarPreview ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -138,18 +312,18 @@ export default function ProfileForm({
                 className="h-full w-full object-cover"
               />
             ) : (
-              <span className="text-xs text-retro-muted">Ingen</span>
+              <span className="text-sm text-retro-muted">Ingen</span>
             )}
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <label className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-retro-border bg-retro-card cursor-pointer hover:bg-retro-surface transition text-stone-200 text-sm">
               Byt profilbild
               <input
                 type="file"
                 accept="image/*"
                 className="hidden"
-                onChange={(e) => setAvatarFile(e.target.files?.[0] ?? null)}
+                onChange={handleFileSelect}
               />
             </label>
 
