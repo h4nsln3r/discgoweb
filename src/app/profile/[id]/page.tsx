@@ -125,7 +125,7 @@ export default async function PublicProfilePage({ params }: Props) {
       </div>
 
       {/* Profil: samma layout som min profil (mobil = kolumn, desktop = rad) */}
-      <div className="rounded-2xl border border-retro-border bg-retro-surface p-6 shadow-sm mb-6">
+      <div className="rounded-2xl border border-retro-border bg-retro-surface p-6 shadow-sm mb-6 relative">
         <div className="flex flex-col md:flex-row items-center md:items-start gap-4">
           <div className="relative shrink-0 w-24 h-24 sm:w-28 sm:h-28 overflow-visible">
             <div className="w-full h-full rounded-full overflow-hidden bg-retro-card border border-retro-border">
@@ -142,20 +142,20 @@ export default async function PublicProfilePage({ params }: Props) {
                 </div>
               )}
             </div>
-            {team ? (
-              <div
-                className="absolute -top-1 -left-0.5 w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden border-2 border-retro-surface bg-retro-card shadow-md z-10"
-                title={team.name}
-              >
-                {team.logga ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img src={team.logga} alt={team.name} className="h-full w-full object-cover" />
-                ) : (
-                  <span className="h-full w-full flex items-center justify-center text-retro-muted text-lg" aria-hidden>👥</span>
-                )}
-              </div>
-            ) : null}
           </div>
+          {team ? (
+            <div
+              className="absolute top-2 left-2 w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden border-2 border-retro-surface bg-retro-card shadow-md z-10 -translate-x-0.5 -translate-y-0.5"
+              title={team.name}
+            >
+              {team.logga ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img src={team.logga} alt={team.name} className="h-full w-full object-cover" />
+              ) : (
+                <span className="h-full w-full flex items-center justify-center text-retro-muted text-lg" aria-hidden>👥</span>
+              )}
+            </div>
+          ) : null}
           <div className="min-w-0 flex-1 w-full flex flex-col gap-3 text-center md:text-left">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4">
               <h1 className="text-2xl sm:text-3xl font-bold text-stone-100 truncate min-w-0">
@@ -217,16 +217,17 @@ export default async function PublicProfilePage({ params }: Props) {
       <div className="rounded-2xl border border-retro-border bg-retro-surface overflow-hidden shadow-sm mb-6">
         {homeCourse ? (
           <>
-            <div className="aspect-video md:aspect-[3/1] max-h-48 md:max-h-52 bg-retro-card relative">
+            <div className="aspect-video md:aspect-[3/1] max-h-48 md:max-h-52 bg-retro-card relative overflow-hidden w-full">
               {homeCourse.main_image_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={homeCourse.main_image_url}
                   alt={homeCourse.name}
-                  className="w-full h-full object-cover"
+                  className="absolute inset-0 w-full h-full object-cover object-center"
+                  style={{ width: "100%", minWidth: "100%" }}
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-retro-muted">
+                <div className="absolute inset-0 flex items-center justify-center text-retro-muted">
                   <HomeIcon className="w-12 h-12" />
                 </div>
               )}
@@ -254,20 +255,23 @@ export default async function PublicProfilePage({ params }: Props) {
         )}
       </div>
 
-      {/* Lag – samma kort som min profil */}
+      {/* Lag – samma höjd och bildstorlek som hemmabana */}
       <div className="rounded-2xl border border-retro-border bg-retro-surface overflow-hidden shadow-sm mb-6">
         {team ? (
           <>
-            <div className="aspect-video bg-retro-card relative flex items-center justify-center">
+            <div className="aspect-video md:aspect-[3/1] max-h-48 md:max-h-52 bg-retro-card relative overflow-hidden w-full">
               {(team.bild || team.logga) ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={team.bild || team.logga || ""}
                   alt={team.name}
-                  className={`w-full h-full ${team.bild ? "object-cover" : "object-contain p-4"}`}
+                  className="absolute inset-0 w-full h-full object-cover object-center"
+                  style={{ width: "100%", minWidth: "100%" }}
                 />
               ) : (
-                <UserGroupIcon className="w-16 h-16 text-retro-muted" />
+                <div className="absolute inset-0 flex items-center justify-center text-retro-muted">
+                  <UserGroupIcon className="w-16 h-16" />
+                </div>
               )}
             </div>
             <div className="p-4">

@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { UserGroupIcon, PencilSquareIcon, MapPinIcon } from "@heroicons/react/24/outline";
 import BackButton from "@/components/Buttons/BackButton";
+import { getMyRoleInTeam, canEditTeam, canManageRoles } from "@/lib/team-roles";
+import TeamMembersSection from "@/components/Teams/TeamMembersSection";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -13,12 +15,14 @@ type TeamRow = {
   logga: string | null;
   bild: string | null;
   about: string | null;
+  created_by: string | null;
 };
 
-type MemberRow = {
+type MemberWithRole = {
   id: string;
   alias: string | null;
   avatar_url: string | null;
+  role: "admin" | "editor" | "viewer";
 };
 
 export default async function TeamDetailPage({ params }: Props) {
@@ -27,12 +31,17 @@ export default async function TeamDetailPage({ params }: Props) {
 
   const { data: teamData, error: teamError } = await supabase
     .from("teams")
-    .select("id, name, ort, logga, bild, about")
+    .select("id, name, ort, logga, bild, about, created_by")
     .eq("id", id)
     .single();
 
   if (teamError || !teamData) notFound();
   const team = teamData as TeamRow;
+
+  const { data: { user } } = await supabase.auth.getUser();
+  const myRole = user ? await getMyRoleInTeam(supabase, id, user.id) : null;
+  const showEditLink = canEditTeam(myRole);
+  const showRoleManagement = canManageRoles(myRole);
 
   const { data: membersData } = await supabase
     .from("profiles")
@@ -40,19 +49,32 @@ export default async function TeamDetailPage({ params }: Props) {
     .eq("team_id", id)
     .order("alias", { nullsFirst: false });
 
-  const members = (membersData ?? []) as MemberRow[];
+  const { data: rolesData } = await supabase
+    .from("team_member_roles")
+    .select("user_id, role")
+    .eq("team_id", id);
+
+  const roleByUser = new Map<string, string>();
+  (rolesData ?? []).forEach((r: { user_id: string; role: string }) => roleByUser.set(r.user_id, r.role));
+
+  const members: MemberWithRole[] = (membersData ?? []).map((m: { id: string; alias: string | null; avatar_url: string | null }) => ({
+    ...m,
+    role: (roleByUser.get(m.id) as "admin" | "editor" | "viewer") ?? (team.created_by === m.id ? "admin" : "viewer"),
+  }));
 
   return (
     <main className="p-4 sm:p-6 max-w-3xl mx-auto">
       <div className="flex items-center justify-between gap-4 mb-4">
         <BackButton />
-        <Link
-          href={`/teams/${id}/edit`}
-          className="inline-flex items-center gap-2 text-amber-400 font-medium hover:text-amber-300 transition shrink-0"
-        >
-          <PencilSquareIcon className="w-5 h-5 shrink-0" />
-          Redigera lag
-        </Link>
+        {showEditLink && (
+          <Link
+            href={`/teams/${id}/edit`}
+            className="inline-flex items-center gap-2 text-amber-400 font-medium hover:text-amber-300 transition shrink-0"
+          >
+            <PencilSquareIcon className="w-5 h-5 shrink-0" />
+            Redigera lag
+          </Link>
+        )}
       </div>
 
       {/* Lagbild – stort längst upp */}
@@ -75,7 +97,7 @@ export default async function TeamDetailPage({ params }: Props) {
       <div className="rounded-2xl border border-retro-border bg-retro-surface p-6 shadow-sm mb-6">
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
           {team.logga ? (
-            <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden bg-retro-card border border-retro-border shrink-0 flex items-center justify-center">
+            <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-xl overflow-hidden shrink-0 flex items-center justify-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={team.logga}
@@ -84,12 +106,12 @@ export default async function TeamDetailPage({ params }: Props) {
               />
             </div>
           ) : (
-            <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl bg-retro-card border border-retro-border flex items-center justify-center shrink-0">
-              <UserGroupIcon className="w-12 h-12 text-retro-muted" />
+            <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-xl flex items-center justify-center shrink-0">
+              <UserGroupIcon className="w-14 h-14 text-retro-muted" />
             </div>
           )}
           <div className="min-w-0 flex-1 text-center sm:text-left">
-            <h1 className="text-2xl sm:text-3xl font-bold text-stone-100">{team.name}</h1>
+            <h1 className="text-3xl sm:text-4xl font-bold text-stone-100">{team.name}</h1>
             {team.ort && (
               <p className="flex items-center justify-center sm:justify-start gap-1.5 text-stone-400 mt-1">
                 <MapPinIcon className="w-5 h-5 text-retro-muted shrink-0" />
@@ -106,44 +128,12 @@ export default async function TeamDetailPage({ params }: Props) {
         )}
       </div>
 
-      {/* Medlemmar */}
-      <div className="rounded-2xl border border-retro-border bg-retro-surface p-6 shadow-sm mb-6">
-        <h2 className="flex items-center gap-2 text-lg font-semibold text-stone-100 mb-4">
-          <UserGroupIcon className="w-5 h-5 text-retro-muted shrink-0" />
-          Medlemmar
-        </h2>
-        {members.length === 0 ? (
-          <p className="text-stone-400 text-sm">Inga medlemmar i laget än.</p>
-        ) : (
-          <ul className="space-y-3">
-            {members.map((member) => (
-              <li key={member.id}>
-                <Link
-                  href={`/profile/${member.id}`}
-                  className="flex items-center gap-3 rounded-xl border border-retro-border bg-retro-card p-3 hover:bg-retro-surface transition"
-                >
-                  <div className="w-12 h-12 rounded-full overflow-hidden bg-retro-surface border border-retro-border shrink-0 flex items-center justify-center">
-                    {member.avatar_url ? (
-                      /* eslint-disable-next-line @next/next/no-img-element */
-                      <img
-                        src={member.avatar_url}
-                        alt=""
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-retro-muted text-xl">🥏</span>
-                    )}
-                  </div>
-                  <span className="font-medium text-stone-100">
-                    {member.alias || "Spelare"}
-                  </span>
-                  <span className="ml-auto text-sm text-retro-accent">Visa profil →</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+      <TeamMembersSection
+        teamId={id}
+        members={members}
+        currentUserId={user?.id ?? null}
+        canManageRoles={showRoleManagement}
+      />
     </main>
   );
 }

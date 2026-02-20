@@ -8,6 +8,7 @@ import BackButton from "@/components/Buttons/BackButton";
 import TeamForm, { type TeamFormData } from "@/components/Forms/TeamForm";
 import { useToast } from "@/components/Toasts/ToastProvider";
 import { uploadTeamAssets } from "@/lib/team-uploads";
+import { getMyRoleInTeam, canEditTeam } from "@/lib/team-roles";
 
 type TeamRow = {
   id: string;
@@ -26,27 +27,35 @@ export default function EditTeamPage() {
 
   const [loading, setLoading] = useState(true);
   const [team, setTeam] = useState<TeamRow | null>(null);
+  const [canEdit, setCanEdit] = useState(false);
 
   useEffect(() => {
     if (!id) return;
 
-    const fetchTeam = async () => {
+    const fetchTeamAndRole = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setLoading(false);
+        return;
+      }
       const { data, error } = await supabase
         .from("teams")
         .select("id, name, ort, logga, bild, about")
         .eq("id", id)
         .single();
 
-      if (error) {
-        console.error(error);
+      if (error || !data) {
         showToast("Kunde inte hämta laget.", "error");
-      } else if (data) {
-        setTeam(data as TeamRow);
+        setLoading(false);
+        return;
       }
+      setTeam(data as TeamRow);
+      const role = await getMyRoleInTeam(supabase, id, user.id);
+      setCanEdit(canEditTeam(role));
       setLoading(false);
     };
 
-    fetchTeam();
+    fetchTeamAndRole();
   }, [id, supabase, showToast]);
 
   const handleUpdate = async (data: TeamFormData) => {
@@ -86,13 +95,24 @@ export default function EditTeamPage() {
       showToast("Kunde inte spara laget.", "error");
     } else {
       showToast("Laget har uppdaterats!", "success");
-      router.push("/teams");
       router.refresh();
+      router.push(`/teams/${id}`);
     }
   };
 
   if (loading) return <div className="max-w-2xl mx-auto p-6 text-stone-400">Laddar...</div>;
   if (!team) return <div className="max-w-2xl mx-auto p-6 text-amber-400">Laget hittades inte.</div>;
+  if (!canEdit) {
+    return (
+      <main className="p-4 sm:p-6 max-w-2xl mx-auto">
+        <BackButton />
+        <div className="rounded-xl border border-amber-500/50 bg-amber-500/10 p-6 text-amber-200 mt-4">
+          <p className="font-medium">Du har inte rättighet att redigera detta lag.</p>
+          <p className="text-sm mt-2">Endast admin och redaktörer kan redigera laget.</p>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="p-4 sm:p-6 max-w-2xl mx-auto">

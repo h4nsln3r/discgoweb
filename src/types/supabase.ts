@@ -212,6 +212,7 @@ export type Database = {
           logga: string | null
           bild: string | null
           about: string | null
+          created_by: string | null
         }
         Insert: {
           id?: string
@@ -220,6 +221,7 @@ export type Database = {
           logga?: string | null
           bild?: string | null
           about?: string | null
+          created_by?: string | null
         }
         Update: {
           name?: string
@@ -227,6 +229,25 @@ export type Database = {
           logga?: string | null
           bild?: string | null
           about?: string | null
+          created_by?: string | null
+        }
+        Relationships: []
+      }
+      team_member_roles: {
+        Row: {
+          team_id: string
+          user_id: string
+          role: string
+        }
+        Insert: {
+          team_id: string
+          user_id: string
+          role: string
+        }
+        Update: {
+          team_id?: string
+          user_id?: string
+          role?: string
         }
         Relationships: []
       }

@@ -9,6 +9,12 @@ export default async function TeamsPage() {
     .select("id, name, ort, logga, bild, about")
     .order("name");
 
+  const { data: { user } } = await supabase.auth.getUser();
+  const { data: myProfile } = user
+    ? await supabase.from("profiles").select("team_id").eq("id", user.id).single()
+    : { data: null };
+  const canCreateTeam = !myProfile?.team_id;
+
   return (
     <main className="p-4 sm:p-6 max-w-3xl mx-auto">
       <div className="flex justify-between items-center mb-6">
@@ -16,12 +22,14 @@ export default async function TeamsPage() {
           <UserGroupIcon className="w-7 h-7 text-retro-accent shrink-0" aria-hidden />
           Lag
         </h1>
-        <Link
-          href="/teams/new"
-          className="px-4 py-2 rounded-xl bg-retro-accent text-stone-100 text-sm font-medium hover:bg-retro-accent-hover transition"
-        >
-          Lägg till lag
-        </Link>
+        {canCreateTeam && (
+          <Link
+            href="/teams/new"
+            className="px-4 py-2 rounded-xl bg-retro-accent text-stone-100 text-sm font-medium hover:bg-retro-accent-hover transition"
+          >
+            Lägg till lag
+          </Link>
+        )}
       </div>
 
       {!teams?.length ? (

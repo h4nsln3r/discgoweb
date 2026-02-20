@@ -2,9 +2,12 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 
-/** 16:9 rektangel så lagbilden passar i korten (aspect-video). */
-const CROP_WIDTH = 400;
-const CROP_HEIGHT = 225;
+/** 16:9 – visningsstorlek i crop-modalen. */
+const CROP_DISPLAY_WIDTH = 400;
+const CROP_DISPLAY_HEIGHT = 225;
+/** Exportupplösning (samma 16:9) – högre = skarpare bild på profilen. */
+const CROP_OUTPUT_WIDTH = 1200;
+const CROP_OUTPUT_HEIGHT = 675;
 
 export type TeamFormData = {
   name: string;
@@ -92,17 +95,17 @@ export default function TeamForm({
     const nw = img.naturalWidth;
     const nh = img.naturalHeight;
     const zoom = Math.max(0.3, Math.min(3, cropZoomBild));
-    const scale = Math.min(CROP_WIDTH / nw, CROP_HEIGHT / nh);
-    const sw = CROP_WIDTH / (zoom * scale);
-    const sh = CROP_HEIGHT / (zoom * scale);
+    const scale = Math.min(CROP_DISPLAY_WIDTH / nw, CROP_DISPLAY_HEIGHT / nh);
+    const sw = CROP_DISPLAY_WIDTH / (zoom * scale);
+    const sh = CROP_DISPLAY_HEIGHT / (zoom * scale);
     const sx = nw / 2 - cropOffsetBild.x / scale - sw / 2;
     const sy = nh / 2 - cropOffsetBild.y / scale - sh / 2;
     const canvas = document.createElement("canvas");
-    canvas.width = CROP_WIDTH;
-    canvas.height = CROP_HEIGHT;
+    canvas.width = CROP_OUTPUT_WIDTH;
+    canvas.height = CROP_OUTPUT_HEIGHT;
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
-    ctx.drawImage(img, sx, sy, sw, sh, 0, 0, CROP_WIDTH, CROP_HEIGHT);
+    ctx.drawImage(img, sx, sy, sw, sh, 0, 0, CROP_OUTPUT_WIDTH, CROP_OUTPUT_HEIGHT);
     return new Promise((resolve) => {
       canvas.toBlob(
         (blob) => {
@@ -114,7 +117,7 @@ export default function TeamForm({
           resolve(f);
         },
         "image/jpeg",
-        0.92
+        0.95
       );
     });
   }, [fileToCropBild, cropZoomBild, cropOffsetBild]);
@@ -168,7 +171,7 @@ export default function TeamForm({
             <div className="p-4">
               <div
                 className="mx-auto rounded-lg overflow-hidden bg-retro-card border-2 border-retro-border select-none touch-none"
-                style={{ width: CROP_WIDTH, height: CROP_HEIGHT }}
+                style={{ width: CROP_DISPLAY_WIDTH, height: CROP_DISPLAY_HEIGHT }}
                 onMouseDown={(e) => {
                   if (e.button !== 0) return;
                   setCropDragBild({ startX: e.clientX, startY: e.clientY, startOffset: { ...cropOffsetBild } });
@@ -209,8 +212,8 @@ export default function TeamForm({
                     alt="Beskär lagbild"
                     className="max-w-none select-none"
                     style={{
-                      width: CROP_WIDTH,
-                      height: CROP_HEIGHT,
+                      width: CROP_DISPLAY_WIDTH,
+                      height: CROP_DISPLAY_HEIGHT,
                       objectFit: "contain",
                     }}
                     draggable={false}
@@ -367,12 +370,13 @@ export default function TeamForm({
           />
         </div>
         {(bildPreviewUrl !== null || bild) && (
-          <div className="mt-3 aspect-video max-h-40 w-full max-w-md rounded-lg border border-retro-border overflow-hidden bg-retro-card">
+          <div className="mt-3 aspect-video md:aspect-[3/1] max-h-48 md:max-h-52 w-full rounded-lg border border-retro-border overflow-hidden bg-retro-card relative">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={bildPreviewUrl ?? bild}
               alt="Lagbild"
-              className="w-full h-full object-cover"
+              className="absolute inset-0 w-full h-full object-cover object-center"
+              style={{ width: "100%" }}
               onError={(e) => {
                 (e.target as HTMLImageElement).style.display = "none";
               }}

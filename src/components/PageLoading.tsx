@@ -8,6 +8,7 @@ const LOADING_TITLES = {
   results: "Laddar resultat...",
   competitions: "Laddar tävlingar...",
   profile: "Laddar profil...",
+  teams: "Laddar lag...",
 } as const;
 
 type Variant = keyof typeof LOADING_TITLES;

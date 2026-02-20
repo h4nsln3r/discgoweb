@@ -223,6 +223,9 @@ export default function ProfileForm({
 
       console.log("[profile] saving payload:", payload);
 
+      const previousTeamId = profile?.team_id ?? null;
+      const newTeamId = teamId || null;
+
       const { error } = await supabase
         .from("profiles")
         .upsert(payload, { onConflict: "id" });
@@ -231,6 +234,21 @@ export default function ProfileForm({
         console.error("[profile] upsert error:", error);
         showToast(error.message || "Kunde inte spara profilen.", "error");
         return;
+      }
+
+      if (previousTeamId !== newTeamId) {
+        if (previousTeamId) {
+          await supabase.from("team_member_roles").delete().eq("team_id", previousTeamId).eq("user_id", user.id);
+        }
+        if (newTeamId) {
+          const { data: team } = await supabase.from("teams").select("created_by").eq("id", newTeamId).single();
+          if (team?.created_by !== user.id) {
+            await supabase.from("team_member_roles").upsert(
+              { team_id: newTeamId, user_id: user.id, role: "viewer" },
+              { onConflict: "team_id,user_id" }
+            );
+          }
+        }
       }
 
       setAvatarFile(null);
@@ -543,6 +561,7 @@ export default function ProfileForm({
             </option>
           ))}
         </select>
+        <p className="text-xs text-stone-500">Du kan bara vara med i ett lag.</p>
         {teams.length === 0 && (
           <p className="text-xs text-retro-muted">
             <Link href="/teams" className="text-retro-accent hover:underline">Lägg till lag</Link> först om du vill välja ett.
