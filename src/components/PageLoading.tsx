@@ -27,7 +27,7 @@ export default function PageLoading({ variant, title }: Props) {
         <div className="absolute inset-0 rounded-full border-4 border-retro-accent/30 border-t-retro-accent animate-spin" />
         <div className="relative z-10 h-10 w-10 md:h-16 md:w-16 lg:h-20 lg:w-20 animate-spin">
           <Image
-            src="/logo/disclogo.png"
+            src="/logo/disco.png"
             alt=""
             width={80}
             height={80}

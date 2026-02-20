@@ -7,11 +7,11 @@ import TopbarWrapper from "../components/Topbar/TopbarWrapper.server";
 import Providers from "../components/Providers";
 
 export const metadata: Metadata = {
-  title: "Discgolf App",
+  title: "Discgo",
   description: "Samla scores och tävla med vänner!",
   icons: {
-    icon: "/logo/logo.png",
-    apple: "/logo/logo.png",
+    icon: "/logo/disco.png",
+    apple: "/logo/disco.png",
   },
 };
 
