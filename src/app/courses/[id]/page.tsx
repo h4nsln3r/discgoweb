@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { Database } from "@/types/supabase";
 import Link from "next/link";
+import { MapPinIcon, PencilSquareIcon, PlusCircleIcon, HashtagIcon } from "@heroicons/react/24/outline";
 import BackLink from "@/components/Buttons/BackLink";
 import ImageGallery from "@/components/ImageGallery";
 import ScoresTable from "@/components/Tables/ScoresTable";
@@ -35,11 +36,29 @@ export default async function CourseDetailPage({
     .select("competition_id, competitions ( id, title, start_date, end_date )")
     .eq("course_id", id);
 
-  // Hämta alla scores
+  // Hämta alla scores (med id för hole-in-one-koppling)
   const { data: allScores } = await supabase
     .from("scores")
-    .select("score, created_at, profiles ( alias )")
+    .select("id, score, created_at, profiles ( alias )")
     .eq("course_id", id);
+
+  const scoreIds = (allScores ?? []).map((s) => (s as { id: string }).id);
+  let holeInOnes: { hole_number: number; alias: string }[] = [];
+  if (scoreIds.length > 0) {
+    const { data: aces } = await supabase
+      .from("score_holes")
+      .select("score_id, hole_number")
+      .in("score_id", scoreIds)
+      .eq("throws", 1);
+    const scoreById = new Map((allScores ?? []).map((s) => [(s as { id: string }).id, s]));
+    holeInOnes = (aces ?? []).map((a) => {
+      const score = scoreById.get((a as { score_id: string }).score_id) as { profiles: { alias: string | null } | null } | undefined;
+      return {
+        hole_number: (a as { hole_number: number }).hole_number,
+        alias: score?.profiles?.alias ?? "Okänd",
+      };
+    });
+  }
 
   // Hämta hål (par + längd) om banan har hålinfo
   const { data: holes } = await supabase
@@ -64,8 +83,15 @@ export default async function CourseDetailPage({
 
   return (
     <div className="max-w-5xl mx-auto p-6 space-y-8">
-      <div>
+      <div className="flex items-center justify-between gap-4">
         <BackLink href="/courses">Tillbaka till banor</BackLink>
+        <Link
+          href={`/results/new?course_id=${course.id}`}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-retro-accent text-stone-100 text-sm font-medium hover:bg-retro-accent-hover transition"
+        >
+          <PlusCircleIcon className="w-5 h-5 shrink-0" />
+          Lägg till resultat
+        </Link>
       </div>
       {allImages.length > 0 && <ImageGallery images={allImages} />}
 
@@ -98,35 +124,33 @@ export default async function CourseDetailPage({
               </ul>
             </div>
           )}
+
+          {holeInOnes.length > 0 && (
+            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4">
+              <h2 className="font-semibold text-lg mb-2 text-amber-200">⛳ Hole in one</h2>
+              <ul className="space-y-1 text-stone-200">
+                {holeInOnes.map((ace, idx) => (
+                  <li key={idx}>
+                    Hål {ace.hole_number} – {ace.alias}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
 
         <div className="space-y-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-3xl font-bold text-stone-100">{course.name}</h1>
-            <Link
-              href={`/results/new?course_id=${course.id}`}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-retro-accent text-stone-100 text-sm font-medium hover:bg-retro-accent-hover transition"
-            >
-              🥏 Lägg till resultat
-            </Link>
-            <Link
-              href={`/courses/${course.id}/edit`}
-              className="text-sm text-retro-accent hover:underline"
-            >
-              ✏️ Redigera bana
-            </Link>
-          </div>
+          <h1 className="text-3xl font-bold text-stone-100">{course.name}</h1>
 
-          {(course.city || course.country) && (
-            <p className="text-stone-400">
+          {(course.city || course.country || course.location) && (
+            <p className="text-stone-400 flex items-center gap-2">
+              <MapPinIcon className="w-4 h-4 text-retro-muted shrink-0" aria-hidden />
               {course.city && <span>{course.city}</span>}
               {course.city && course.country && <span>, </span>}
               {course.country && <span>{course.country}</span>}
+              {(course.city || course.country) && course.location && <span> · </span>}
+              {course.location && <span className="text-retro-muted text-sm">{course.location}</span>}
             </p>
-          )}
-
-          {course.location && (
-            <p className="text-retro-muted text-sm">{course.location}</p>
           )}
 
           {course.description && (
@@ -138,7 +162,10 @@ export default async function CourseDetailPage({
 
           {holes && holes.length > 0 && (
             <div className="border-t border-retro-border pt-4">
-              <h2 className="text-xl font-semibold mb-3 text-stone-100">Hål</h2>
+              <h2 className="text-xl font-semibold mb-3 text-stone-100 flex items-center gap-2">
+                <HashtagIcon className="w-5 h-5 shrink-0 text-retro-muted" aria-hidden />
+                Hål
+              </h2>
               <div className="rounded-xl border border-retro-border bg-retro-card/50 overflow-hidden">
                 <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-9 gap-px bg-retro-border">
                   {holes.map((h) => (
@@ -163,6 +190,15 @@ export default async function CourseDetailPage({
               </div>
             </div>
           )}
+          <p className="pt-2">
+            <Link
+              href={`/courses/${course.id}/edit`}
+              className="inline-flex items-center gap-1.5 text-sm text-amber-400 hover:text-amber-300 transition"
+            >
+              <PencilSquareIcon className="w-4 h-4 shrink-0" aria-hidden />
+              Redigera bana
+            </Link>
+          </p>
         </div>
       </div>
 

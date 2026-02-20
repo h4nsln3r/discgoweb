@@ -2,9 +2,15 @@
 
 import { useEffect, useMemo, useState } from "react";
 import AddScoreForm from "@/components/Forms/AddScoreForm";
-import CourseScores, { CourseScore } from "@/components/CourseScores";
 import Link from "next/link";
 import PageLoading from "@/components/PageLoading";
+
+export type Top3Score = {
+  id: string;
+  score: number;
+  date_played: string | null;
+  profiles: { alias: string | null } | null;
+};
 
 export type Course = {
   id: string;
@@ -13,7 +19,9 @@ export type Course = {
   main_image_url?: string;
   latitude?: number;
   longitude?: number;
-  scores?: CourseScore[];
+  hole_count?: number;
+  top3?: Top3Score[];
+  scores?: { id: string; score: number; date_played: string | null; profiles: { alias: string | null } | null }[];
 };
 
 const SORT_OPTIONS = [
@@ -85,56 +93,78 @@ export default function CourseList({ refresh }: { refresh?: boolean }) {
         </select>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-      {sortedCourses.map((course) => (
-        <div
-          key={course.id}
-          className="rounded-xl border border-retro-border bg-retro-surface shadow-sm overflow-hidden hover:border-retro-muted/50 transition"
-        >
-          {course.main_image_url ? (
-            // eslint-disable-next-line @next/next/no-img-element -- external image URL
-            <img
-              src={course.main_image_url}
-              alt={course.name}
-              className="w-full h-40 object-cover"
-            />
-          ) : (
-            <div className="w-full h-40 bg-retro-card flex items-center justify-center text-retro-muted text-sm">
-              Ingen bild
-            </div>
-          )}
-          <div className="p-4">
-            <h3 className="text-lg font-semibold text-stone-100">{course.name}</h3>
-            <p className="text-sm text-stone-400 mt-1">{course.location || "—"}</p>
-            {course.latitude && course.longitude && (
-              <p className="text-xs text-retro-muted mt-1">
-                📍 {course.latitude}, {course.longitude}
-              </p>
-            )}
-            <Link
-              href={`/courses/${course.id}`}
-              className="inline-block mt-2 text-sm text-retro-accent font-medium hover:underline"
-            >
-              Visa detaljer
-            </Link>
-            <button
-              onClick={() => toggleForm(course.id)}
-              className="mt-3 block w-full text-left text-sm text-retro-accent font-medium hover:underline"
-            >
-              {openForms[course.id] ? "Stäng formulär" : "Lägg till resultat"}
-            </button>
-            {openForms[course.id] && (
-              <div className="mt-3">
-                <AddScoreForm
-                  courseId={course.id}
-                  onClose={() => toggleForm(course.id)}
+      <div className="grid gap-6 md:grid-cols-2">
+        {sortedCourses.map((course) => (
+          <article
+            key={course.id}
+            className="rounded-2xl border border-retro-border bg-retro-surface shadow-md overflow-hidden hover:border-retro-muted/50 hover:shadow-lg transition-all flex flex-col"
+          >
+            <div className="relative aspect-[16/10] bg-retro-card shrink-0">
+              {course.main_image_url ? (
+                // eslint-disable-next-line @next/next/no-img-element -- external image URL
+                <img
+                  src={course.main_image_url}
+                  alt={course.name}
+                  className="w-full h-full object-cover"
                 />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-retro-muted text-sm">
+                  Ingen bild
+                </div>
+              )}
+              <div className="absolute bottom-2 left-2 rounded-lg bg-black/60 px-2 py-1 text-xs font-medium text-stone-200">
+                {course.hole_count ? `${course.hole_count} hål` : "—"}
               </div>
-            )}
-            <CourseScores scores={course.scores ?? []} />
-          </div>
-        </div>
-      ))}
+            </div>
+            <div className="p-5 flex flex-col flex-1">
+              <h3 className="text-xl font-semibold text-stone-100">{course.name}</h3>
+              <p className="text-sm text-stone-400 mt-0.5">{course.location || "—"}</p>
+
+              {course.top3 && course.top3.length > 0 && (
+                <div className="mt-4 rounded-xl bg-retro-card/60 border border-retro-border p-3">
+                  <h4 className="text-xs font-semibold text-retro-muted uppercase tracking-wider mb-2">
+                    🏆 Topp 3
+                  </h4>
+                  <ul className="space-y-1.5 text-sm text-stone-200">
+                    {course.top3.map((s, idx) => (
+                      <li key={s.id} className="flex justify-between items-center">
+                        <span className="flex items-center gap-2">
+                          <span className="text-retro-muted w-5">{idx + 1}.</span>
+                          {s.profiles?.alias ?? "Okänd"}
+                        </span>
+                        <span className="font-medium text-stone-100">{s.score} kast</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Link
+                  href={`/courses/${course.id}`}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-retro-accent text-stone-100 text-sm font-medium hover:bg-retro-accent-hover transition"
+                >
+                  Visa detaljer
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => toggleForm(course.id)}
+                  className="inline-flex items-center px-4 py-2 rounded-xl border border-retro-border text-stone-300 text-sm font-medium hover:bg-retro-card hover:text-stone-100 transition"
+                >
+                  {openForms[course.id] ? "Stäng" : "Lägg till resultat"}
+                </button>
+              </div>
+              {openForms[course.id] && (
+                <div className="mt-4 pt-4 border-t border-retro-border">
+                  <AddScoreForm
+                    courseId={course.id}
+                    onClose={() => toggleForm(course.id)}
+                  />
+                </div>
+              )}
+            </div>
+          </article>
+        ))}
       </div>
     </div>
   );

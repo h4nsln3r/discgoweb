@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, Fragment } from "react";
 import {
   ColumnDef,
   flexRender,
@@ -15,6 +15,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ChevronDownIcon,
+  ChevronUpIcon,
   ArrowRightIcon,
   MapPinIcon,
   CalendarDaysIcon,
@@ -22,6 +23,7 @@ import {
   TrophyIcon,
   FlagIcon,
   PencilSquareIcon,
+  HashtagIcon,
 } from "@heroicons/react/24/outline";
 import PageLoading from "@/components/PageLoading";
 
@@ -47,8 +49,35 @@ export default function ResultsPage() {
   const [globalFilter, setGlobalFilter] = useState("");
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [expandedHolesId, setExpandedHolesId] = useState<string | null>(null);
+  const [holesByScoreId, setHolesByScoreId] = useState<
+    Record<string, { hole_number: number; throws: number }[] | null>
+  >({});
   const [onlyCompetitions, setOnlyCompetitions] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  const fetchHolesForScore = (scoreId: string) => {
+    if (holesByScoreId[scoreId] !== undefined) return;
+    setHolesByScoreId((prev) => ({ ...prev, [scoreId]: null }));
+    fetch(`/api/score-holes?score_id=${encodeURIComponent(scoreId)}`)
+      .then((r) => r.json())
+      .then((data) =>
+        setHolesByScoreId((prev) => ({
+          ...prev,
+          [scoreId]: Array.isArray(data) ? data : [],
+        }))
+      )
+      .catch(() =>
+        setHolesByScoreId((prev) => ({ ...prev, [scoreId]: [] }))
+      );
+  };
+
+  const toggleHoles = (scoreId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setExpandedHolesId((prev) => (prev === scoreId ? null : scoreId));
+    if (expandedHolesId !== scoreId) fetchHolesForScore(scoreId);
+  };
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -83,7 +112,6 @@ export default function ResultsPage() {
       try {
         const res = await fetch("/api/get-all-scores");
         const json = await res.json();
-        console.log("json", json);
         setData(json);
       } catch (error) {
         console.error("Error fetching scores:", error);
@@ -193,11 +221,39 @@ export default function ResultsPage() {
           <a
             href={`/competitions/${comp.competition_id}`}
             className="text-retro-accent hover:underline"
+            onClick={(e) => e.stopPropagation()}
           >
             {comp.competitions.title}
           </a>
         ) : (
           "-"
+        );
+      },
+    },
+    {
+      id: "holes",
+      header: () => (
+        <span className="inline-flex items-center gap-1">
+          <HashtagIcon className="w-4 h-4 shrink-0" aria-hidden /> Hål
+        </span>
+      ),
+      cell: (info) => {
+        const row = info.row.original;
+        const isExpanded = expandedHolesId === row.id;
+        return (
+          <button
+            type="button"
+            onClick={(e) => toggleHoles(row.id, e)}
+            className="p-1.5 rounded-lg text-retro-accent hover:bg-retro-card transition"
+            title={isExpanded ? "Dölj hål" : "Visa hål"}
+            aria-label={isExpanded ? "Dölj hål" : "Visa hål"}
+          >
+            {isExpanded ? (
+              <ChevronUpIcon className="w-4 h-4" />
+            ) : (
+              <ChevronDownIcon className="w-4 h-4" />
+            )}
+          </button>
         );
       },
     },
@@ -466,6 +522,50 @@ export default function ResultsPage() {
                         {new Date(score.date_played).toLocaleDateString("sv-SE")}
                       </dd>
                     </dl>
+                    <div className="border-t border-retro-border pt-3">
+                      <button
+                        type="button"
+                        onClick={(e) => toggleHoles(score.id, e)}
+                        className="inline-flex items-center gap-2 text-sm text-retro-accent hover:underline"
+                      >
+                        {expandedHolesId === score.id ? (
+                          <ChevronUpIcon className="w-4 h-4" />
+                        ) : (
+                          <ChevronDownIcon className="w-4 h-4" />
+                        )}
+                        <HashtagIcon className="w-4 h-4" />
+                        {expandedHolesId === score.id ? "Dölj hål" : "Visa hål"}
+                      </button>
+                      {expandedHolesId === score.id && (
+                        <div className="mt-2">
+                          {holesByScoreId[score.id] === undefined ? (
+                            <p className="text-sm text-stone-400">Laddar hål…</p>
+                          ) : holesByScoreId[score.id] === null ? (
+                            <p className="text-sm text-stone-400">Laddar hål…</p>
+                          ) : (holesByScoreId[score.id]?.length ?? 0) === 0 ? (
+                            <p className="text-sm text-stone-400">
+                              Ingen hålfördelning sparad.
+                            </p>
+                          ) : (
+                            <div className="flex flex-wrap gap-2">
+                              {[...(holesByScoreId[score.id] ?? [])]
+                                .sort((a, b) => a.hole_number - b.hole_number)
+                                .map((h) => (
+                                  <span
+                                    key={h.hole_number}
+                                    className="inline-flex items-center gap-1 rounded-lg bg-retro-surface border border-retro-border px-2.5 py-1 text-sm text-stone-200"
+                                  >
+                                    <span className="text-retro-muted">
+                                      H{h.hole_number}
+                                    </span>
+                                    <span className="font-medium">{h.throws}</span>
+                                  </span>
+                                ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                     <div className="flex flex-wrap gap-2">
                       <Link
                         href={`/results/${score.id}`}
@@ -520,32 +620,76 @@ export default function ResultsPage() {
             ))}
           </thead>
           <tbody>
-            {table.getRowModel().rows.map((row, index) => (
-              <tr
-                key={row.id}
-                className={`${
-                  index % 2 === 0 ? "bg-retro-surface" : "bg-retro-card"
-                } hover:bg-retro-border/30 cursor-pointer focus:outline-none focus:ring-2 focus:ring-retro-accent border-b border-retro-border last:border-b-0`}
-                onClick={() => handleRowClick(row.original.id)}
-                onKeyDown={(e) => handleRowKeyDown(e, row.original.id)}
-                tabIndex={0}
-                role="button"
-                aria-label={`Öppna resultat ${row.original.id}`}
-              >
-                {row.getVisibleCells().map((cell) => (
-                  <td
-                    key={cell.id}
-                    className="px-4 py-2 text-stone-200"
-                    onClick={(e) => {
-                      const target = e.target as HTMLElement;
-                      if (target.closest("a,button")) e.stopPropagation();
-                    }}
+            {table.getRowModel().rows.map((row, index) => {
+              const score = row.original;
+              const isHolesExpanded = expandedHolesId === score.id;
+              const rowHoles = holesByScoreId[score.id];
+              return (
+                <Fragment key={row.id}>
+                  <tr
+                    className={`${
+                      index % 2 === 0 ? "bg-retro-surface" : "bg-retro-card"
+                    } hover:bg-retro-border/30 cursor-pointer focus:outline-none focus:ring-2 focus:ring-retro-accent border-b border-retro-border`}
+                    onClick={() => handleRowClick(score.id)}
+                    onKeyDown={(e) => handleRowKeyDown(e, score.id)}
+                    tabIndex={0}
+                    role="button"
+                    aria-label={`Öppna resultat ${score.id}`}
                   >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                ))}
-              </tr>
-            ))}
+                    {row.getVisibleCells().map((cell) => (
+                      <td
+                        key={cell.id}
+                        className="px-4 py-2 text-stone-200"
+                        onClick={(e) => {
+                          const target = e.target as HTMLElement;
+                          if (target.closest("a, button")) e.stopPropagation();
+                        }}
+                      >
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </td>
+                    ))}
+                  </tr>
+                  {isHolesExpanded && (
+                    <tr
+                      key={`${row.id}-holes`}
+                      className="bg-retro-card/50 border-b border-retro-border"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <td
+                        colSpan={row.getVisibleCells().length}
+                        className="px-4 py-3"
+                      >
+                        {rowHoles === undefined ? (
+                          <p className="text-sm text-stone-400">Laddar hål…</p>
+                        ) : rowHoles === null ? (
+                          <p className="text-sm text-stone-400">Laddar hål…</p>
+                        ) : rowHoles.length === 0 ? (
+                          <p className="text-sm text-stone-400">
+                            Ingen hålfördelning sparad.
+                          </p>
+                        ) : (
+                          <div className="flex flex-wrap gap-2">
+                            {[...rowHoles]
+                              .sort((a, b) => a.hole_number - b.hole_number)
+                              .map((h) => (
+                                <span
+                                  key={h.hole_number}
+                                  className="inline-flex items-center gap-1 rounded-lg bg-retro-surface border border-retro-border px-2.5 py-1 text-sm text-stone-200"
+                                >
+                                  <span className="text-retro-muted">
+                                    H{h.hole_number}
+                                  </span>
+                                  <span className="font-medium">{h.throws}</span>
+                                </span>
+                              ))}
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
+              );
+            })}
           </tbody>
         </table>
       </div>

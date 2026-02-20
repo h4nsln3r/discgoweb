@@ -13,6 +13,7 @@ import {
   FlagIcon,
   PencilSquareIcon,
   UserGroupIcon,
+  HashtagIcon,
 } from "@heroicons/react/24/outline";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import type { Database } from "@/types/supabase";
@@ -70,6 +71,7 @@ export default function ScoreDetailPage() {
 
   const [loading, setLoading] = useState(true);
   const [item, setItem] = useState<ScoreDetail | null>(null);
+  const [holes, setHoles] = useState<{ hole_number: number; throws: number }[] | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -82,6 +84,7 @@ export default function ScoreDetailPage() {
 
   useEffect(() => {
     const load = async () => {
+      if (!id) return;
       setLoading(true);
       const { data, error } = await supabase
         .from("scores")
@@ -106,11 +109,27 @@ export default function ScoreDetailPage() {
         console.error("[SCORE DETAIL ERROR]", error);
       }
       setItem((data ?? null) as unknown as ScoreDetail | null);
+      setHoles(null);
       setLoading(false);
     };
 
-    if (id) load();
+    load();
   }, [id, supabase]);
+
+  useEffect(() => {
+    if (!item?.id) return;
+    let cancelled = false;
+    fetch(`/api/score-holes?score_id=${encodeURIComponent(item.id)}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (!cancelled && Array.isArray(data)) setHoles(data);
+        else if (!cancelled) setHoles([]);
+      })
+      .catch(() => {
+        if (!cancelled) setHoles([]);
+      });
+    return () => { cancelled = true; };
+  }, [item?.id]);
 
   if (loading) {
     return (
@@ -245,6 +264,33 @@ export default function ScoreDetailPage() {
             <p className="text-stone-400">—</p>
           )}
         </div>
+      </div>
+
+      {/* Hål – visas alltid; innehåll beroende på om det finns sparad hålfördelning */}
+      <div className="rounded-xl border border-retro-border p-4 bg-retro-surface">
+        <h2 className="flex items-center gap-2 text-lg font-semibold text-stone-100 mb-3">
+          <HashtagIcon className="w-5 h-5 text-retro-muted shrink-0" aria-hidden />
+          Hål
+        </h2>
+        {holes === null ? (
+          <p className="text-stone-400 text-sm">Laddar hål…</p>
+        ) : holes.length === 0 ? (
+          <p className="text-stone-400 text-sm">Ingen hålfördelning sparad för detta resultat.</p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {[...holes]
+              .sort((a, b) => a.hole_number - b.hole_number)
+              .map((h) => (
+                <span
+                  key={h.hole_number}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-retro-card border border-retro-border px-3 py-1.5 text-sm text-stone-200"
+                >
+                  <span className="text-retro-muted font-medium">H{h.hole_number}</span>
+                  <span className="font-semibold text-stone-100">{h.throws}</span>
+                </span>
+              ))}
+          </div>
+        )}
       </div>
 
       {currentUserId != null && item.user_id === currentUserId && (

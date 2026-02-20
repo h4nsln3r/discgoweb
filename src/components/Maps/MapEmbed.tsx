@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { MapIcon, ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline";
 
 type CourseData = {
   name: string;
@@ -15,56 +16,46 @@ type CourseData = {
 };
 
 export default function MapEmbed({ course }: { course: CourseData }) {
-  const [satellite, setSatellite] = useState(true); // Satellit som default
-  const zoomLevel = 18; // Mer inzoomad vy
+  const [satellite, setSatellite] = useState(true);
+  const zoomLevel = 18;
 
-  // Karta: lat/long eller fallback till namn+adress
   const mapSrc =
     course.latitude && course.longitude
-      ? `https://www.google.com/maps?q=${course.latitude},${
-          course.longitude
-        }&t=${satellite ? "k" : ""}&hl=sv&z=${zoomLevel}&output=embed`
-      : `https://www.google.com/maps?q=${encodeURIComponent(
-          course.name + " " + course.location
-        )}&t=${satellite ? "k" : ""}&hl=sv&z=${zoomLevel}&output=embed`;
+      ? `https://www.google.com/maps?q=${course.latitude},${course.longitude}&t=${satellite ? "k" : ""}&hl=sv&z=${zoomLevel}&output=embed`
+      : `https://www.google.com/maps?q=${encodeURIComponent(course.name + " " + course.location)}&t=${satellite ? "k" : ""}&hl=sv&z=${zoomLevel}&output=embed`;
 
-  // Länk till vägbeskrivning
   const directionsHref =
     course.latitude && course.longitude
       ? `https://www.google.com/maps/dir/?api=1&destination=${course.latitude},${course.longitude}`
-      : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
-          course.name + " " + course.location
-        )}`;
+      : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(course.name + " " + course.location)}`;
 
   return (
     <>
-      {/* Karta */}
       <iframe
-        title="Google Maps"
+        title="Karta"
         width="100%"
         height="300"
-        className="rounded-lg shadow"
+        className="rounded-xl border border-retro-border shadow"
         src={mapSrc}
         allowFullScreen
-      ></iframe>
-
-      {/* Toggle mellan kartvy/satellit */}
-      <div className="flex gap-2">
+      />
+      <div className="mt-3 flex flex-wrap gap-2">
         <button
+          type="button"
           onClick={() => setSatellite(!satellite)}
-          className="flex-1 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+          className="inline-flex items-center gap-2 rounded-xl border border-retro-border bg-retro-surface px-4 py-2.5 text-sm font-medium text-stone-200 hover:bg-retro-card hover:text-stone-100 transition"
         >
-          Byt till {satellite ? "karta" : "satellit"}
+          <MapIcon className="w-4 h-4 shrink-0" />
+          {satellite ? "Karta" : "Satellit"}
         </button>
-
-        {/* Vägbeskrivningsknapp */}
         <a
           href={directionsHref}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex-1 text-center bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+          className="inline-flex items-center gap-2 rounded-xl border border-retro-border bg-retro-surface px-4 py-2.5 text-sm font-medium text-stone-200 hover:bg-retro-card hover:text-stone-100 transition"
         >
-          Få vägbeskrivning
+          Vägbeskrivning
+          <ArrowTopRightOnSquareIcon className="w-4 h-4 shrink-0" />
         </a>
       </div>
     </>

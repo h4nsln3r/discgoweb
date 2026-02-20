@@ -1,20 +1,24 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, Fragment } from "react";
+import { TrophyIcon, ChevronDownIcon, ChevronUpIcon, UserIcon, CalendarDaysIcon, HashtagIcon } from "@heroicons/react/24/outline";
 
-function ScoresTable({
-  scores,
-}: {
-  scores: {
-    score: number;
-    created_at: string;
-    profiles: { alias: string | null } | null;
-  }[];
-}) {
-  const [sortBy, setSortBy] = useState<"alias" | "score" | "created_at">(
-    "score"
-  );
+type ScoreRow = {
+  id?: string;
+  score: number;
+  created_at: string;
+  profiles: { alias: string | null } | null;
+};
+
+type HoleRow = { hole_number: number; throws: number };
+
+function ScoresTable({ scores }: { scores: ScoreRow[] }) {
+  const [sortBy, setSortBy] = useState<"alias" | "score" | "created_at">("score");
   const [sortAsc, setSortAsc] = useState(true);
   const [filter, setFilter] = useState<string>("");
+  const [recordHolesOpen, setRecordHolesOpen] = useState(false);
+  const [recordHoles, setRecordHoles] = useState<HoleRow[] | null>(null);
+  const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
+  const [holesByScoreId, setHolesByScoreId] = useState<Record<string, HoleRow[] | null>>({});
 
   const uniqueAliases = Array.from(
     new Set(scores.map((s) => s.profiles?.alias ?? "Okänd"))
@@ -22,11 +26,9 @@ function ScoresTable({
 
   const sortedAndFiltered = useMemo(() => {
     let result = scores;
-
     if (filter) {
       result = result.filter((s) => (s.profiles?.alias ?? "Okänd") === filter);
     }
-
     result = [...result].sort((a, b) => {
       let valA, valB;
       if (sortBy === "alias") {
@@ -43,22 +45,97 @@ function ScoresTable({
       if (valA > valB) return sortAsc ? 1 : -1;
       return 0;
     });
-
     return result;
   }, [scores, sortBy, sortAsc, filter]);
 
-  const record = scores.reduce((best, current) => {
-    return current.score < best.score ? current : best;
-  }, scores[0]);
+  const record =
+    scores.length > 0
+      ? scores.reduce((best, current) => (current.score < best.score ? current : best), scores[0])
+      : null;
+
+  useEffect(() => {
+    if (!recordHolesOpen || !record?.id) return;
+    let cancelled = false;
+    fetch(`/api/score-holes?score_id=${encodeURIComponent(record.id)}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (!cancelled && Array.isArray(data)) setRecordHoles(data);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [recordHolesOpen, record?.id]);
+
+  const fetchHolesForRow = (scoreId: string) => {
+    if (holesByScoreId[scoreId] !== undefined) return;
+    setHolesByScoreId((prev) => ({ ...prev, [scoreId]: null }));
+    fetch(`/api/score-holes?score_id=${encodeURIComponent(scoreId)}`)
+      .then((r) => r.json())
+      .then((data) => {
+        setHolesByScoreId((prev) => ({
+          ...prev,
+          [scoreId]: Array.isArray(data) ? data : [],
+        }));
+      })
+      .catch(() => setHolesByScoreId((prev) => ({ ...prev, [scoreId]: [] })));
+  };
+
+  const toggleRowHoles = (scoreId: string) => {
+    setExpandedRowId((prev) => (prev === scoreId ? null : scoreId));
+    if (expandedRowId !== scoreId) fetchHolesForRow(scoreId);
+  };
 
   return (
     <div className="space-y-4">
-      <div className="text-retro-accent font-medium">
-        🥇 Banrekord: {record.score} kast – {record.profiles?.alias ?? "Okänd"}{" "}
-        ({formatDate(record.created_at)})
+      {record && (
+      <div className="rounded-xl border border-retro-border bg-retro-surface p-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <TrophyIcon className="w-5 h-5 text-amber-400 shrink-0" aria-hidden />
+          <span className="text-stone-200 font-medium">
+            Banrekord: <span className="text-retro-accent font-semibold">{record.score} kast</span>
+            {" – "}
+            <span className="text-stone-100">{record.profiles?.alias ?? "Okänd"}</span>
+            <span className="text-stone-400 text-sm ml-1">({formatDate(record.created_at)})</span>
+          </span>
+          {record.id && (
+            <button
+              type="button"
+              onClick={() => setRecordHolesOpen((o) => !o)}
+              className="ml-auto p-1.5 rounded-lg text-retro-accent hover:bg-retro-card transition"
+              title={recordHolesOpen ? "Dölj hål" : "Visa hål"}
+              aria-label={recordHolesOpen ? "Dölj hål" : "Visa hål"}
+            >
+              {recordHolesOpen ? <ChevronUpIcon className="w-5 h-5" /> : <ChevronDownIcon className="w-5 h-5" />}
+            </button>
+          )}
+        </div>
+        {recordHolesOpen && record?.id && (
+          <div className="mt-3 pt-3 border-t border-retro-border">
+            {recordHoles === null ? (
+              <p className="text-sm text-stone-400">Laddar hål…</p>
+            ) : recordHoles.length === 0 ? (
+              <p className="text-sm text-stone-400">Ingen hålfördelning sparad.</p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {recordHoles
+                  .sort((a, b) => a.hole_number - b.hole_number)
+                  .map((h) => (
+                    <span
+                      key={h.hole_number}
+                      className="inline-flex items-center gap-1 rounded-lg bg-retro-card px-2.5 py-1 text-sm text-stone-200"
+                    >
+                      <span className="text-retro-muted">H{h.hole_number}</span>
+                      <span className="font-medium">{h.throws}</span>
+                    </span>
+                  ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
+      )}
 
       <div className="flex items-center gap-2">
+        <UserIcon className="w-4 h-4 text-stone-400 shrink-0" aria-hidden />
         <label htmlFor="filter" className="text-sm text-stone-300">
           Filtrera på spelare:
         </label>
@@ -85,7 +162,9 @@ function ScoresTable({
                 className="px-4 py-2 border-b border-retro-border cursor-pointer text-stone-200"
                 onClick={() => handleSort("alias")}
               >
-                Spelare {sortBy === "alias" ? (sortAsc ? "▲" : "▼") : ""}
+                <span className="inline-flex items-center gap-1">
+                  <UserIcon className="w-4 h-4 shrink-0" /> Spelare {sortBy === "alias" ? (sortAsc ? "▲" : "▼") : ""}
+                </span>
               </th>
               <th
                 className="px-4 py-2 border-b border-retro-border cursor-pointer text-stone-200"
@@ -97,22 +176,79 @@ function ScoresTable({
                 className="px-4 py-2 border-b border-retro-border cursor-pointer text-stone-200"
                 onClick={() => handleSort("created_at")}
               >
-                Datum {sortBy === "created_at" ? (sortAsc ? "▲" : "▼") : ""}
+                <span className="inline-flex items-center gap-1">
+                  <CalendarDaysIcon className="w-4 h-4 shrink-0" /> Datum {sortBy === "created_at" ? (sortAsc ? "▲" : "▼") : ""}
+                </span>
+              </th>
+              <th className="px-4 py-2 border-b border-retro-border text-stone-400 text-left w-20">
+                <span className="inline-flex items-center gap-1">
+                  <HashtagIcon className="w-4 h-4 shrink-0" /> Hål
+                </span>
               </th>
             </tr>
           </thead>
           <tbody>
-            {sortedAndFiltered.map((s, idx) => (
-              <tr key={idx} className="hover:bg-retro-card border-b border-retro-border last:border-b-0">
-                <td className="px-4 py-2 text-stone-200">
-                  {s.profiles?.alias ?? "Okänd"}
-                </td>
-                <td className="px-4 py-2 text-stone-200">{s.score}</td>
-                <td className="px-4 py-2 text-stone-200">
-                  {formatDate(s.created_at)}
-                </td>
-              </tr>
-            ))}
+            {sortedAndFiltered.map((s, idx) => {
+              const scoreId = s.id ?? `idx-${idx}`;
+              const hasId = Boolean(s.id);
+              const isExpanded = expandedRowId === scoreId;
+              const rowHoles = hasId ? holesByScoreId[scoreId] : undefined;
+              return (
+                <Fragment key={scoreId}>
+                  <tr className="hover:bg-retro-card border-b border-retro-border last:border-b-0">
+                    <td className="px-4 py-2 text-stone-200">
+                      {s.profiles?.alias ?? "Okänd"}
+                    </td>
+                    <td className="px-4 py-2 text-stone-200">{s.score}</td>
+                    <td className="px-4 py-2 text-stone-200">
+                      {formatDate(s.created_at)}
+                    </td>
+                    <td className="px-4 py-2 text-stone-400">
+                      {hasId ? (
+                        <button
+                          type="button"
+                          onClick={() => toggleRowHoles(scoreId)}
+                          className="p-1.5 rounded-lg text-retro-accent hover:bg-retro-card transition"
+                          title={isExpanded ? "Dölj hål" : "Visa hål"}
+                          aria-label={isExpanded ? "Dölj hål" : "Visa hål"}
+                        >
+                          {isExpanded ? <ChevronUpIcon className="w-4 h-4" /> : <ChevronDownIcon className="w-4 h-4" />}
+                        </button>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                  </tr>
+                  {hasId && isExpanded && (
+                    <tr key={`${scoreId}-holes`} className="bg-retro-card/50 border-b border-retro-border">
+                      <td colSpan={4} className="px-4 py-3">
+                        {rowHoles === undefined ? (
+                          <p className="text-sm text-stone-400">Laddar hål…</p>
+                        ) : rowHoles === null ? (
+                          <p className="text-sm text-stone-400">Laddar hål…</p>
+                        ) : rowHoles.length === 0 ? (
+                          <p className="text-sm text-stone-400">Ingen hålfördelning sparad.</p>
+                        ) : (
+                          <div className="flex flex-wrap gap-2">
+                            {[...rowHoles]
+                              .sort((a, b) => a.hole_number - b.hole_number)
+                              .map((h) => (
+                                <span
+                                  key={h.hole_number}
+                                  className="inline-flex items-center gap-1 rounded-lg bg-retro-surface border border-retro-border px-2.5 py-1 text-sm text-stone-200"
+                                >
+                                  <span className="text-retro-muted">H{h.hole_number}</span>
+                                  <span className="font-medium">{h.throws}</span>
+                                </span>
+                              ))}
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
+              );
+            })}
           </tbody>
         </table>
       </div>

@@ -119,10 +119,42 @@ export default function EditScorePage() {
     }
   };
 
-  if (loading) {
+  if (loading || !userChecked) {
     return (
-      <main className="p-4 md:p-6 max-w-3xl mx-auto">
-        <div className="text-stone-400 animate-pulse">Laddar resultat...</div>
+      <main className="p-4 md:p-6 max-w-3xl mx-auto space-y-6">
+        <div className="h-5 w-48 rounded bg-stone-600/50 animate-pulse" aria-hidden />
+        <div className="h-8 w-56 rounded bg-stone-600/50 animate-pulse" aria-hidden />
+        <div className="space-y-4 rounded-xl border border-retro-border bg-retro-surface p-4 md:p-6">
+          <div className="space-y-2">
+            <div className="h-4 w-24 rounded bg-stone-600/40 animate-pulse" aria-hidden />
+            <div className="h-10 w-full rounded-lg bg-stone-600/30 animate-pulse" aria-hidden />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <div className="h-4 w-20 rounded bg-stone-600/40 animate-pulse" aria-hidden />
+              <div className="h-10 w-full rounded-lg bg-stone-600/30 animate-pulse" aria-hidden />
+            </div>
+            <div className="space-y-2">
+              <div className="h-4 w-16 rounded bg-stone-600/40 animate-pulse" aria-hidden />
+              <div className="h-10 w-full rounded-lg bg-stone-600/30 animate-pulse" aria-hidden />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <div className="h-4 w-14 rounded bg-stone-600/40 animate-pulse" aria-hidden />
+            <div className="h-10 w-full rounded-lg bg-stone-600/30 animate-pulse" aria-hidden />
+          </div>
+          <div className="space-y-2">
+            <div className="h-4 w-32 rounded bg-stone-600/40 animate-pulse" aria-hidden />
+            <div className="h-24 w-full rounded-lg bg-stone-600/20 animate-pulse" aria-hidden />
+          </div>
+          <div className="flex gap-2 pt-2">
+            <div className="h-10 w-28 rounded-lg bg-stone-600/40 animate-pulse" aria-hidden />
+            <div className="h-10 w-36 rounded-lg bg-stone-600/30 animate-pulse" aria-hidden />
+          </div>
+        </div>
+        <div className="pt-4 border-t border-retro-border">
+          <div className="h-10 w-40 rounded-lg bg-stone-600/30 animate-pulse" aria-hidden />
+        </div>
       </main>
     );
   }
@@ -153,14 +185,6 @@ export default function EditScorePage() {
           <ArrowLeftIcon className="h-4 w-4" />
           Tillbaka till resultatet
         </Link>
-      </main>
-    );
-  }
-
-  if (!userChecked) {
-    return (
-      <main className="p-4 md:p-6 max-w-3xl mx-auto">
-        <div className="text-stone-400 animate-pulse">Kontrollerar behörighet...</div>
       </main>
     );
   }

@@ -4,13 +4,21 @@ import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { NextResponse } from "next/server";
 import type { Database } from "@/types/supabase";
 
+type ScoreRow = {
+  id: string;
+  score: number;
+  date_played: string | null;
+  course_id: string;
+  user_id: string;
+  profiles: { alias: string | null } | null;
+};
+
 export async function GET() {
   const cookieStore = await cookies();
   const supabase = createRouteHandlerClient<Database>({
     cookies: () => cookieStore,
   });
 
-  // Hämta alla banor
   const { data: courses, error: coursesError } = await supabase
     .from("courses")
     .select("*");
@@ -23,7 +31,6 @@ export async function GET() {
     );
   }
 
-  // Hämta alla scores för dessa banor, inklusive course_id för gruppering
   const { data: scores, error: scoresError } = await supabase
     .from("scores")
     .select("id, score, date_played, with_friends, user_id, course_id, profiles(alias)");
@@ -36,19 +43,40 @@ export async function GET() {
     );
   }
 
-  const scoresByCourse: Record<string, unknown[]> = {};
+  const { data: holesData } = await supabase
+    .from("course_holes")
+    .select("course_id");
 
-  for (const score of scores ?? []) {
-    const courseId = (score as { course_id: string | null }).course_id;
-    if (!courseId) continue;
-    if (!scoresByCourse[courseId]) scoresByCourse[courseId] = [];
-    scoresByCourse[courseId].push(score);
+  const holeCountByCourse: Record<string, number> = {};
+  for (const row of holesData ?? []) {
+    const cid = (row as { course_id: string }).course_id;
+    holeCountByCourse[cid] = (holeCountByCourse[cid] ?? 0) + 1;
   }
 
-  const result = (courses ?? []).map((course) => ({
-    ...course,
-    scores: scoresByCourse[course.id as string] ?? [],
-  }));
+  const scoresByCourse: Record<string, ScoreRow[]> = {};
+  for (const score of (scores ?? []) as ScoreRow[]) {
+    if (!score.course_id) continue;
+    if (!scoresByCourse[score.course_id]) scoresByCourse[score.course_id] = [];
+    scoresByCourse[score.course_id].push(score);
+  }
+
+  const result = (courses ?? []).map((course) => {
+    const courseScores = scoresByCourse[course.id as string] ?? [];
+    const bestPerUser = new Map<string, ScoreRow>();
+    for (const s of courseScores) {
+      const existing = bestPerUser.get(s.user_id);
+      if (!existing || s.score < existing.score) bestPerUser.set(s.user_id, s);
+    }
+    const top3 = [...bestPerUser.values()]
+      .sort((a, b) => a.score - b.score)
+      .slice(0, 3);
+    return {
+      ...course,
+      hole_count: holeCountByCourse[course.id as string] ?? 0,
+      scores: courseScores,
+      top3,
+    };
+  });
 
   return NextResponse.json(result);
 }

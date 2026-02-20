@@ -195,7 +195,19 @@ export default function AddScoreForm({
           ? new Date(editingScore.date_played).toISOString().split("T")[0]
           : ""
       );
-      const friends = editingScore.with_friends ?? [];
+      const raw = editingScore.with_friends;
+      const friends = Array.isArray(raw)
+        ? raw
+        : typeof raw === "string"
+          ? (() => {
+              try {
+                const p = JSON.parse(raw.trim());
+                return Array.isArray(p) ? p.map(String).filter(Boolean) : [];
+              } catch {
+                return [];
+              }
+            })()
+          : [];
       setWithFriends(friends.filter((a) => a !== currentUserAlias && !a.startsWith("Gäst:")));
       setManualGuests(friends.filter((a) => a.startsWith("Gäst:")).map((a) => a.replace(/^Gäst:/, "")));
       setSelectedCourse(editingScore.courses.id);
