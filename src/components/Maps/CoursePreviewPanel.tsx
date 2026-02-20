@@ -2,8 +2,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { Course } from "../CourseList";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import type { Course } from "../CourseList";
 import { XMarkIcon, MapPinIcon } from "@heroicons/react/24/outline";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import type { Database } from "@/types/supabase";
@@ -24,6 +25,7 @@ type BestScore = {
 };
 
 export default function CoursePreviewPanel({ course, onClose, embedded }: Props) {
+  const router = useRouter();
   const supabase = useMemo(() => createClientComponentClient<Database>(), []);
 
   const [bestScore, setBestScore] = useState<BestScore | null>(null);
@@ -126,7 +128,11 @@ export default function CoursePreviewPanel({ course, onClose, embedded }: Props)
           <div className="p-4">
             {/* Title & location */}
             <div className="mb-2">
-              <h3 className="text-xl font-semibold text-stone-100">{course.name}</h3>
+              <h3 className="text-xl font-semibold text-stone-100">
+                <Link href={`/courses/${course.id}`} onClick={onClose} className="text-retro-accent hover:underline">
+                  {course.name}
+                </Link>
+              </h3>
               {course.location && (
                 <p className="mt-1 text-sm text-stone-400 flex items-center gap-1">
                   <MapPinIcon className="h-4 w-4" />
@@ -140,25 +146,41 @@ export default function CoursePreviewPanel({ course, onClose, embedded }: Props)
               )}
             </div>
 
-            {/* Course record (single row) */}
-            <div className="mt-3">
-              <h4 className="text-sm font-medium text-stone-300">Banrekord</h4>
-              <div className="mt-2 rounded-xl border border-retro-border bg-retro-card">
+            {/* Course record – klickbar rad till resultatet */}
+            <div className="mt-2">
+              <h4 className="text-xs font-medium text-stone-400 mb-1">Banrekord</h4>
+              <div className="rounded-lg border border-retro-border bg-retro-card">
                 {loadingScore ? (
-                  <div className="p-3 animate-pulse">
-                    <div className="h-3 w-24 bg-retro-border rounded" />
-                    <div className="mt-2 h-3 w-16 bg-retro-border rounded" />
+                  <div className="p-2 animate-pulse">
+                    <div className="h-3 w-20 bg-retro-border rounded" />
+                    <div className="mt-1.5 h-3 w-14 bg-retro-border rounded" />
                   </div>
                 ) : scoreError ? (
-                  <div className="p-3 text-sm text-amber-400">{scoreError}</div>
+                  <div className="p-2 text-xs text-amber-400">{scoreError}</div>
                 ) : bestScore ? (
-                  <div className="p-3 flex items-center justify-between">
-                    <div className="text-sm">
-                      <div className="font-medium text-stone-200">
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => {
+                      onClose();
+                      router.push(`/results/${bestScore.id}`);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        onClose();
+                        router.push(`/results/${bestScore.id}`);
+                      }
+                    }}
+                    className="block p-2 flex items-center justify-between gap-2 hover:bg-retro-border/30 rounded-lg transition cursor-pointer"
+                  >
+                    <div className="text-xs min-w-0">
+                      <div className="font-medium text-stone-200 truncate">
                         {(bestScore as { user_id?: string }).user_id ? (
                           <Link
                             href={`/profile/${(bestScore as { user_id: string }).user_id}`}
                             className="text-retro-accent hover:underline"
+                            onClick={(e) => e.stopPropagation()}
                           >
                             {bestScore.profiles?.alias ?? "Okänd spelare"}
                           </Link>
@@ -172,15 +194,13 @@ export default function CoursePreviewPanel({ course, onClose, embedded }: Props)
                           : "Okänt datum"}
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="text-lg font-semibold text-stone-100">
-                        {recordValue ?? "—"}
-                      </div>
+                    <div className="text-right shrink-0">
+                      <div className="text-sm font-semibold text-stone-100">{recordValue ?? "—"}</div>
                       <div className="text-xs text-retro-muted">kast</div>
                     </div>
                   </div>
                 ) : (
-                  <div className="p-3 text-sm text-stone-400">
+                  <div className="p-2 text-xs text-stone-400">
                     Inga registrerade rundor ännu.
                   </div>
                 )}

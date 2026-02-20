@@ -165,40 +165,7 @@ export default function DashboardFeeds({
   }, [initialData]);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      {/* Nya banor */}
-      <Card>
-        <CardHeader>
-          <h2 className="text-xl font-semibold text-stone-100">Nya banor</h2>
-          <Link href="/courses" className="text-sm text-retro-accent hover:underline">
-            Visa alla banor
-          </Link>
-        </CardHeader>
-        <CardBody>
-          <MiniTable
-            headers={["Bana", "Plats", "Skapad"]}
-            rows={
-              courses?.map((c) => [
-                <Link
-                  key={c.id}
-                  href={`/courses/${c.id}`}
-                  className="text-retro-accent hover:underline"
-                >
-                  {c.name}
-                </Link>,
-                c.location ?? "—",
-                c.created_at
-                  ? new Date(c.created_at).toLocaleDateString("sv-SE")
-                  : "—",
-              ]) ?? null
-            }
-            loading={coursesLoading}
-            emptyText="Inga banor ännu."
-            error={coursesError}
-          />
-        </CardBody>
-      </Card>
-
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {/* Senaste resultat */}
       <Card>
         <CardHeader>

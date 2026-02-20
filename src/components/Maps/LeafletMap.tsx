@@ -1,6 +1,7 @@
 "use client";
 
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { useEffect, useRef, useState } from "react";
+import { MapContainer, TileLayer, CircleMarker, Marker, Popup, useMap } from "react-leaflet";
 import type { Course } from "../CourseList";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -36,31 +37,140 @@ const activeIcon = new L.Icon({
   shadowSize: [41, 41],
 });
 
+const ZOOM_SELECTED = 14;
+const ZOOM_DEFAULT = 6;
+
+function isValidLatLng(lat: number, lng: number): boolean {
+  return Number.isFinite(lat) && Number.isFinite(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+}
+
+function MapViewController({
+  selectedCourseId,
+  courses,
+  defaultCenter,
+  centerOffsetPx,
+}: {
+  selectedCourseId: string | null;
+  courses: Course[];
+  defaultCenter: [number, number];
+  /** På desktop: pan efter fly så pricken hamnar mer till höger (px att pana åt vänster). */
+  centerOffsetPx?: number;
+}) {
+  const map = useMap();
+  const lastCenterRef = useRef<[number, number] | null>(null);
+
+  useEffect(() => {
+    if (selectedCourseId) {
+      const course = courses.find((c) => c.id === selectedCourseId);
+      if (!course) return;
+      const lat = Number(course.latitude);
+      const lng = Number(course.longitude);
+      if (!isValidLatLng(lat, lng)) return;
+      const center: [number, number] = [lat, lng];
+      if (!isValidLatLng(center[0], center[1])) return;
+      lastCenterRef.current = center;
+      const offset = centerOffsetPx ?? 0;
+      if (offset > 0) {
+        map.once("moveend", () => {
+          map.panBy([-offset, 0], { duration: 0.25 });
+        });
+      }
+      map.flyTo(center, ZOOM_SELECTED, { duration: 0.6 });
+    } else {
+      const target = lastCenterRef.current ?? defaultCenter;
+      const [tLat, tLng] = target;
+      const offset = centerOffsetPx ?? 0;
+      if (offset > 0) {
+        map.once("moveend", () => {
+          map.panBy([-offset, 0], { duration: 0.25 });
+        });
+      }
+      if (!isValidLatLng(tLat, tLng)) {
+        lastCenterRef.current = null;
+        map.flyTo(defaultCenter, ZOOM_DEFAULT, { duration: 0.6 });
+      } else {
+        map.flyTo(target, ZOOM_DEFAULT, { duration: 0.6 });
+        lastCenterRef.current = null;
+      }
+    }
+  }, [selectedCourseId, courses, defaultCenter, map, centerOffsetPx]);
+
+  return null;
+}
+
 type Props = {
   courses: Course[];
   onSelectCourse?: (course: Course) => void;
   selectedCourseId: string | null;
+  /** Höjd på kartcontainern (t.ex. "280px" för inbäddad karta). */
+  height?: string;
+  /** På desktop: pan efter zoom så pricken hamnar mer till höger (px att pana åt vänster, t.ex. 180). */
+  centerOffsetPx?: number;
 };
 
 export default function LeafletMap({
   courses,
   onSelectCourse,
   selectedCourseId,
+  height = "500px",
+  centerOffsetPx,
 }: Props) {
-  const swedenCenter: [number, number] = [62.0, 15.0];
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const defaultCenter: [number, number] = [58.2, 15.0]; // Södra Sverige
+  const defaultZoom = 6;
+
+  if (!mounted) {
+    return (
+      <div
+        className="w-full z-0 rounded-lg shadow bg-retro-card flex items-center justify-center"
+        style={{ height }}
+      >
+        <div className="h-32 w-32 rounded-full border-4 border-retro-accent/30 border-t-retro-accent animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <MapContainer
-      center={swedenCenter}
-      zoom={5}
+      key="dashboard-map"
+      center={defaultCenter}
+      zoom={defaultZoom}
       scrollWheelZoom={true}
       className="w-full z-0 rounded-lg shadow"
-      style={{ height: "500px" }}
+      style={{ height }}
     >
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a>'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
+      <MapViewController
+        selectedCourseId={selectedCourseId}
+        courses={courses}
+        defaultCenter={defaultCenter}
+        centerOffsetPx={centerOffsetPx}
+      />
+
+      {/* Glow under vald bana på kartan */}
+      {selectedCourseId &&
+        courses
+          .filter((c) => c.id === selectedCourseId && c.latitude && c.longitude)
+          .map((course) => (
+            <CircleMarker
+              key={`glow-${course.id}`}
+              center={[course.latitude!, course.longitude!]}
+              radius={24}
+              pathOptions={{
+                color: "rgb(34, 197, 94)",
+                fillColor: "rgb(34, 197, 94)",
+                fillOpacity: 0.25,
+                weight: 2,
+              }}
+            />
+          ))}
 
       {courses
         .filter((c) => c.latitude && c.longitude)
