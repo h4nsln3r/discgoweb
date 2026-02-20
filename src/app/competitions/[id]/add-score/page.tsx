@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Database } from "@/types/supabase";
-import { useToast } from "@/components/ui/ToastProvider";
-import BackLink from "@/components/BackLink";
+import { useToast } from "@/components/Toasts/ToastProvider";
+import BackLink from "@/components/Buttons/BackLink";
 
 export default function AddCompetitionScorePage() {
   const supabase = useMemo(() => createClientComponentClient<Database>(), []);
@@ -18,6 +18,9 @@ export default function AddCompetitionScorePage() {
   const [selectedCourse, setSelectedCourse] = useState<string>("");
   const [score, setScore] = useState<number>(0);
   const [loading, setLoading] = useState(false);
+  const [invalidFields, setInvalidFields] = useState<Set<string>>(new Set());
+  const courseRef = useRef<HTMLDivElement>(null);
+  const scoreRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -50,6 +53,17 @@ export default function AddCompetitionScorePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const invalid = new Set<string>();
+    if (!selectedCourse?.trim()) invalid.add("course");
+    if (score < 1 || Number.isNaN(score)) invalid.add("score");
+    if (invalid.size > 0) {
+      setInvalidFields(invalid);
+      const first = invalid.has("course") ? courseRef.current : scoreRef.current;
+      first?.scrollIntoView({ behavior: "smooth", block: "center" });
+      showToast(!selectedCourse?.trim() ? "Välj en bana." : "Fyll i antal kast (minst 1).", "error");
+      return;
+    }
+    setInvalidFields(new Set());
     setLoading(true);
 
     const {
@@ -90,34 +104,44 @@ export default function AddCompetitionScorePage() {
       <h1 className="text-2xl font-bold mb-4">Lägg till score</h1>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <label className="block">
-          Bana:
-          <select
-            required
-            value={selectedCourse}
-            onChange={(e) => setSelectedCourse(e.target.value)}
-            className="w-full border p-2 rounded mt-1"
-          >
-            <option value="">Välj bana</option>
-            {courses.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <div ref={courseRef}>
+          <label className="block">
+            Bana:
+            <select
+              required
+              value={selectedCourse}
+              onChange={(e) => {
+                setSelectedCourse(e.target.value);
+                setInvalidFields((p) => { const n = new Set(p); n.delete("course"); return n; });
+              }}
+              className={`w-full border p-2 rounded mt-1 ${invalidFields.has("course") ? "border-red-500 ring-2 ring-red-500/50" : ""}`}
+            >
+              <option value="">Välj bana</option>
+              {courses.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
 
-        <label className="block">
-          Totalt antal kast:
-          <input
-            type="number"
-            value={score}
-            onChange={(e) => setScore(Number(e.target.value))}
-            required
-            min={1}
-            className="w-full border p-2 rounded mt-1"
-          />
-        </label>
+        <div ref={scoreRef}>
+          <label className="block">
+            Totalt antal kast:
+            <input
+              type="number"
+              value={score}
+              onChange={(e) => {
+                setScore(Number(e.target.value));
+                setInvalidFields((p) => { const n = new Set(p); n.delete("score"); return n; });
+              }}
+              required
+              min={1}
+              className={`w-full border p-2 rounded mt-1 ${invalidFields.has("score") ? "border-red-500 ring-2 ring-red-500/50" : ""}`}
+            />
+          </label>
+        </div>
 
         <button
           type="submit"

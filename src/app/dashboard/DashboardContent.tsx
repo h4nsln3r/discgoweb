@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Map from "@/components/Maps/Map";
 import DashboardFeeds from "./DashboardFeeds";
-import PageLoading from "@/components/ui/PageLoading";
+import PageLoading from "@/components/PageLoading";
 
 type DashboardSummary = {
   courses: { id: string; name: string; location?: string | null; created_at?: string | null }[];

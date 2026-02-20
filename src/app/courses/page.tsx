@@ -1,5 +1,5 @@
 // src/app/courses/page.tsx
-import CourseList from "@/components/CourseList";
+import CourseList from "@/components/Lists/CourseList";
 import Link from "next/link";
 
 export default async function AllCoursesPage() {

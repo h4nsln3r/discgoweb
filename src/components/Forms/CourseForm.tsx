@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 
 export type CourseHole = {
   hole_number: number;
@@ -68,6 +68,9 @@ export default function CourseForm({
   const [imageUrls, setImageUrls] = useState<string[]>(initialImageUrls);
   const [mainImageUrl, setMainImageUrl] = useState(initialMainImageUrl);
   const [loading, setLoading] = useState(false);
+  const [invalidFields, setInvalidFields] = useState<Set<string>>(new Set());
+  const nameRef = useRef<HTMLDivElement>(null);
+  const locationRef = useRef<HTMLDivElement>(null);
 
   const numHolesOption = useMemo((): 0 | 9 | 12 | 18 => {
     const n = initialHoles.length;
@@ -126,6 +129,15 @@ export default function CourseForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const invalid = new Set<string>();
+    if (!name.trim()) invalid.add("name");
+    if (!location.trim()) invalid.add("location");
+    if (invalid.size > 0) {
+      setInvalidFields(invalid);
+      (invalid.has("name") ? nameRef.current : locationRef.current)?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+    setInvalidFields(new Set());
     setLoading(true);
     await onSubmit({
       name,
@@ -160,7 +172,7 @@ export default function CourseForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {/* Name */}
-      <div>
+      <div ref={nameRef}>
         <label htmlFor="name" className="block font-semibold mb-1 text-stone-200">
           Namn
         </label>
@@ -168,15 +180,18 @@ export default function CourseForm({
           id="name"
           type="text"
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={(e) => {
+            setName(e.target.value);
+            setInvalidFields((p) => { const n = new Set(p); n.delete("name"); return n; });
+          }}
           placeholder="Namn"
-          className="w-full border border-retro-border bg-retro-surface text-stone-100 p-2 rounded focus:outline-none focus:ring-2 focus:ring-retro-accent placeholder:text-stone-500"
+          className={`w-full border bg-retro-surface text-stone-100 p-2 rounded focus:outline-none focus:ring-2 placeholder:text-stone-500 ${invalidFields.has("name") ? "border-red-500 ring-2 ring-red-500/50 focus:ring-red-500" : "border-retro-border focus:ring-retro-accent"}`}
           required
         />
       </div>
 
       {/* Location */}
-      <div>
+      <div ref={locationRef}>
         <label htmlFor="location" className="block font-semibold mb-1 text-stone-200">
           Plats (område eller park)
         </label>
@@ -184,9 +199,12 @@ export default function CourseForm({
           id="location"
           type="text"
           value={location}
-          onChange={(e) => setLocation(e.target.value)}
+          onChange={(e) => {
+            setLocation(e.target.value);
+            setInvalidFields((p) => { const n = new Set(p); n.delete("location"); return n; });
+          }}
           placeholder="Plats"
-          className="w-full border border-retro-border bg-retro-surface text-stone-100 p-2 rounded focus:outline-none focus:ring-2 focus:ring-retro-accent placeholder:text-stone-500"
+          className={`w-full border bg-retro-surface text-stone-100 p-2 rounded focus:outline-none focus:ring-2 placeholder:text-stone-500 ${invalidFields.has("location") ? "border-red-500 ring-2 ring-red-500/50 focus:ring-red-500" : "border-retro-border focus:ring-retro-accent"}`}
           required
         />
       </div>

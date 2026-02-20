@@ -1,4 +1,4 @@
-import PageLoading from "@/components/ui/PageLoading";
+import PageLoading from "@/components/PageLoading";
 
 export default function ResultsLoading() {
   return (

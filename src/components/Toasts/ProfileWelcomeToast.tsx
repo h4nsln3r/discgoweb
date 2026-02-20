@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useToast } from "@/components/ui/ToastProvider";
+import { useToast } from "@/components/Toasts/ToastProvider";
 
 export default function ProfileWelcomeToast({
   displayName,

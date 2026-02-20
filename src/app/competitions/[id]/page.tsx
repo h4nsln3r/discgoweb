@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { Database } from "@/types/supabase";
 import Link from "next/link";
-import BackLink from "@/components/BackLink";
+import BackLink from "@/components/Buttons/BackLink";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -81,6 +81,7 @@ export default async function CompetitionDetailPage({ params }: PageProps) {
         </Link>
       </div>
       {competition.image_url && (
+        // eslint-disable-next-line @next/next/no-img-element -- dynamisk tävlingsbild-URL
         <img
           src={competition.image_url}
           alt={competition.title}

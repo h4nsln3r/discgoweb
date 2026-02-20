@@ -4,8 +4,8 @@ import { useRouter } from "next/navigation";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Database } from "@/types/supabase";
 import CourseForm, { type CourseHole } from "@/components/Forms/CourseForm";
-import BackLink from "@/components/BackLink";
-import { useToast } from "@/components/ui/ToastProvider";
+import BackLink from "@/components/Buttons/BackLink";
+import { useToast } from "@/components/Toasts/ToastProvider";
 
 export default function AddCoursePage() {
   const supabase = createClientComponentClient<Database>();

@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import BackLink from "@/components/BackLink";
+import BackLink from "@/components/Buttons/BackLink";
 import { Database } from "@/types/supabase";
-import { useToast } from "@/components/ui/ToastProvider";
+import { useToast } from "@/components/Toasts/ToastProvider";
 
 export default function EditCompetitionPage() {
   const supabase = createClientComponentClient<Database>();
@@ -27,6 +27,8 @@ export default function EditCompetitionPage() {
   const [allCourses, setAllCourses] = useState<{ id: string; name: string }[]>(
     []
   );
+  const [invalidFields, setInvalidFields] = useState<Set<string>>(new Set());
+  const titleRef = useRef<HTMLDivElement>(null);
 
   // Hämta tävling + befintliga banor + alla banor
   useEffect(() => {
@@ -85,6 +87,13 @@ export default function EditCompetitionPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!id) return;
+    if (!title.trim()) {
+      setInvalidFields(new Set(["title"]));
+      titleRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      showToast("Fyll i tävlingstitel.", "error");
+      return;
+    }
+    setInvalidFields(new Set());
     setSaving(true);
 
     const { error: updateError } = await supabase
@@ -158,7 +167,7 @@ export default function EditCompetitionPage() {
       <h1 className="text-2xl font-bold text-stone-100">Redigera tävling</h1>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
+        <div ref={titleRef}>
           <label htmlFor="title" className="block font-semibold mb-1 text-stone-200">
             Tävlingstitel
           </label>
@@ -166,9 +175,12 @@ export default function EditCompetitionPage() {
             id="title"
             type="text"
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={(e) => {
+              setTitle(e.target.value);
+              setInvalidFields((p) => { const n = new Set(p); n.delete("title"); return n; });
+            }}
             placeholder="Tävlingstitel"
-            className={inputClass}
+            className={invalidFields.has("title") ? `${inputClass} border-red-500 ring-2 ring-red-500/50` : inputClass}
             required
           />
         </div>
@@ -227,6 +239,7 @@ export default function EditCompetitionPage() {
             className={inputClass}
           />
           {imageUrl && (
+            // eslint-disable-next-line @next/next/no-img-element -- preview av användar-URL
             <img
               src={imageUrl}
               alt="Förhandsgranskning"

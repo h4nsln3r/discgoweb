@@ -7,7 +7,6 @@ import Link from "next/link";
 import { XMarkIcon, MapPinIcon } from "@heroicons/react/24/outline";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import type { Database } from "@/types/supabase";
-import AddScoreForm from "@/components/AddScoreForm";
 
 type Props = {
   course: Course | null;
@@ -27,7 +26,6 @@ type BestScore = {
 export default function CoursePreviewPanel({ course, onClose, embedded }: Props) {
   const supabase = useMemo(() => createClientComponentClient<Database>(), []);
 
-  const [openForm, setOpenForm] = useState(false);
   const [bestScore, setBestScore] = useState<BestScore | null>(null);
   const [loadingScore, setLoadingScore] = useState(false);
   const [scoreError, setScoreError] = useState<string | null>(null);
@@ -106,7 +104,7 @@ export default function CoursePreviewPanel({ course, onClose, embedded }: Props)
               {/* Close btn over image */}
               <button
                 className="absolute top-3 right-3 p-2 rounded-full bg-retro-surface/90 hover:bg-retro-card border border-retro-border shadow"
-                onClick={() => { setOpenForm(false); onClose(); }}
+                onClick={onClose}
                 aria-label="Stäng"
               >
                 <XMarkIcon className="h-5 w-5 text-stone-200" />
@@ -116,7 +114,7 @@ export default function CoursePreviewPanel({ course, onClose, embedded }: Props)
             <div className="flex justify-end p-3 border-b border-retro-border">
               <button
                 className="p-2 rounded-lg hover:bg-retro-card text-stone-300"
-                onClick={() => { setOpenForm(false); onClose(); }}
+                onClick={onClose}
                 aria-label="Stäng"
               >
                 <XMarkIcon className="h-6 w-6" />
@@ -184,28 +182,19 @@ export default function CoursePreviewPanel({ course, onClose, embedded }: Props)
             <div className="mt-4 flex items-center gap-3">
               <Link
                 href={`/courses/${course.id}`}
-                onClick={() => {
-                  setOpenForm(false);
-                  onClose();
-                }}
+                onClick={onClose}
                 className="inline-flex items-center justify-center rounded-lg border border-retro-border bg-retro-card px-4 py-2 text-sm font-medium text-stone-200 hover:bg-retro-border/50 transition"
               >
                 Visa detaljer
               </Link>
-              <button
-                onClick={() => setOpenForm((v) => !v)}
+              <Link
+                href={`/results/new?course_id=${course.id}`}
+                onClick={onClose}
                 className="inline-flex items-center justify-center rounded-lg border border-retro-accent bg-retro-accent/20 px-4 py-2 text-sm font-medium text-retro-accent hover:bg-retro-accent/30 transition"
               >
-                {openForm ? "Stäng formulär" : "Lägg till resultat"}
-              </button>
+                Lägg till resultat
+              </Link>
             </div>
-
-            {/* Inline add score form (optional reveal) */}
-            {openForm && (
-              <div className="mt-3">
-                <AddScoreForm onClose={() => setOpenForm(false)} />
-              </div>
-            )}
           </div>
     </div>
   );
@@ -216,10 +205,7 @@ export default function CoursePreviewPanel({ course, onClose, embedded }: Props)
     <>
       <div
         className="fixed inset-0 z-40 bg-black/50"
-        onClick={() => {
-          setOpenForm(false);
-          onClose();
-        }}
+        onClick={onClose}
       />
       <div
         className="fixed z-40 bottom-0 inset-x-0 max-h-[85vh] overflow-y-auto"

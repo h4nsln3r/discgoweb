@@ -4,11 +4,11 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeftIcon, TrashIcon } from "@heroicons/react/24/outline";
-import BackLink from "@/components/BackLink";
+import BackLink from "@/components/Buttons/BackLink";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import type { Database } from "@/types/supabase";
-import AddScoreForm from "@/components/AddScoreForm";
-import { useToast } from "@/components/ui/ToastProvider";
+import AddScoreForm from "@/components/Forms/AddScoreForm";
+import { useToast } from "@/components/Toasts/ToastProvider";
 
 type ScoreFromDb = {
   id: string;

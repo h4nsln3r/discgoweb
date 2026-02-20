@@ -1,7 +1,7 @@
 // src/app/competitions/page.tsx
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import Link from "next/link";
-import CompetitionList from "@/components/CompetitionList";
+import CompetitionList from "@/components/Lists/CompetitionList";
 
 export default async function CompetitionsPage() {
   const supabase = await createServerSupabaseClient();

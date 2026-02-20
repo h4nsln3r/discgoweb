@@ -1,6 +1,6 @@
 // app/profile/edit/page.tsx
-import ProfileForm from "@/components/ProfileForm";
-import BackButton from "@/components/BackButton";
+import ProfileForm from "@/components/Forms/ProfileForm";
+import BackButton from "@/components/Buttons/BackButton";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { redirect } from "next/navigation";
 

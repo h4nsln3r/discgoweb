@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import AddScoreForm from "./AddScoreForm";
-import CourseScores, { CourseScore } from "./CourseScores";
+import AddScoreForm from "@/components/Forms/AddScoreForm";
+import CourseScores, { CourseScore } from "@/components/CourseScores";
 import Link from "next/link";
-import PageLoading from "./ui/PageLoading";
+import PageLoading from "@/components/PageLoading";
 
 export type Course = {
   id: string;

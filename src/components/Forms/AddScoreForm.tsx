@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
-import { useToast } from "@/components/ui/ToastProvider";
+import { useEffect, useState, useMemo, useRef, useCallback } from "react";
+import { useToast } from "@/components/Toasts/ToastProvider";
 
 type Course = { id: string; name: string };
 type Player = { id: string; alias: string };
@@ -27,6 +27,8 @@ type Props = {
   competitionTitle?: string | null;
   /** Banor som ingår i tävlingen (används bara när initialCompetitionId är satt). */
   competitionCourses?: Course[] | null;
+  /** Förladdad banlista (t.ex. när sidan laddat banor innan formuläret visas). */
+  preloadedCourses?: Course[] | null;
 };
 
 export default function AddScoreForm({
@@ -37,6 +39,7 @@ export default function AddScoreForm({
   initialCompetitionId,
   competitionTitle,
   competitionCourses,
+  preloadedCourses,
 }: Props) {
   const { showToast } = useToast();
   const [score, setScore] = useState("");
@@ -45,7 +48,6 @@ export default function AddScoreForm({
   const [withFriends, setWithFriends] = useState<string[]>([]);
   const [selectedCourse, setSelectedCourse] = useState(initialCourseId ?? "");
   const isCompetitionMode = Boolean(initialCompetitionId && competitionCourses !== undefined && competitionCourses !== null);
-  const [manualGuests, setManualGuests] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
   const [courses, setCourses] = useState<Course[]>([]);
@@ -55,6 +57,23 @@ export default function AddScoreForm({
 
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUserAlias, setCurrentUserAlias] = useState<string>("");
+  const [friendSearch, setFriendSearch] = useState("");
+  const [manualGuests, setManualGuests] = useState<string[]>([]);
+  const [invalidFields, setInvalidFields] = useState<Set<string>>(new Set());
+
+  const courseRef = useRef<HTMLDivElement>(null);
+  const dateRef = useRef<HTMLDivElement>(null);
+  const throwsRef = useRef<HTMLDivElement>(null);
+  const scoreRef = useRef<HTMLDivElement>(null);
+  const holesRef = useRef<HTMLDivElement>(null);
+
+  const clearInvalid = useCallback((field: string) => {
+    setInvalidFields((prev) => {
+      const next = new Set(prev);
+      next.delete(field);
+      return next;
+    });
+  }, []);
 
   const usePerHole = courseHoles.length > 0;
   const totalFromHoles = useMemo(() => {
@@ -78,9 +97,7 @@ export default function AddScoreForm({
       const data = await res.json();
       if (!data.error) {
         setCurrentUserId(data.id);
-        setCurrentUserAlias(data.alias);
-        // Lägg till dig själv i withFriends direkt
-        setWithFriends([data.alias]);
+        setCurrentUserAlias(data.alias ?? "");
       }
     };
     fetchCurrentUser();
@@ -108,8 +125,18 @@ export default function AddScoreForm({
     fetchPlayers();
   }, []);
 
+  // Förladade banor (t.ex. från Lägg till resultat med course_id i URL)
+  useEffect(() => {
+    if (isCompetitionMode || !preloadedCourses?.length) return;
+    setCourses(preloadedCourses);
+    if (initialCourseId && preloadedCourses.some((c) => c.id === initialCourseId)) {
+      setSelectedCourse(initialCourseId);
+    }
+  }, [isCompetitionMode, preloadedCourses, initialCourseId]);
+
   useEffect(() => {
     if (isCompetitionMode) return;
+    if (preloadedCourses?.length) return; // använd förladade, hoppa över fetch
     const fetchData = async () => {
       const [coursesRes, playersRes] = await Promise.all([
         fetch("/api/get-courses"),
@@ -126,7 +153,7 @@ export default function AddScoreForm({
       }
     };
     fetchData();
-  }, [editingScore, initialCourseId, isCompetitionMode]);
+  }, [editingScore, initialCourseId, isCompetitionMode, preloadedCourses?.length]);
 
   // Hämta hål för vald bana
   useEffect(() => {
@@ -168,50 +195,71 @@ export default function AddScoreForm({
           ? new Date(editingScore.date_played).toISOString().split("T")[0]
           : ""
       );
-      setWithFriends(editingScore.with_friends ?? [currentUserAlias]);
+      const friends = editingScore.with_friends ?? [];
+      setWithFriends(friends.filter((a) => a !== currentUserAlias && !a.startsWith("Gäst:")));
+      setManualGuests(friends.filter((a) => a.startsWith("Gäst:")).map((a) => a.replace(/^Gäst:/, "")));
       setSelectedCourse(editingScore.courses.id);
     } else {
       setScore("");
       setThrows("");
       setDatePlayed("");
-      setWithFriends(currentUserAlias ? [currentUserAlias] : []);
-      setSelectedCourse("");
+      setWithFriends([]);
       setManualGuests([]);
+      setSelectedCourse(initialCourseId ?? "");
     }
-  }, [editingScore, currentUserAlias]);
+  }, [editingScore, currentUserAlias, initialCourseId]);
 
-  // Lägg till gästfält
-  const addGuestField = () => {
-    setManualGuests([...manualGuests, ""]);
-  };
+  const combinedFriendsForSubmit = useMemo(() => {
+    const others = withFriends.filter((a) => a.trim() !== "");
+    const guests = manualGuests.filter((g) => g.trim() !== "").map((g) => `Gäst:${g.trim()}`);
+    return currentUserAlias ? [currentUserAlias, ...others, ...guests] : [...others, ...guests];
+  }, [currentUserAlias, withFriends, manualGuests]);
 
-  const handleGuestChange = (index: number, value: string) => {
-    const updated = [...manualGuests];
-    updated[index] = value;
-    setManualGuests(updated);
-  };
+  const searchQuery = friendSearch.trim().toLowerCase();
+  const playersForPicker = useMemo(() => {
+    return players.filter((p) => {
+      if (p.id === currentUserId) return false;
+      if (!searchQuery) return true;
+      return (p.alias ?? "").toLowerCase().includes(searchQuery);
+    });
+  }, [players, currentUserId, searchQuery]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const invalid = new Set<string>();
+    if (!selectedCourse?.trim()) invalid.add("course");
+    if (!datePlayed?.trim()) invalid.add("date");
     if (usePerHole) {
-      if (totalFromHoles === null) {
-        showToast("Fyll i slag för alla hål (minst 1 per hål).", "error");
-        return;
-      }
+      if (totalFromHoles === null) invalid.add("holes");
     } else {
       const scoreNum = Number(score);
       const throwsNum = Number(throws);
-      if (score.trim() === "" || throws.trim() === "" || Number.isNaN(scoreNum) || Number.isNaN(throwsNum)) {
-        showToast("Fyll i både antal kast och poäng.", "error");
-        return;
-      }
+      if (throws.trim() === "" || Number.isNaN(throwsNum)) invalid.add("throws");
+      if (score.trim() === "" || Number.isNaN(scoreNum)) invalid.add("score");
     }
+    if (invalid.size > 0) {
+      setInvalidFields(invalid);
+      const order: string[] = ["course", "date", usePerHole ? "holes" : "throws", usePerHole ? "" : "score"].filter(Boolean);
+      const first = order.find((id) => invalid.has(id));
+      const refMap = { course: courseRef, date: dateRef, throws: throwsRef, score: scoreRef, holes: holesRef } as const;
+      const ref = first ? refMap[first as keyof typeof refMap]?.current : null;
+      if (ref) {
+        ref.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+      showToast(
+        !selectedCourse?.trim()
+          ? "Välj en bana."
+          : !datePlayed?.trim()
+            ? "Fyll i datum."
+            : usePerHole
+              ? "Fyll i slag för alla hål."
+              : "Fyll i antal kast och poäng.",
+        "error"
+      );
+      return;
+    }
+    setInvalidFields(new Set());
     setLoading(true);
-
-    const combinedFriends = [
-      ...withFriends,
-      ...manualGuests.filter((g) => g.trim() !== "").map((g) => `Gäst:${g}`),
-    ];
 
     const payload: {
       course_id: string;
@@ -226,7 +274,7 @@ export default function AddScoreForm({
       score: usePerHole && totalFromHoles ? totalFromHoles.score : Number(score),
       throws: usePerHole && totalFromHoles ? totalFromHoles.throws : Number(throws),
       date_played: datePlayed,
-      with_friends: combinedFriends,
+      with_friends: combinedFriendsForSubmit,
     };
     if (initialCompetitionId) payload.competition_id = initialCompetitionId;
     if (usePerHole && holeThrows.length === courseHoles.length) {
@@ -264,7 +312,7 @@ export default function AddScoreForm({
         setScore("");
         setThrows("");
         setDatePlayed(new Date().toISOString().split("T")[0]);
-        setWithFriends(currentUserAlias ? [currentUserAlias] : []);
+        setWithFriends([]);
         setManualGuests([]);
         setSelectedCourse("");
         setCourseHoles([]);
@@ -289,7 +337,7 @@ export default function AddScoreForm({
       )}
 
       {/* Dropdown för bana */}
-      <div>
+      <div ref={courseRef}>
         <label className="block font-medium text-stone-200 mb-1">
           {isCompetitionMode ? "Välj bana (i tävlingen)" : "Välj bana"}
         </label>
@@ -300,9 +348,12 @@ export default function AddScoreForm({
         ) : (
           <select
             value={selectedCourse}
-            onChange={(e) => setSelectedCourse(e.target.value)}
+            onChange={(e) => {
+              setSelectedCourse(e.target.value);
+              clearInvalid("course");
+            }}
             required
-            className="w-full rounded-lg border border-retro-border bg-retro-card px-3 py-2 text-stone-100 focus:outline-none focus:ring-2 focus:ring-retro-accent"
+            className={`w-full rounded-lg border bg-retro-card px-3 py-2 text-stone-100 focus:outline-none focus:ring-2 ${invalidFields.has("course") ? `border-red-500 ring-2 ring-red-500/50 focus:ring-red-500` : "border-retro-border focus:ring-retro-accent"}`}
           >
             <option value="">-- Välj bana --</option>
             {courses.map((course) => (
@@ -314,9 +365,32 @@ export default function AddScoreForm({
         )}
       </div>
 
+      {/* Datum – samma rad som Välj idag */}
+      <div ref={dateRef}>
+        <label className="block font-medium text-stone-200 mb-1">Datum</label>
+        <div className="flex gap-2">
+          <input
+            type="date"
+            className={`flex-1 min-w-0 rounded-lg border bg-retro-card px-3 py-2 text-stone-100 focus:outline-none focus:ring-2 ${invalidFields.has("date") ? "border-red-500 ring-2 ring-red-500/50 focus:ring-red-500" : "border-retro-border focus:ring-retro-accent"}`}
+            value={datePlayed}
+            onChange={(e) => {
+              setDatePlayed(e.target.value);
+              clearInvalid("date");
+            }}
+          />
+          <button
+            type="button"
+            onClick={() => setDatePlayed(new Date().toISOString().split("T")[0])}
+            className="shrink-0 px-3 py-2 rounded-lg border border-retro-border bg-retro-card text-sm text-stone-200 hover:bg-retro-border/30 transition"
+          >
+            Välj idag
+          </button>
+        </div>
+      </div>
+
       {/* Score / Slag per hål */}
       {usePerHole ? (
-        <div className="space-y-2">
+        <div ref={holesRef} className="space-y-2">
           <label className="block font-medium text-stone-200 mb-1">Slag per hål</label>
           <p className="text-sm text-stone-400">Banan har hålinfo – fyll i antal slag per hål.</p>
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
@@ -334,8 +408,9 @@ export default function AddScoreForm({
                     const next = [...holeThrows];
                     next[i] = e.target.value;
                     setHoleThrows(next);
+                    clearInvalid("holes");
                   }}
-                  className="w-full rounded-lg border border-retro-border bg-retro-card px-2 py-1.5 text-stone-100 text-sm focus:outline-none focus:ring-2 focus:ring-retro-accent"
+                  className={`w-full rounded-lg border bg-retro-card px-2 py-1.5 text-stone-100 text-sm focus:outline-none focus:ring-2 ${invalidFields.has("holes") ? "border-red-500 ring-2 ring-red-500/50 focus:ring-red-500" : "border-retro-border focus:ring-retro-accent"}`}
                 />
               </div>
             ))}
@@ -363,25 +438,31 @@ export default function AddScoreForm({
           <p className="text-sm text-stone-400 mb-2">
             Båda fälten behövs för att skicka in resultatet.
           </p>
-          <div>
+          <div ref={throwsRef}>
             <label className="block font-medium text-stone-200 mb-1">Antal kast</label>
             <input
               type="number"
               min={1}
-              className="w-full rounded-lg border border-retro-border bg-retro-card px-3 py-2 text-stone-100 focus:outline-none focus:ring-2 focus:ring-retro-accent"
+              className={`w-full rounded-lg border bg-retro-card px-3 py-2 text-stone-100 focus:outline-none focus:ring-2 ${invalidFields.has("throws") ? "border-red-500 ring-2 ring-red-500/50 focus:ring-red-500" : "border-retro-border focus:ring-retro-accent"}`}
               value={throws}
-              onChange={(e) => setThrows(e.target.value)}
+              onChange={(e) => {
+                setThrows(e.target.value);
+                clearInvalid("throws");
+              }}
               required={!usePerHole}
               placeholder="t.ex. 54"
             />
           </div>
-          <div>
+          <div ref={scoreRef}>
             <label className="block font-medium text-stone-200 mb-1">Poäng</label>
             <input
               type="number"
-              className="w-full rounded-lg border border-retro-border bg-retro-card px-3 py-2 text-stone-100 focus:outline-none focus:ring-2 focus:ring-retro-accent"
+              className={`w-full rounded-lg border bg-retro-card px-3 py-2 text-stone-100 focus:outline-none focus:ring-2 ${invalidFields.has("score") ? "border-red-500 ring-2 ring-red-500/50 focus:ring-red-500" : "border-retro-border focus:ring-retro-accent"}`}
               value={score}
-              onChange={(e) => setScore(e.target.value)}
+              onChange={(e) => {
+                setScore(e.target.value);
+                clearInvalid("score");
+              }}
               required={!usePerHole}
               placeholder="t.ex. 54"
             />
@@ -389,64 +470,73 @@ export default function AddScoreForm({
         </>
       )}
 
-      {/* Datum */}
+      {/* Vilka var med – sök profiler, lägg till med checkmark, visa valda under */}
       <div>
-        <label className="block font-medium text-stone-200 mb-1">Datum</label>
+        <label className="block font-medium text-stone-200 mb-1">Vilka var med?</label>
+        <p className="text-sm text-stone-400 mb-2">Sök och lägg till spelare som var med. Du behöver inte välja någon.</p>
         <input
-          type="date"
-          className="w-full rounded-lg border border-retro-border bg-retro-card px-3 py-2 text-stone-100 focus:outline-none focus:ring-2 focus:ring-retro-accent"
-          value={datePlayed}
-          onChange={(e) => setDatePlayed(e.target.value)}
+          type="text"
+          placeholder="Sök spelare..."
+          value={friendSearch}
+          onChange={(e) => setFriendSearch(e.target.value)}
+          className="w-full rounded-lg border border-retro-border bg-retro-card px-3 py-2 text-stone-100 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-retro-accent mb-2"
         />
-        <button
-          type="button"
-          onClick={() => setDatePlayed(new Date().toISOString().split("T")[0])}
-          className="mt-2 px-3 py-1.5 rounded-lg border border-retro-border bg-retro-card text-sm text-stone-200 hover:bg-retro-border/30 transition"
-        >
-          Välj idag
-        </button>
-      </div>
-
-      {/* Medspelare */}
-      <div>
-        <label className="block font-medium text-stone-200 mb-2">Vilka var med?</label>
-        <div className="flex flex-wrap gap-2 mb-2">
-          {players.map((player) => {
-            const isCurrentUser = player.id === currentUserId;
-            const isSelected = withFriends.includes(player.alias);
-
-            return (
-              <label
-                key={player.id}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition ${
-                  isCurrentUser
-                    ? "border-retro-accent/50 bg-retro-accent/15 text-stone-100 font-medium cursor-not-allowed"
-                    : "border-retro-border bg-retro-card text-stone-200 hover:border-retro-accent/50"
-                }`}
-              >
-                <input
-                  type="checkbox"
-                  checked={isCurrentUser || isSelected}
-                  disabled={isCurrentUser}
-                  onChange={(e) => {
-                    if (e.target.checked) {
-                      setWithFriends([...withFriends, player.alias]);
-                    } else {
-                      setWithFriends(
-                        withFriends.filter((name) => name !== player.alias)
-                      );
-                    }
-                  }}
-                  className="rounded border-retro-border text-retro-accent focus:ring-retro-accent"
-                />
-                {player.alias}
-              </label>
-            );
-          })}
+        <div className="max-h-40 overflow-y-auto rounded-lg border border-retro-border bg-retro-card divide-y divide-retro-border">
+          {playersForPicker.length === 0 ? (
+            <div className="px-3 py-2 text-sm text-stone-500">
+              {searchQuery ? "Inga spelare matchar sökningen." : "Skriv för att söka spelare."}
+            </div>
+          ) : (
+            playersForPicker.map((player) => {
+              const isSelected = withFriends.includes(player.alias);
+              return (
+                <label
+                  key={player.id}
+                  className="flex items-center gap-2 px-3 py-2 hover:bg-retro-surface cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setWithFriends([...withFriends, player.alias]);
+                      } else {
+                        setWithFriends(withFriends.filter((a) => a !== player.alias));
+                      }
+                    }}
+                    className="rounded border-retro-border text-retro-accent focus:ring-retro-accent"
+                  />
+                  <span className="text-stone-200">{player.alias}</span>
+                </label>
+              );
+            })
+          )}
         </div>
+        {withFriends.length > 0 && (
+          <div className="mt-2">
+            <span className="text-xs font-medium text-stone-500 block mb-1">Registrerade som var med</span>
+            <div className="flex flex-wrap gap-2">
+              {withFriends.map((alias) => (
+                <span
+                  key={alias}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-retro-accent/20 border border-retro-accent/40 text-stone-200 text-sm"
+                >
+                  {alias}
+                  <button
+                    type="button"
+                    onClick={() => setWithFriends(withFriends.filter((a) => a !== alias))}
+                    className="text-stone-400 hover:text-stone-100 ml-0.5"
+                    aria-label={`Ta bort ${alias}`}
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
 
-        {/* Gäst-fält */}
-        <div className="space-y-2">
+        <div className="mt-3 space-y-2">
           {manualGuests.map((guest, index) => (
             <input
               key={index}
@@ -454,17 +544,21 @@ export default function AddScoreForm({
               className="w-full rounded-lg border border-retro-border bg-retro-card px-3 py-2 text-stone-100 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-retro-accent"
               placeholder="Gästnamn"
               value={guest}
-              onChange={(e) => handleGuestChange(index, e.target.value)}
+              onChange={(e) => {
+                const next = [...manualGuests];
+                next[index] = e.target.value;
+                setManualGuests(next);
+              }}
             />
           ))}
+          <button
+            type="button"
+            onClick={() => setManualGuests([...manualGuests, ""])}
+            className="px-3 py-2 rounded-lg border border-retro-border bg-retro-card text-stone-200 hover:bg-retro-border/30 transition text-sm"
+          >
+            Lägg till gäst
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={addGuestField}
-          className="mt-2 px-3 py-2 rounded-lg border border-retro-border bg-retro-card text-stone-200 hover:bg-retro-border/30 transition"
-        >
-          Lägg till gäst
-        </button>
       </div>
 
       {/* Actions */}

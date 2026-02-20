@@ -4,9 +4,9 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Database } from "@/types/supabase";
-import BackButton from "@/components/BackButton";
+import BackButton from "@/components/Buttons/BackButton";
 import TeamForm from "@/components/Forms/TeamForm";
-import { useToast } from "@/components/ui/ToastProvider";
+import { useToast } from "@/components/Toasts/ToastProvider";
 
 type TeamRow = {
   id: string;

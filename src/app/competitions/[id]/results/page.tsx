@@ -5,7 +5,7 @@ import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { Database } from "@/types/supabase";
 import Link from "next/link";
-import BackLink from "@/components/BackLink";
+import BackLink from "@/components/Buttons/BackLink";
 
 export default async function CompetitionResultsPage({
   params,

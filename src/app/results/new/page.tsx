@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import BackLink from "@/components/BackLink";
-import AddScoreForm from "@/components/AddScoreForm";
+import BackLink from "@/components/Buttons/BackLink";
+import AddScoreForm from "@/components/Forms/AddScoreForm";
 
 interface Score {
   id: string;
@@ -29,26 +29,59 @@ export default function AddResultPage() {
   const [editingScore, setEditingScore] = useState<Score | null>(null);
   const [loading, setLoading] = useState(true);
   const [competitionData, setCompetitionData] = useState<CompetitionData>(null);
+  const [coursesForForm, setCoursesForForm] = useState<{ id: string; name: string }[] | null>(null);
+  const [coursesLoading, setCoursesLoading] = useState(!!courseIdFromUrl);
+  const [competitionLoading, setCompetitionLoading] = useState(!!competitionIdFromUrl);
+
+  // När användaren kom från en bana: hämta banlista så att banan finns i listan innan formuläret visas
+  useEffect(() => {
+    if (!courseIdFromUrl) {
+      setCoursesLoading(false);
+      setCoursesForForm(null);
+      return;
+    }
+    let cancelled = false;
+    setCoursesLoading(true);
+    fetch("/api/get-courses")
+      .then((res) => res.json())
+      .then((data) => {
+        if (!cancelled) {
+          setCoursesForForm(Array.isArray(data) ? data : []);
+          setCoursesLoading(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setCoursesForForm([]);
+          setCoursesLoading(false);
+        }
+      });
+    return () => { cancelled = true; };
+  }, [courseIdFromUrl]);
 
   useEffect(() => {
     if (!competitionIdFromUrl) {
       setCompetitionData(null);
+      setCompetitionLoading(false);
       return;
     }
-    const fetchCompetition = async () => {
-      try {
-        const res = await fetch(`/api/competition-with-courses?competition_id=${competitionIdFromUrl}`);
-        if (res.ok) {
-          const data = await res.json();
-          setCompetitionData({ id: data.id, title: data.title, courses: data.courses ?? [] });
-        } else {
-          setCompetitionData(null);
+    let cancelled = false;
+    setCompetitionLoading(true);
+    fetch(`/api/competition-with-courses?competition_id=${competitionIdFromUrl}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!cancelled) {
+          setCompetitionData(data ? { id: data.id, title: data.title, courses: data.courses ?? [] } : null);
+          setCompetitionLoading(false);
         }
-      } catch {
-        setCompetitionData(null);
-      }
-    };
-    fetchCompetition();
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setCompetitionData(null);
+          setCompetitionLoading(false);
+        }
+      });
+    return () => { cancelled = true; };
   }, [competitionIdFromUrl]);
 
   // Hämta senaste resultat
@@ -106,29 +139,34 @@ export default function AddResultPage() {
           <h1 className="text-2xl font-bold mb-4">
             {editingScore ? "✏️ Redigera resultat" : "🥏 Lägg till resultat"}
           </h1>
-          <AddScoreForm
-            editingScore={
-              editingScore
-                ? {
-                    id: editingScore.id,
-                    score: editingScore.score,
-                    throws: editingScore.throws,
-                    date_played: editingScore.date_played,
-                    with_friends: editingScore.with_friends ?? [],
-                    courses: {
-                      id: editingScore.courses.id,
-                      name: editingScore.courses.name,
-                    },
-                  }
-                : null
-            }
-            initialCourseId={courseIdFromUrl}
-            initialCompetitionId={competitionData?.id ?? null}
-            competitionTitle={competitionData?.title ?? null}
-            competitionCourses={competitionData?.courses ?? null}
-            onClose={handleResetForm}
-            onSuccess={handleSuccess}
-          />
+          {(courseIdFromUrl && coursesLoading) || (competitionIdFromUrl && competitionLoading) ? (
+            <AddResultFormSkeleton />
+          ) : (
+            <AddScoreForm
+              editingScore={
+                editingScore
+                  ? {
+                      id: editingScore.id,
+                      score: editingScore.score,
+                      throws: editingScore.throws,
+                      date_played: editingScore.date_played,
+                      with_friends: editingScore.with_friends ?? [],
+                      courses: {
+                        id: editingScore.courses.id,
+                        name: editingScore.courses.name,
+                      },
+                    }
+                  : null
+              }
+              initialCourseId={courseIdFromUrl}
+              initialCompetitionId={competitionData?.id ?? null}
+              competitionTitle={competitionData?.title ?? null}
+              competitionCourses={competitionData?.courses ?? null}
+              preloadedCourses={coursesForForm ?? undefined}
+              onClose={handleResetForm}
+              onSuccess={handleSuccess}
+            />
+          )}
         </div>
 
         {/* Höger kolumn: Senaste resultat */}
@@ -179,5 +217,27 @@ export default function AddResultPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+function AddResultFormSkeleton() {
+  return (
+    <div className="rounded-xl border border-retro-border bg-retro-surface p-6 space-y-4 animate-pulse">
+      <div className="space-y-2">
+        <div className="h-4 w-20 rounded bg-retro-border/60" />
+        <div className="h-10 w-full rounded-lg bg-retro-border/60" />
+      </div>
+      <div className="space-y-2">
+        <div className="h-4 w-24 rounded bg-retro-border/60" />
+        <div className="h-10 w-full rounded-lg bg-retro-border/60" />
+      </div>
+      <div className="space-y-2">
+        <div className="h-4 w-16 rounded bg-retro-border/60" />
+        <div className="h-10 w-32 rounded-lg bg-retro-border/60" />
+      </div>
+      <div className="pt-2">
+        <div className="h-10 w-full rounded-lg bg-retro-border/60" />
+      </div>
+    </div>
   );
 }

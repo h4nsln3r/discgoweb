@@ -2,7 +2,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { createSupabaseClient } from "@/lib/supabase";
 
 type Course = { id: string; name: string };
@@ -90,8 +90,18 @@ export default function OnboardingForm({
     return data.publicUrl;
   };
 
+  const aliasRef = useRef<HTMLDivElement>(null);
+  const [invalidFields, setInvalidFields] = useState<Set<string>>(new Set());
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!alias.trim()) {
+      setInvalidFields(new Set(["alias"]));
+      aliasRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      setError("Fyll i visningsnamn.");
+      return;
+    }
+    setInvalidFields(new Set());
     setLoading(true);
     setError(null);
     try {
@@ -122,15 +132,18 @@ export default function OnboardingForm({
 
   return (
     <form onSubmit={onSubmit} className="space-y-5">
-      <div>
+      <div ref={aliasRef}>
         <label className="block text-sm font-medium text-gray-700 mb-1">
           Visningsnamn
         </label>
         <input
           required
           value={alias}
-          onChange={(e) => setAlias(e.target.value)}
-          className="w-full rounded-lg border border-gray-300 bg-white/70 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          onChange={(e) => {
+            setAlias(e.target.value);
+            setInvalidFields((p) => { const n = new Set(p); n.delete("alias"); return n; });
+          }}
+          className={`w-full rounded-lg border bg-white/70 px-3 py-2 focus:outline-none focus:ring-2 ${invalidFields.has("alias") ? "border-red-500 ring-2 ring-red-500/50 focus:ring-red-500" : "border-gray-300 focus:ring-emerald-500"}`}
           placeholder="Ditt namn eller alias"
         />
       </div>

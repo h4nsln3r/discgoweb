@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 //TODO use Image from next
 // import Image from "next/image";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Database } from "@/types/supabase";
-import { useToast } from "@/components/ui/ToastProvider";
+import { useToast } from "@/components/Toasts/ToastProvider";
 
 export default function NewCompetitionPage() {
   const supabase = useMemo(() => createClientComponentClient<Database>(), []);
@@ -25,6 +25,8 @@ export default function NewCompetitionPage() {
   const [allCourses, setAllCourses] = useState<{ id: string; name: string }[]>(
     []
   );
+  const [invalidFields, setInvalidFields] = useState<Set<string>>(new Set());
+  const titleRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -37,6 +39,13 @@ export default function NewCompetitionPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!title.trim()) {
+      setInvalidFields(new Set(["title"]));
+      titleRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      showToast("Fyll i tävlingstitel.", "error");
+      return;
+    }
+    setInvalidFields(new Set());
     setLoading(true);
     setSuccessMessage("");
 
@@ -109,14 +118,19 @@ export default function NewCompetitionPage() {
       {successMessage && <p className="text-retro-accent">{successMessage}</p>}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <input
-          type="text"
-          placeholder="Tävlingstitel"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          required
-          className={inputClass}
-        />
+        <div ref={titleRef}>
+          <input
+            type="text"
+            placeholder="Tävlingstitel"
+            value={title}
+            onChange={(e) => {
+              setTitle(e.target.value);
+              setInvalidFields((p) => { const n = new Set(p); n.delete("title"); return n; });
+            }}
+            required
+            className={invalidFields.has("title") ? `${inputClass} border-red-500 ring-2 ring-red-500/50` : inputClass}
+          />
+        </div>
 
         <textarea
           placeholder="Beskrivning"

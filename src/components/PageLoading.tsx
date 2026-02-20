@@ -27,4 +27,3 @@ export default function PageLoading({ variant, title }: Props) {
     </div>
   );
 }
-

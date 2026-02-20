@@ -23,7 +23,7 @@ import {
   FlagIcon,
   PencilSquareIcon,
 } from "@heroicons/react/24/outline";
-import PageLoading from "@/components/ui/PageLoading";
+import PageLoading from "@/components/PageLoading";
 
 interface Score {
   id: string;

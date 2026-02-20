@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { Database } from "@/types/supabase";
 import { createSupabaseClient } from "@/lib/supabase";
-import { useToast } from "@/components/ui/ToastProvider";
+import { useToast } from "@/components/Toasts/ToastProvider";
 import { CITY_COUNTRY_PAIRS, CITY_SUGGESTIONS, COUNTRY_SUGGESTIONS } from "@/data/location-suggestions";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
@@ -54,6 +54,8 @@ export default function ProfileForm({
   const [cropDrag, setCropDrag] = useState<{ startX: number; startY: number; startOffset: { x: number; y: number } } | null>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
   const [saving, setSaving] = useState(false);
+  const [invalidFields, setInvalidFields] = useState<Set<string>>(new Set());
+  const aliasRef = useRef<HTMLDivElement>(null);
 
   const avatarPreview = useMemo(() => {
     if (avatarFile) return URL.createObjectURL(avatarFile);
@@ -183,6 +185,13 @@ export default function ProfileForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!alias.trim()) {
+      setInvalidFields(new Set(["alias"]));
+      aliasRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      showToast("Fyll i namn / visningsnamn.", "error");
+      return;
+    }
+    setInvalidFields(new Set());
     setSaving(true);
 
     try {
@@ -375,14 +384,17 @@ export default function ProfileForm({
         </p>
       </div>
 
-      <div className="space-y-2">
+      <div ref={aliasRef} className="space-y-2">
         <label className="block text-sm font-medium text-stone-300">
           Name / Display name
         </label>
         <input
-          className={inputClass}
+          className={invalidFields.has("alias") ? `${inputClass} border-red-500 ring-2 ring-red-500/50` : inputClass}
           value={alias}
-          onChange={(e) => setAlias(e.target.value)}
+          onChange={(e) => {
+            setAlias(e.target.value);
+            setInvalidFields((p) => { const n = new Set(p); n.delete("alias"); return n; });
+          }}
           required
         />
       </div>

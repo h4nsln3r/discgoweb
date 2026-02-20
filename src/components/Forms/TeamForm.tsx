@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 type TeamFormProps = {
   initialName?: string;
@@ -29,12 +29,20 @@ export default function TeamForm({
   const [logga, setLogga] = useState(initialLogga);
   const [about, setAbout] = useState(initialAbout);
   const [loading, setLoading] = useState(false);
+  const [invalidFields, setInvalidFields] = useState<Set<string>>(new Set());
+  const nameRef = useRef<HTMLDivElement>(null);
 
   const inputClass =
     "w-full rounded-xl border border-retro-border bg-retro-surface text-stone-100 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-retro-accent placeholder:text-stone-500";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!name.trim()) {
+      setInvalidFields(new Set(["name"]));
+      nameRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+    setInvalidFields(new Set());
     setLoading(true);
     await onSubmit({ name: name.trim(), ort: ort.trim() || "", logga: logga.trim() || "", about: about.trim() || "" });
     setLoading(false);
@@ -42,12 +50,15 @@ export default function TeamForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      <div>
+      <div ref={nameRef}>
         <label className="block text-sm font-medium text-stone-300 mb-1">Namn</label>
         <input
-          className={inputClass}
+          className={invalidFields.has("name") ? `${inputClass} border-red-500 ring-2 ring-red-500/50` : inputClass}
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={(e) => {
+            setName(e.target.value);
+            setInvalidFields((p) => { const n = new Set(p); n.delete("name"); return n; });
+          }}
           placeholder="t.ex. Discgolfklubben"
           required
         />
