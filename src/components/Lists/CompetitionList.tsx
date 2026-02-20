@@ -89,27 +89,27 @@ export default function CompetitionList({
         </select>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+      <div className="flex flex-col gap-4 w-full">
         {sorted.map((comp) => (
           <Link
             key={comp.id}
             href={`/competitions/${comp.id}`}
-            className="block rounded-xl border border-retro-border bg-retro-surface shadow-sm overflow-hidden hover:border-retro-muted/50 transition"
+            className="block w-full rounded-xl border border-retro-border bg-retro-surface shadow-sm overflow-hidden hover:border-retro-muted/50 transition"
           >
             {comp.image_url ? (
               // eslint-disable-next-line @next/next/no-img-element -- external image URL
               <img
                 src={comp.image_url}
                 alt={comp.title}
-                className="w-full h-40 object-cover"
+                className="w-full h-48 sm:h-56 object-cover"
               />
             ) : (
-              <div className="w-full h-40 bg-retro-card flex items-center justify-center text-retro-muted text-sm">
+              <div className="w-full h-48 sm:h-56 bg-retro-card flex items-center justify-center text-retro-muted text-sm">
                 Ingen bild
               </div>
             )}
-            <div className="p-4">
-              <h2 className="text-lg font-semibold text-stone-100">
+            <div className="p-4 sm:p-5">
+              <h2 className="text-lg sm:text-xl font-semibold text-stone-100">
                 {comp.title}
               </h2>
               <p className="text-sm text-stone-400 mt-1">

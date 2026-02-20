@@ -5,14 +5,16 @@ import { useRouter, useParams } from "next/navigation";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Database } from "@/types/supabase";
 import BackButton from "@/components/Buttons/BackButton";
-import TeamForm from "@/components/Forms/TeamForm";
+import TeamForm, { type TeamFormData } from "@/components/Forms/TeamForm";
 import { useToast } from "@/components/Toasts/ToastProvider";
+import { uploadTeamAssets } from "@/lib/team-uploads";
 
 type TeamRow = {
   id: string;
   name: string;
   ort: string | null;
   logga: string | null;
+  bild: string | null;
   about: string | null;
 };
 
@@ -31,7 +33,7 @@ export default function EditTeamPage() {
     const fetchTeam = async () => {
       const { data, error } = await supabase
         .from("teams")
-        .select("id, name, ort, logga, about")
+        .select("id, name, ort, logga, bild, about")
         .eq("id", id)
         .single();
 
@@ -47,18 +49,34 @@ export default function EditTeamPage() {
     fetchTeam();
   }, [id, supabase, showToast]);
 
-  const handleUpdate = async (data: {
-    name: string;
-    ort: string;
-    logga: string;
-    about: string;
-  }) => {
+  const handleUpdate = async (data: TeamFormData) => {
+    let loggaUrl = data.logga || null;
+    let bildUrl = data.bild || null;
+
+    if (id && (data.loggaFile || data.bildFile)) {
+      const uploaded = await uploadTeamAssets(
+        supabase,
+        id,
+        data.loggaFile,
+        data.bildFile
+      );
+      if (uploaded.error) {
+        showToast(
+          "Bilderna kunde inte laddas upp. Skapa bucket \"teams\" i Supabase (Storage) med public läsning och tillåt upload för inloggade.",
+          "error"
+        );
+      }
+      if (uploaded.loggaUrl !== null) loggaUrl = uploaded.loggaUrl;
+      if (uploaded.bildUrl !== null) bildUrl = uploaded.bildUrl;
+    }
+
     const { error } = await supabase
       .from("teams")
       .update({
         name: data.name,
         ort: data.ort || null,
-        logga: data.logga || null,
+        logga: loggaUrl,
+        bild: bildUrl,
         about: data.about || null,
       })
       .eq("id", id as string);
@@ -87,6 +105,7 @@ export default function EditTeamPage() {
         initialOrt={team.ort ?? ""}
         initialLogga={team.logga ?? ""}
         initialAbout={team.about ?? ""}
+        initialBild={team.bild ?? ""}
         onSubmit={handleUpdate}
         submitText="Spara ändringar"
       />

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { ClipboardDocumentListIcon, TrophyIcon } from "@heroicons/react/24/outline";
 
 /* ---------- Shapes ---------- */
 type LatestCourse = {
@@ -137,7 +138,10 @@ export default function DashboardFeeds({
       {/* Senaste resultat */}
       <Card>
         <CardHeader>
-          <h2 className="text-xl font-semibold text-stone-100">Senaste resultat</h2>
+          <h2 className="text-xl font-semibold text-stone-100 flex items-center gap-2">
+            <ClipboardDocumentListIcon className="h-6 w-6 text-retro-accent shrink-0" aria-hidden />
+            Senaste resultat
+          </h2>
           <Link href="/results" className="text-sm text-retro-accent hover:underline">
             Visa alla resultat
           </Link>
@@ -173,7 +177,7 @@ export default function DashboardFeeds({
                   aliasCell,
                   <Link
                     key={r.courseId}
-                    href={`/courses/${r.courseId}`}
+                    href={`/courses/${r.courseId}?from=dashboard`}
                     className="text-retro-accent hover:underline"
                   >
                     {r.courseName}
@@ -193,7 +197,10 @@ export default function DashboardFeeds({
       {/* Senaste tävlingar (competitions) */}
       <Card>
         <CardHeader>
-          <h2 className="text-xl font-semibold text-stone-100">Senaste tävlingar</h2>
+          <h2 className="text-xl font-semibold text-stone-100 flex items-center gap-2">
+          <TrophyIcon className="h-6 w-6 text-retro-accent shrink-0" aria-hidden />
+          Senaste tävlingar
+        </h2>
           <Link
             href="/competitions"
             className="text-sm text-retro-accent hover:underline"

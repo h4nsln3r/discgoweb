@@ -5,7 +5,7 @@ import Link from "next/link";
 import Map from "@/components/Maps/Map";
 import DashboardFeeds from "./DashboardFeeds";
 import PageLoading from "@/components/PageLoading";
-import { UserCircleIcon } from "@heroicons/react/24/outline";
+import { MapPinIcon, UserCircleIcon, UserGroupIcon } from "@heroicons/react/24/outline";
 
 type NewMember = { id: string; alias: string; avatar_url: string | null };
 
@@ -78,7 +78,10 @@ export default function DashboardContent({ userName }: { userName: string }) {
 
   const newMembersCard = newMembers.length > 0 ? (
     <div className="rounded-2xl border border-retro-border bg-retro-surface p-4 md:p-5 h-fit">
-      <h2 className="text-lg font-semibold text-stone-100 mb-3">Nya medlemmar</h2>
+      <h2 className="text-lg font-semibold text-stone-100 mb-3 flex items-center gap-2">
+          <UserGroupIcon className="h-5 w-5 text-retro-accent" aria-hidden />
+          Nya medlemmar
+        </h2>
       <div className="flex flex-wrap gap-3 md:gap-4">
         {newMembers.map((member) => (
           <Link
@@ -114,7 +117,10 @@ export default function DashboardContent({ userName }: { userName: string }) {
   const newCoursesCard = newCourses.length > 0 ? (
     <div className="rounded-2xl border border-retro-border bg-retro-surface p-4 md:p-5 h-fit">
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-lg font-semibold text-stone-100">Nya banor</h2>
+        <h2 className="text-lg font-semibold text-stone-100 flex items-center gap-2">
+          <MapPinIcon className="h-5 w-5 text-retro-accent" aria-hidden />
+          Nya banor
+        </h2>
         <Link href="/courses" className="text-sm text-retro-accent hover:underline">
           Visa alla
         </Link>
@@ -125,7 +131,7 @@ export default function DashboardContent({ userName }: { userName: string }) {
           return (
             <Link
               key={c.id}
-              href={`/courses/${c.id}`}
+              href={`/courses/${c.id}?from=dashboard`}
               className={`block px-3 py-2.5 text-sm transition border-b border-retro-border last:border-b-0 ${
                 isSelected
                   ? "bg-retro-accent/20 text-retro-accent font-medium ring-inset ring-1 ring-retro-accent/50"
@@ -148,10 +154,11 @@ export default function DashboardContent({ userName }: { userName: string }) {
       <div className="flex flex-col gap-4 md:flex-row md:items-stretch">
         <div className="order-2 md:order-1 flex-1 min-w-0">
           <Map
-          userName={userName}
-          initialCourses={data.mapCourses}
-          onSelectionChange={setSelectedMapCourseId}
-        />
+            userName={userName}
+            initialCourses={data.mapCourses}
+            onSelectionChange={setSelectedMapCourseId}
+            fromDashboard
+          />
         </div>
         {hasRightColumn && (
           <div className="order-1 md:order-2 w-full md:w-72 md:shrink-0 flex flex-col gap-4">

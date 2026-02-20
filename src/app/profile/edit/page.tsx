@@ -27,13 +27,22 @@ export default async function EditProfilePage() {
     .from("teams")
     .select("id, name");
 
+  let discs: { id: string; name: string }[] = [];
+  const { data: discsData } = await supabase.from("discs").select("id, name");
+  if (discsData) discs = discsData as { id: string; name: string }[];
+
   return (
     <main className="p-4 sm:p-6 max-w-3xl mx-auto">
       <div className="mb-6">
         <BackButton />
       </div>
       <h1 className="text-2xl font-bold mb-4 text-stone-100">Redigera profil</h1>
-      <ProfileForm profile={profile} courses={courses || []} teams={teams || []} />
+      <ProfileForm
+        profile={profile}
+        courses={courses || []}
+        teams={teams || []}
+        discs={discs || []}
+      />
     </main>
   );
 }

@@ -18,6 +18,7 @@ type ProfileRow = {
   avatar_url: string | null;
   home_course: string | null;
   team_id: string | null;
+  favorite_disc_id: string | null;
   phone: string | null;
   favorite_disc: string | null;
   city: string | null;
@@ -35,7 +36,14 @@ type TeamRow = {
   name: string;
   ort: string | null;
   logga: string | null;
+  bild: string | null;
   about: string | null;
+};
+
+type DiscRow = {
+  id: string;
+  name: string;
+  bild: string | null;
 };
 
 export default async function ProfileHomePage() {
@@ -50,7 +58,7 @@ export default async function ProfileHomePage() {
   const { data: profileData, error: profileError } = await supabase
     .from("profiles")
     .select(
-      "id, alias, avatar_url, home_course, team_id, phone, favorite_disc, city, country"
+      "id, alias, avatar_url, home_course, team_id, favorite_disc_id, phone, favorite_disc, city, country"
     )
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .eq("id", user.id as any)
@@ -87,11 +95,22 @@ export default async function ProfileHomePage() {
   if (profile?.team_id) {
     const { data: teamData } = await supabase
       .from("teams")
-      .select("id, name, ort, logga, about")
+      .select("id, name, ort, logga, bild, about")
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .eq("id", profile.team_id as any)
       .single();
     team = teamData as TeamRow | null;
+  }
+
+  let favoriteDisc: DiscRow | null = null;
+  if (profile?.favorite_disc_id) {
+    const res = await supabase
+      .from("discs")
+      .select("id, name, bild")
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .eq("id", profile.favorite_disc_id as any)
+      .maybeSingle();
+    if (!res.error && res.data) favoriteDisc = res.data as DiscRow;
   }
 
   type ScoreRow = {
@@ -125,70 +144,107 @@ export default async function ProfileHomePage() {
         <ProfileWelcomeToast displayName={profile?.alias ?? null} />
       </Suspense>
 
-      {/* Profil: rund bild + namn (inga ikoner i rubriker) */}
+      {/* Profil: mobil = kolumn, desktop = rad. Bild + namn/disc/plats. */}
       <div className="rounded-2xl border border-retro-border bg-retro-surface p-6 shadow-sm mb-6">
-        <div className="flex items-center gap-4">
-          <div className="shrink-0 w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden bg-retro-card border border-retro-border">
-            {profile?.avatar_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={profile.avatar_url}
-                alt="Profilbild"
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <div className="h-full w-full flex items-center justify-center text-retro-muted text-3xl">
-                🥏
+        <div className="flex flex-col md:flex-row items-center md:items-start gap-4">
+          {/* Profilbild med laglogga i övre högra hörnet (halv storlek) */}
+          <div className="relative shrink-0 w-24 h-24 sm:w-28 sm:h-28 overflow-visible">
+            <div className="w-full h-full rounded-full overflow-hidden bg-retro-card border border-retro-border">
+              {profile?.avatar_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={profile.avatar_url}
+                  alt="Profilbild"
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="h-full w-full flex items-center justify-center text-retro-muted text-3xl">
+                  🥏
+                </div>
+              )}
+            </div>
+            {team ? (
+              <div
+                className="absolute -top-1 -left-0.5 w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden border-2 border-retro-surface bg-retro-card shadow-md z-10"
+                title={team.name}
+              >
+                {team.logga ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={team.logga}
+                    alt={team.name}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <span className="h-full w-full flex items-center justify-center text-retro-muted text-lg" aria-hidden>👥</span>
+                )}
               </div>
-            )}
+            ) : null}
           </div>
-          <div className="min-w-0">
-            <h1 className="text-xl sm:text-2xl font-bold text-stone-100 truncate">
-              {profile?.alias || "Anonym kastare"}
-            </h1>
-            {profile?.favorite_disc && (
-              <p className="text-stone-400 text-sm mt-0.5">
-                Favorit disc: {profile.favorite_disc}
-              </p>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Stad, Land, Telefon – ett kort med ikoner */}
-      <div className="rounded-2xl border border-retro-border bg-retro-surface p-5 shadow-sm mb-6">
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-          {profile?.city ? (
-            <span className="flex items-center gap-2 text-stone-200">
-              <MapPinIcon className="w-4 h-4 text-retro-muted shrink-0" />
-              {profile.city}
-            </span>
-          ) : null}
-          {profile?.country ? (
-            <span className="flex items-center gap-2 text-stone-200">
-              {profile.country === "Sverige" ? (
-                <span className="text-lg leading-none" title="Sverige">🇸🇪</span>
+          {/* Kolumn: namn + favorit disc (desktop: samma rad; mobil: under varandra), sedan plats/nummer */}
+          <div className="min-w-0 flex-1 w-full flex flex-col gap-3 text-center md:text-left">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4">
+              <h1 className="text-2xl sm:text-3xl font-bold text-stone-100 truncate min-w-0">
+                {profile?.alias || "Anonym kastare"}
+              </h1>
+              {/* Favorit disc: desktop = till höger om namn, mobil = under namnet */}
+              {(favoriteDisc || profile?.favorite_disc) ? (
+                <div className="flex items-center justify-center md:justify-end gap-3 shrink-0 md:ml-auto">
+                  <div className="text-right">
+                    <p className="text-xs text-retro-muted uppercase tracking-wide">Favorit disc</p>
+                    <p className="text-stone-200 font-medium">
+                      {favoriteDisc?.name ?? profile?.favorite_disc ?? "—"}
+                    </p>
+                  </div>
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden bg-retro-card border border-retro-border shrink-0 flex items-center justify-center">
+                    {favoriteDisc?.bild ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={favoriteDisc.bild}
+                        alt={favoriteDisc.name}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-retro-muted text-xl">🥏</span>
+                    )}
+                  </div>
+                </div>
               ) : null}
-              {profile.country}
-            </span>
-          ) : null}
-          {profile?.phone ? (
-            <span className="flex items-center gap-2 text-stone-200">
-              <PhoneIcon className="w-4 h-4 text-retro-muted shrink-0" />
-              {profile.phone}
-            </span>
-          ) : null}
-          {!profile?.city && !profile?.country && !profile?.phone ? (
-            <span className="text-retro-muted text-sm">Ingen plats eller telefon angiven</span>
-          ) : null}
+            </div>
+            <div className="flex flex-col gap-1 text-sm text-stone-400 items-center md:items-start">
+              {profile?.city ? (
+                <span className="flex items-center gap-1.5">
+                  <MapPinIcon className="w-4 h-4 text-retro-muted shrink-0" />
+                  {profile.city}
+                </span>
+              ) : null}
+              {profile?.country ? (
+                <span className="flex items-center gap-1.5">
+                  {profile.country === "Sverige" ? (
+                    <span className="leading-none" title="Sverige">🇸🇪</span>
+                  ) : null}
+                  {profile.country}
+                </span>
+              ) : null}
+              {profile?.phone ? (
+                <span className="flex items-center gap-1.5">
+                  <PhoneIcon className="w-4 h-4 text-retro-muted shrink-0" />
+                  {profile.phone}
+                </span>
+              ) : null}
+              {!profile?.city && !profile?.country && !profile?.phone ? (
+                <span className="text-retro-muted">Ingen plats eller telefon angiven</span>
+              ) : null}
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Hemmabana – eget kort med bild + bästa runda */}
+      {/* Hemmabana – eget kort med bild (lägre på desktop) + bästa runda */}
       <div className="rounded-2xl border border-retro-border bg-retro-surface overflow-hidden shadow-sm mb-6">
         {homeCourse ? (
           <>
-            <div className="aspect-video bg-retro-card relative">
+            <div className="aspect-video md:aspect-[3/1] max-h-48 md:max-h-52 bg-retro-card relative">
               {homeCourse.main_image_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -230,12 +286,12 @@ export default async function ProfileHomePage() {
         {team ? (
           <>
             <div className="aspect-video bg-retro-card relative flex items-center justify-center">
-              {team.logga ? (
+              {(team.bild || team.logga) ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={team.logga}
+                  src={team.bild || team.logga || ""}
                   alt={team.name}
-                  className="w-full h-full object-contain p-4"
+                  className={`w-full h-full ${team.bild ? "object-cover" : "object-contain p-4"}`}
                 />
               ) : (
                 <UserGroupIcon className="w-16 h-16 text-retro-muted" />
@@ -243,7 +299,21 @@ export default async function ProfileHomePage() {
             </div>
             <div className="p-4">
               <p className="text-sm text-retro-muted">Lag</p>
-              <p className="font-semibold text-stone-100">{team.name}</p>
+              <div className="flex items-center gap-3 mt-1">
+                <div className="h-10 w-10 rounded-lg overflow-hidden bg-retro-card border border-retro-border shrink-0 flex items-center justify-center">
+                  {team.logga ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={team.logga}
+                      alt=""
+                      className="h-full w-full object-contain"
+                    />
+                  ) : (
+                    <UserGroupIcon className="w-6 h-6 text-retro-muted" />
+                  )}
+                </div>
+                <p className="font-semibold text-stone-100">{team.name}</p>
+              </div>
               {team.ort && (
                 <p className="text-stone-400 text-sm mt-0.5">{team.ort}</p>
               )}

@@ -12,14 +12,18 @@ import MapEmbed from "@/components/Maps/MapEmbed";
 
 export default async function CourseDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ from?: string }>;
 }) {
   const cookieStore = await cookies();
   const supabase = createServerComponentClient<Database>({
     cookies: () => cookieStore,
   });
   const { id } = await params;
+  const { from } = await searchParams;
+  const fromDashboard = from === "dashboard";
 
   // Hämta kursen
   const { data: course, error } = await supabase
@@ -85,7 +89,9 @@ export default async function CourseDetailPage({
   return (
     <div className="max-w-5xl mx-auto p-6 space-y-8">
       <div className="flex items-center justify-between gap-4">
-        <BackLink href="/courses">Tillbaka till banor</BackLink>
+        <BackLink href={fromDashboard ? "/dashboard" : "/courses"}>
+          {fromDashboard ? "Tillbaka till dashboard" : "Tillbaka till banor"}
+        </BackLink>
         <Link
           href={`/results/new?course_id=${course.id}`}
           className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-retro-accent text-stone-100 text-sm font-medium hover:bg-retro-accent-hover transition"

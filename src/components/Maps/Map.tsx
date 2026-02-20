@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import type { Course } from "../Lists/CourseList";
 import { useEffect, useMemo, useState } from "react";
-import { MagnifyingGlassIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { MagnifyingGlassIcon, MapPinIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import CoursePreviewPanel from "./CoursePreviewPanel";
 import Link from "next/link";
 
@@ -15,9 +15,11 @@ type Props = {
   initialCourses?: Course[] | null;
   /** Anropas när användaren väljer eller avmarkerar en bana på kartan (för t.ex. att lyfta fram i Nya banor). */
   onSelectionChange?: (courseId: string | null) => void;
+  /** Om true, länkar till bana får ?from=dashboard så tillbaka på bansidan går till dashboard. */
+  fromDashboard?: boolean;
 };
 
-export default function Map({ userName, initialCourses, onSelectionChange }: Props) {
+export default function Map({ userName, initialCourses, onSelectionChange, fromDashboard }: Props) {
   const [courses, setCourses] = useState<Course[]>(initialCourses ?? []);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [courseSearch, setCourseSearch] = useState("");
@@ -82,6 +84,7 @@ export default function Map({ userName, initialCourses, onSelectionChange }: Pro
                 course={selectedCourse}
                 onClose={() => setSelectedAndNotify(null)}
                 embedded
+                fromDashboard={fromDashboard}
               />
             </div>
           ) : (
@@ -102,7 +105,8 @@ export default function Map({ userName, initialCourses, onSelectionChange }: Pro
                 </div>
               )}
               <div className="p-3 border-b border-retro-border shrink-0">
-                <h3 className="text-lg font-semibold text-stone-100 mb-2">
+                <h3 className="text-lg font-semibold text-stone-100 mb-2 flex items-center gap-2">
+                  <MapPinIcon className="h-5 w-5 text-retro-accent shrink-0" aria-hidden />
                   Välj bana
                 </h3>
                 <p className="text-stone-400 text-sm mb-3">
@@ -184,6 +188,7 @@ export default function Map({ userName, initialCourses, onSelectionChange }: Pro
               course={selectedCourse}
               onClose={() => setSelectedAndNotify(null)}
               embedded
+              fromDashboard={fromDashboard}
             />
             {isMobile &&
               selectedCourse.latitude != null &&

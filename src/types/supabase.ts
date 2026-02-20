@@ -184,12 +184,33 @@ export type Database = {
           },
         ]
       }
+      discs: {
+        Row: {
+          id: string
+          name: string
+          bild: string | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          name: string
+          bild?: string | null
+          created_at?: string | null
+        }
+        Update: {
+          name?: string
+          bild?: string | null
+          created_at?: string | null
+        }
+        Relationships: []
+      }
       teams: {
         Row: {
           id: string
           name: string
           ort: string | null
           logga: string | null
+          bild: string | null
           about: string | null
         }
         Insert: {
@@ -197,12 +218,14 @@ export type Database = {
           name: string
           ort?: string | null
           logga?: string | null
+          bild?: string | null
           about?: string | null
         }
         Update: {
           name?: string
           ort?: string | null
           logga?: string | null
+          bild?: string | null
           about?: string | null
         }
         Relationships: []
@@ -214,6 +237,7 @@ export type Database = {
           city: string | null
           country: string | null
           favorite_disc: string | null
+          favorite_disc_id: string | null
           phone: string | null
           team_id: string | null
           home_course: string | null
@@ -225,6 +249,7 @@ export type Database = {
           city?: string | null
           country?: string | null
           favorite_disc?: string | null
+          favorite_disc_id?: string | null
           phone?: string | null
           team_id?: string | null
           home_course?: string | null
@@ -236,6 +261,7 @@ export type Database = {
           city?: string | null
           country?: string | null
           favorite_disc?: string | null
+          favorite_disc_id?: string | null
           phone?: string | null
           team_id?: string | null
           home_course?: string | null
@@ -254,6 +280,13 @@ export type Database = {
             columns: ["team_id"]
             isOneToOne: false
             referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_favorite_disc_id_fkey"
+            columns: ["favorite_disc_id"]
+            isOneToOne: false
+            referencedRelation: "discs"
             referencedColumns: ["id"]
           },
         ]

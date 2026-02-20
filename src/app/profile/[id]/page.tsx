@@ -1,50 +1,97 @@
-// Offentlig profilsida för en användare (t.ex. från resultatlistan)
+// Offentlig profilsida – samma layout som min profil, men "Dens resultat" och utan redigera-knapp
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
-import { ArrowLeftIcon, MapPinIcon, TrophyIcon } from "@heroicons/react/24/outline";
+import {
+  MapPinIcon,
+  PhoneIcon,
+  HomeIcon,
+  UserGroupIcon,
+  TrophyIcon,
+} from "@heroicons/react/24/outline";
+import BackButton from "@/components/Buttons/BackButton";
 
 type Props = { params: Promise<{ id: string }> };
+
+type HomeCourseRow = {
+  id: string;
+  name: string;
+  main_image_url: string | null;
+};
+type TeamRow = {
+  id: string;
+  name: string;
+  ort: string | null;
+  logga: string | null;
+  bild: string | null;
+  about: string | null;
+};
+type DiscRow = { id: string; name: string; bild: string | null };
 
 export default async function PublicProfilePage({ params }: Props) {
   const { id } = await params;
   const supabase = await createServerSupabaseClient();
 
-  const { data: profile, error } = await supabase
+  const { data: profileData, error: profileError } = await supabase
     .from("profiles")
-    .select("id, alias, avatar_url, city, team_id, favorite_disc, home_course")
+    .select("id, alias, avatar_url, home_course, team_id, favorite_disc_id, phone, favorite_disc, city, country")
     .eq("id", id)
     .single();
 
-  if (error || !profile) notFound();
+  if (profileError || !profileData) notFound();
 
-  let homeCourseName: string | null = null;
+  const profile = profileData as {
+    id: string;
+    alias: string | null;
+    avatar_url: string | null;
+    home_course: string | null;
+    team_id: string | null;
+    favorite_disc_id: string | null;
+    phone: string | null;
+    favorite_disc: string | null;
+    city: string | null;
+    country: string | null;
+  };
+
+  let homeCourse: HomeCourseRow | null = null;
+  let bestRoundScore: number | null = null;
   if (profile.home_course) {
     const { data: course } = await supabase
       .from("courses")
-      .select("name")
+      .select("id, name, main_image_url")
       .eq("id", profile.home_course)
       .single();
-    homeCourseName = course?.name ?? null;
+    homeCourse = course as HomeCourseRow | null;
+    const { data: bestRow } = await supabase
+      .from("scores")
+      .select("score")
+      .eq("user_id", id)
+      .eq("course_id", profile.home_course)
+      .order("score", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    bestRoundScore = bestRow?.score ?? null;
   }
 
-  let teamName: string | null = null;
+  let team: TeamRow | null = null;
   if (profile.team_id) {
-    const { data: team } = await supabase
+    const { data: teamData } = await supabase
       .from("teams")
-      .select("name")
+      .select("id, name, ort, logga, bild, about")
       .eq("id", profile.team_id)
       .single();
-    teamName = team?.name ?? null;
+    team = teamData as TeamRow | null;
   }
 
-  const { data: scores } = await supabase
-    .from("scores")
-    .select("id, score, throws, date_played, created_at, course_id, courses ( id, name )")
-    .eq("user_id", id)
-    .order("date_played", { ascending: false })
-    .order("created_at", { ascending: false })
-    .limit(100);
+  let favoriteDisc: DiscRow | null = null;
+  if (profile.favorite_disc_id) {
+    const res = await supabase
+      .from("discs")
+      .select("id, name, bild")
+      .eq("id", profile.favorite_disc_id)
+      .maybeSingle();
+    if (!res.error && res.data) favoriteDisc = res.data as DiscRow;
+  }
 
   type ScoreRow = {
     id: string;
@@ -56,11 +103,15 @@ export default async function PublicProfilePage({ params }: Props) {
     courses: { id: string; name: string } | null;
   };
 
-  const scoreList = (scores ?? []) as ScoreRow[];
-  const coursesPlayed = Array.from(
-    new Map(scoreList.map((s) => [s.course_id, { id: s.course_id, name: s.courses?.name ?? "Okänd bana" }])).values()
-  );
-  const recentScores = scoreList.slice(0, 20);
+  const { data: scoresData } = await supabase
+    .from("scores")
+    .select("id, score, throws, date_played, created_at, course_id, courses ( id, name )")
+    .eq("user_id", id)
+    .order("date_played", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(100);
+
+  const scoreList = (scoresData ?? []) as ScoreRow[];
 
   function formatDate(date: string | null) {
     if (!date) return "—";
@@ -68,105 +119,196 @@ export default async function PublicProfilePage({ params }: Props) {
   }
 
   return (
-    <main className="p-4 md:p-6 max-w-3xl mx-auto space-y-6">
-      <Link
-        href="/results"
-        className="inline-flex items-center gap-2 text-sm text-stone-400 hover:text-stone-200 transition"
-      >
-        <ArrowLeftIcon className="h-4 w-4" />
-        Tillbaka
-      </Link>
+    <main className="p-4 sm:p-6 max-w-3xl mx-auto">
+      <div className="mb-4">
+        <BackButton />
+      </div>
 
-      <div className="rounded-2xl border border-retro-border bg-retro-surface p-6 space-y-6">
-        <div className="flex items-center gap-4">
-          <div className="h-16 w-16 rounded-full bg-retro-card border border-retro-border overflow-hidden flex items-center justify-center shrink-0">
-            {profile.avatar_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={profile.avatar_url}
-                alt=""
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <span className="text-xs text-retro-muted">—</span>
-            )}
-          </div>
-          <div>
-            <h1 className="text-xl font-bold text-stone-100">
-              {profile.alias || "Spelare"}
-            </h1>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-          {homeCourseName && profile.home_course && (
-            <div>
-              <p className="text-stone-500">Hemmabana</p>
-              <Link
-                href={`/courses/${profile.home_course}`}
-                className="font-medium text-stone-200 text-retro-accent hover:underline"
+      {/* Profil: samma layout som min profil (mobil = kolumn, desktop = rad) */}
+      <div className="rounded-2xl border border-retro-border bg-retro-surface p-6 shadow-sm mb-6">
+        <div className="flex flex-col md:flex-row items-center md:items-start gap-4">
+          <div className="relative shrink-0 w-24 h-24 sm:w-28 sm:h-28 overflow-visible">
+            <div className="w-full h-full rounded-full overflow-hidden bg-retro-card border border-retro-border">
+              {profile.avatar_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={profile.avatar_url}
+                  alt="Profilbild"
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="h-full w-full flex items-center justify-center text-retro-muted text-3xl">
+                  🥏
+                </div>
+              )}
+            </div>
+            {team ? (
+              <div
+                className="absolute -top-1 -left-0.5 w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden border-2 border-retro-surface bg-retro-card shadow-md z-10"
+                title={team.name}
               >
-                {homeCourseName}
-              </Link>
+                {team.logga ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img src={team.logga} alt={team.name} className="h-full w-full object-cover" />
+                ) : (
+                  <span className="h-full w-full flex items-center justify-center text-retro-muted text-lg" aria-hidden>👥</span>
+                )}
+              </div>
+            ) : null}
+          </div>
+          <div className="min-w-0 flex-1 w-full flex flex-col gap-3 text-center md:text-left">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4">
+              <h1 className="text-2xl sm:text-3xl font-bold text-stone-100 truncate min-w-0">
+                {profile.alias || "Spelare"}
+              </h1>
+              {(favoriteDisc || profile.favorite_disc) ? (
+                <div className="flex items-center justify-center md:justify-end gap-3 shrink-0 md:ml-auto">
+                  <div className="text-right">
+                    <p className="text-xs text-retro-muted uppercase tracking-wide">Favorit disc</p>
+                    <p className="text-stone-200 font-medium">
+                      {favoriteDisc?.name ?? profile.favorite_disc ?? "—"}
+                    </p>
+                  </div>
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden bg-retro-card border border-retro-border shrink-0 flex items-center justify-center">
+                    {favoriteDisc?.bild ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={favoriteDisc.bild}
+                        alt={favoriteDisc.name}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-retro-muted text-xl">🥏</span>
+                    )}
+                  </div>
+                </div>
+              ) : null}
             </div>
-          )}
-          {profile.city && (
-            <div>
-              <p className="text-stone-500">Stad</p>
-              <p className="font-medium text-stone-200">{profile.city}</p>
+            <div className="flex flex-col gap-1 text-sm text-stone-400 items-center md:items-start">
+              {profile.city ? (
+                <span className="flex items-center gap-1.5">
+                  <MapPinIcon className="w-4 h-4 text-retro-muted shrink-0" />
+                  {profile.city}
+                </span>
+              ) : null}
+              {profile.country ? (
+                <span className="flex items-center gap-1.5">
+                  {profile.country === "Sverige" ? (
+                    <span className="leading-none" title="Sverige">🇸🇪</span>
+                  ) : null}
+                  {profile.country}
+                </span>
+              ) : null}
+              {profile.phone ? (
+                <span className="flex items-center gap-1.5">
+                  <PhoneIcon className="w-4 h-4 text-retro-muted shrink-0" />
+                  {profile.phone}
+                </span>
+              ) : null}
+              {!profile.city && !profile.country && !profile.phone ? (
+                <span className="text-retro-muted">Ingen plats angiven</span>
+              ) : null}
             </div>
-          )}
-          {teamName && (
-            <div>
-              <p className="text-stone-500">Lag</p>
-              <p className="font-medium text-stone-200">{teamName}</p>
-            </div>
-          )}
-          {profile.favorite_disc && (
-            <div>
-              <p className="text-stone-500">Favoritdisc</p>
-              <p className="font-medium text-stone-200">{profile.favorite_disc}</p>
-            </div>
-          )}
+          </div>
         </div>
       </div>
 
-      {coursesPlayed.length > 0 && (
-        <div className="rounded-2xl border border-retro-border bg-retro-surface p-6">
-          <h2 className="flex items-center gap-2 text-lg font-semibold text-stone-100 mb-3">
-            <MapPinIcon className="w-5 h-5 text-retro-muted shrink-0" aria-hidden />
-            Spelade banor
-          </h2>
-          <ul className="space-y-2">
-            {coursesPlayed.map((c) => {
-              const onCourse = scoreList.filter((s) => s.course_id === c.id);
-              const best = onCourse.reduce((a, b) => (a.score < b.score ? a : b), onCourse[0]);
-              return (
-                <li key={c.id} className="flex items-center justify-between gap-3 py-2 border-b border-retro-border last:border-0">
-                  <Link
-                    href={`/courses/${c.id}`}
-                    className="font-medium text-retro-accent hover:underline"
-                  >
-                    {c.name}
-                  </Link>
-                  <span className="text-sm text-stone-400">
-                    {onCourse.length} rund{onCourse.length === 1 ? "a" : "or"}
-                    {best && (
-                      <> · Bästa: {best.throws ?? best.score} kast</>
-                    )}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      )}
+      {/* Hemmabana – samma kort som min profil */}
+      <div className="rounded-2xl border border-retro-border bg-retro-surface overflow-hidden shadow-sm mb-6">
+        {homeCourse ? (
+          <>
+            <div className="aspect-video md:aspect-[3/1] max-h-48 md:max-h-52 bg-retro-card relative">
+              {homeCourse.main_image_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={homeCourse.main_image_url}
+                  alt={homeCourse.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-retro-muted">
+                  <HomeIcon className="w-12 h-12" />
+                </div>
+              )}
+            </div>
+            <div className="p-4">
+              <p className="text-sm text-retro-muted">Hemmabana</p>
+              <Link
+                href={`/courses/${homeCourse.id}`}
+                className="font-semibold text-stone-100 text-retro-accent hover:underline"
+              >
+                {homeCourse.name}
+              </Link>
+              {bestRoundScore !== null && (
+                <p className="text-stone-400 text-sm mt-1">
+                  Bästa runda: {bestRoundScore} slag
+                </p>
+              )}
+            </div>
+          </>
+        ) : (
+          <div className="p-5">
+            <p className="text-sm text-retro-muted">Hemmabana</p>
+            <p className="text-stone-400">Ingen hemmabana vald</p>
+          </div>
+        )}
+      </div>
 
-      {recentScores.length > 0 && (
-        <div className="rounded-2xl border border-retro-border bg-retro-surface p-6">
+      {/* Lag – samma kort som min profil */}
+      <div className="rounded-2xl border border-retro-border bg-retro-surface overflow-hidden shadow-sm mb-6">
+        {team ? (
+          <>
+            <div className="aspect-video bg-retro-card relative flex items-center justify-center">
+              {(team.bild || team.logga) ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={team.bild || team.logga || ""}
+                  alt={team.name}
+                  className={`w-full h-full ${team.bild ? "object-cover" : "object-contain p-4"}`}
+                />
+              ) : (
+                <UserGroupIcon className="w-16 h-16 text-retro-muted" />
+              )}
+            </div>
+            <div className="p-4">
+              <p className="text-sm text-retro-muted">Lag</p>
+              <div className="flex items-center gap-3 mt-1">
+                <div className="h-10 w-10 rounded-lg overflow-hidden bg-retro-card border border-retro-border shrink-0 flex items-center justify-center">
+                  {team.logga ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={team.logga}
+                      alt=""
+                      className="h-full w-full object-contain"
+                    />
+                  ) : (
+                    <UserGroupIcon className="w-6 h-6 text-retro-muted" />
+                  )}
+                </div>
+                <p className="font-semibold text-stone-100">{team.name}</p>
+              </div>
+              {team.ort && (
+                <p className="text-stone-400 text-sm mt-0.5">{team.ort}</p>
+              )}
+              {team.about && (
+                <p className="text-stone-400 text-sm mt-2">{team.about}</p>
+              )}
+            </div>
+          </>
+        ) : (
+          <div className="p-5">
+            <p className="text-sm text-retro-muted">Lag</p>
+            <p className="text-stone-400">Inget lag valt</p>
+          </div>
+        )}
+      </div>
+
+      {/* Resultat – samma tabell men rubriken "Dens resultat" */}
+      {scoreList.length > 0 ? (
+        <div className="rounded-2xl border border-retro-border bg-retro-surface p-6 shadow-sm mb-6">
           <h2 className="flex items-center gap-2 text-lg font-semibold text-stone-100 mb-3">
             <TrophyIcon className="w-5 h-5 text-retro-muted shrink-0" aria-hidden />
-            Senaste resultat
+            Dens resultat
           </h2>
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left">
@@ -180,7 +322,7 @@ export default async function PublicProfilePage({ params }: Props) {
                 </tr>
               </thead>
               <tbody>
-                {recentScores.map((s) => (
+                {scoreList.map((s) => (
                   <tr key={s.id} className="border-b border-retro-border/50 last:border-0">
                     <td className="py-2 pr-3">
                       <Link
@@ -209,10 +351,8 @@ export default async function PublicProfilePage({ params }: Props) {
             </table>
           </div>
         </div>
-      )}
-
-      {scoreList.length === 0 && (
-        <div className="rounded-2xl border border-retro-border bg-retro-surface p-6">
+      ) : (
+        <div className="rounded-2xl border border-retro-border bg-retro-surface p-6 shadow-sm mb-6">
           <p className="text-stone-400 text-sm">Inga resultat inlagda än.</p>
         </div>
       )}

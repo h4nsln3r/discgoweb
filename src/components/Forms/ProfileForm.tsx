@@ -14,6 +14,7 @@ type Course = Pick<
   "id" | "name"
 >;
 type Team = Pick<Database["public"]["Tables"]["teams"]["Row"], "id" | "name">;
+type Disc = Pick<Database["public"]["Tables"]["discs"]["Row"], "id" | "name">;
 
 const CROP_SIZE = 320;
 const PREVIEW_SIZE = 96;
@@ -22,10 +23,12 @@ export default function ProfileForm({
   profile,
   courses,
   teams,
+  discs = [],
 }: {
   profile: Profile | null;
   courses: Course[];
   teams: Team[];
+  discs?: Disc[];
 }) {
   const supabase = createSupabaseClient();
   const router = useRouter();
@@ -36,8 +39,8 @@ export default function ProfileForm({
     profile?.home_course ?? ""
   );
   const [phone, setPhone] = useState(profile?.phone ?? "+46 ");
-  const [favoriteDisc, setFavoriteDisc] = useState(
-    profile?.favorite_disc ?? ""
+  const [favoriteDiscId, setFavoriteDiscId] = useState(
+    profile?.favorite_disc_id ?? ""
   );
   const [city, setCity] = useState(profile?.city ?? "");
   const [country, setCountry] = useState(profile?.country ?? "");
@@ -204,13 +207,15 @@ export default function ProfileForm({
 
       const avatar_url = await uploadAvatar();
 
+      const selectedDisc = discs.find((d) => d.id === favoriteDiscId);
       const payload: Database["public"]["Tables"]["profiles"]["Insert"] = {
         id: user.id,
         alias,
         avatar_url,
         home_course: homeCourse || null,
         phone: phone?.trim() || null,
-        favorite_disc: favoriteDisc?.trim() || null,
+        favorite_disc_id: favoriteDiscId || null,
+        favorite_disc: selectedDisc?.name ?? profile?.favorite_disc ?? null,
         city: city?.trim() || null,
         country: country?.trim() || null,
         team_id: teamId || null,
@@ -430,12 +435,23 @@ export default function ProfileForm({
         </div>
         <div className="space-y-2">
           <label className="block text-sm font-medium text-stone-300">Favorit disc</label>
-          <input
+          <select
             className={inputClass}
-            value={favoriteDisc}
-            onChange={(e) => setFavoriteDisc(e.target.value)}
-            placeholder="t.ex. Destroyer"
-          />
+            value={favoriteDiscId}
+            onChange={(e) => setFavoriteDiscId(e.target.value)}
+          >
+            <option value="">Ingen vald</option>
+            {discs.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.name}
+              </option>
+            ))}
+          </select>
+          {discs.length === 0 && (
+            <p className="text-xs text-retro-muted">
+              <Link href="/discs" className="text-retro-accent hover:underline">Lägg till discar</Link> först om du vill välja en favorit.
+            </p>
+          )}
         </div>
       </div>
 

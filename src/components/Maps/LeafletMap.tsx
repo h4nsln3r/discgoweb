@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { MapContainer, TileLayer, CircleMarker, Marker, Popup, useMap } from "react-leaflet";
 import type { Course } from "../CourseList";
 import L from "leaflet";
@@ -129,7 +130,15 @@ export default function LeafletMap({
         className="w-full z-0 rounded-lg shadow bg-retro-card flex items-center justify-center"
         style={{ height }}
       >
-        <div className="h-32 w-32 rounded-full border-4 border-retro-accent/30 border-t-retro-accent animate-spin" />
+        <div className="h-80 w-80 md:h-96 md:w-96 animate-spin">
+          <Image
+            src="/logo/disco.png"
+            alt=""
+            width={384}
+            height={384}
+            className="h-full w-full object-contain"
+          />
+        </div>
       </div>
     );
   }

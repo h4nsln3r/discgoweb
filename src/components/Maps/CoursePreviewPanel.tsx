@@ -14,6 +14,8 @@ type Props = {
   onClose: () => void;
   /** Inbäddad i fullsidsoverlay (ingen egen backdrop/fixed), bara innehåll. */
   embedded?: boolean;
+  /** Om true, länk till banan inkluderar ?from=dashboard så tillbaka går till dashboard. */
+  fromDashboard?: boolean;
 };
 
 type BestScore = {
@@ -24,7 +26,8 @@ type BestScore = {
   profiles: { alias: string | null } | null;
 };
 
-export default function CoursePreviewPanel({ course, onClose, embedded }: Props) {
+export default function CoursePreviewPanel({ course, onClose, embedded, fromDashboard }: Props) {
+  const courseHref = course ? `/courses/${course.id}${fromDashboard ? "?from=dashboard" : ""}` : "#";
   const router = useRouter();
   const supabase = useMemo(() => createClientComponentClient<Database>(), []);
 
@@ -129,7 +132,7 @@ export default function CoursePreviewPanel({ course, onClose, embedded }: Props)
             {/* Title & location */}
             <div className="mb-2">
               <h3 className="text-xl font-semibold text-stone-100">
-                <Link href={`/courses/${course.id}`} onClick={onClose} className="text-retro-accent hover:underline">
+                <Link href={courseHref} onClick={onClose} className="text-retro-accent hover:underline">
                   {course.name}
                 </Link>
               </h3>
@@ -210,7 +213,7 @@ export default function CoursePreviewPanel({ course, onClose, embedded }: Props)
             {/* Actions in one row */}
             <div className="mt-4 flex items-center gap-3">
               <Link
-                href={`/courses/${course.id}`}
+                href={courseHref}
                 onClick={onClose}
                 className="inline-flex items-center justify-center rounded-lg border border-retro-border bg-retro-card px-4 py-2 text-sm font-medium text-stone-200 hover:bg-retro-border/50 transition"
               >
