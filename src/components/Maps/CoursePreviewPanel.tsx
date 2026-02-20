@@ -18,6 +18,8 @@ type Props = {
   fromDashboard?: boolean;
   /** Kompakt vy: mindre bild, utan koordinater och utan knapparna Visa detaljer/Lägg till resultat. */
   compact?: boolean;
+  /** Extra kompakt bild (halv höjd) – för mobil-bottenpanel. */
+  compactImageSmall?: boolean;
 };
 
 type BestScore = {
@@ -28,7 +30,7 @@ type BestScore = {
   profiles: { alias: string | null } | null;
 };
 
-export default function CoursePreviewPanel({ course, onClose, embedded, fromDashboard, compact }: Props) {
+export default function CoursePreviewPanel({ course, onClose, embedded, fromDashboard, compact, compactImageSmall }: Props) {
   const courseHref = course ? `/courses/${course.id}${fromDashboard ? "?from=dashboard" : ""}` : "#";
   const router = useRouter();
   const supabase = useMemo(() => createClientComponentClient<Database>(), []);
@@ -101,7 +103,7 @@ export default function CoursePreviewPanel({ course, onClose, embedded, fromDash
     >
           {/* Header image */}
           {course.main_image_url ? (
-            <div className={`relative w-full overflow-hidden md:rounded-t-2xl ${compact ? "aspect-[3/2] max-h-28" : "aspect-[16/9]"}`}>
+            <div className={`relative w-full overflow-hidden md:rounded-t-2xl ${compact ? (compactImageSmall ? "aspect-[3/2] max-h-14" : "aspect-[3/2] max-h-28") : "aspect-[16/9]"}`}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={course.main_image_url}

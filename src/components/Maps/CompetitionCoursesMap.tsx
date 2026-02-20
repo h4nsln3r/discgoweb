@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import CoursePreviewPanel from "./CoursePreviewPanel";
 import type { Course } from "../Lists/CourseList";
@@ -25,6 +25,14 @@ type Props = {
 
 export default function CompetitionCoursesMap({ courses }: Props) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
 
   const validCourses: Course[] = courses
     .filter((c) => c.latitude != null && c.longitude != null)
@@ -47,7 +55,7 @@ export default function CompetitionCoursesMap({ courses }: Props) {
         <h2 className="text-xl font-semibold px-4 py-3 border-b border-retro-border bg-retro-card text-stone-100">
           🗺️ Banor i tävlingen
         </h2>
-        <div className="relative h-64">
+        <div className="relative h-80 md:h-64">
           {/* Desktop: panel till höger som overlay på kartan */}
           {selectedCourse && (
             <div className="hidden md:flex absolute inset-y-0 right-0 z-20 w-72 shrink-0 flex-col overflow-hidden rounded-r-xl border-l border-retro-border bg-retro-surface shadow-lg">
@@ -61,37 +69,31 @@ export default function CompetitionCoursesMap({ courses }: Props) {
               </div>
             </div>
           )}
+          {/* Mobil: panel i nedre delen av kartan */}
+          {selectedCourse && (
+            <div className="md:hidden absolute inset-x-0 bottom-0 z-20 max-h-[55%] flex flex-col overflow-hidden rounded-t-xl border-t border-retro-border bg-retro-surface shadow-lg">
+              <div className="flex-1 min-h-0 overflow-y-auto">
+                <CoursePreviewPanel
+                  course={selectedCourse}
+                  onClose={() => setSelectedId(null)}
+                  embedded
+                  compact
+                  compactImageSmall
+                />
+              </div>
+            </div>
+          )}
           <LeafletMap
             courses={validCourses}
             selectedCourseId={selectedId}
             onSelectCourse={(c) => setSelectedId(c.id)}
-            height="256px"
+            height="100%"
             fitToCourses
-            centerOffsetPx={-144}
+            centerOffsetPx={isMobile ? undefined : -144}
+            centerOffsetPxY={isMobile && selectedId ? 60 : undefined}
           />
         </div>
       </div>
-
-      {/* Mobil: fullskärms-overlay */}
-      {selectedCourse && (
-        <div
-          className="fixed inset-0 z-40 bg-retro-bg overflow-y-auto md:hidden"
-          onClick={() => setSelectedId(null)}
-          aria-label="Stäng bana"
-        >
-          <div
-            className="min-h-full max-w-md mx-auto p-4 pb-8"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <CoursePreviewPanel
-              course={selectedCourse}
-              onClose={() => setSelectedId(null)}
-              embedded
-              compact
-            />
-          </div>
-        </div>
-      )}
     </>
   );
 }
