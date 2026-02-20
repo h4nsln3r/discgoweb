@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeftIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { TrashIcon } from "@heroicons/react/24/outline";
 import BackLink from "@/components/Buttons/BackLink";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import type { Database } from "@/types/supabase";
@@ -162,13 +162,7 @@ export default function EditScorePage() {
     return (
       <main className="p-4 md:p-6 max-w-3xl mx-auto">
         <p className="text-stone-400">Hittade inte resultat.</p>
-        <Link
-          href="/results"
-          className="inline-flex items-center gap-2 mt-3 text-retro-accent hover:underline"
-        >
-          <ArrowLeftIcon className="h-4 w-4" />
-          Tillbaka till resultat
-        </Link>
+        <BackLink href="/results" className="mt-3 inline-flex items-center gap-2 text-retro-accent hover:text-stone-200" />
       </main>
     );
   }
@@ -178,13 +172,7 @@ export default function EditScorePage() {
     return (
       <main className="p-4 md:p-6 max-w-3xl mx-auto space-y-4">
         <p className="text-stone-400">Du kan bara redigera och ta bort resultat som du själv lagt in.</p>
-        <Link
-          href={`/results/${id}`}
-          className="inline-flex items-center gap-2 text-retro-accent hover:underline"
-        >
-          <ArrowLeftIcon className="h-4 w-4" />
-          Tillbaka till resultatet
-        </Link>
+        <BackLink href={`/results/${id}`} className="inline-flex items-center gap-2 text-retro-accent hover:text-stone-200" />
       </main>
     );
   }
@@ -192,9 +180,7 @@ export default function EditScorePage() {
   return (
     <main className="p-4 md:p-6 max-w-3xl mx-auto space-y-6">
       <div>
-        <BackLink href={id ? `/results/${id}` : "/results"}>
-          Tillbaka till resultatet
-        </BackLink>
+        <BackLink href={id ? `/results/${id}` : "/results"} />
       </div>
 
       <h1 className="text-2xl font-bold text-stone-100">Redigera resultat</h1>

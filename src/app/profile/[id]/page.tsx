@@ -17,6 +17,8 @@ type HomeCourseRow = {
   id: string;
   name: string;
   main_image_url: string | null;
+  city: string | null;
+  location: string | null;
 };
 type TeamRow = {
   id: string;
@@ -58,7 +60,7 @@ export default async function PublicProfilePage({ params }: Props) {
   if (profile.home_course) {
     const { data: course } = await supabase
       .from("courses")
-      .select("id, name, main_image_url")
+      .select("id, name, main_image_url, city, location")
       .eq("id", profile.home_course)
       .single();
     homeCourse = course as HomeCourseRow | null;
@@ -124,59 +126,106 @@ export default async function PublicProfilePage({ params }: Props) {
         <BackButton />
       </div>
 
-      {/* Profil: samma layout som min profil (mobil = kolumn, desktop = rad) */}
-      <div className="rounded-2xl border border-retro-border bg-retro-surface p-6 shadow-sm mb-6 relative">
-        <div className="flex flex-col md:flex-row items-center md:items-start gap-4">
-          <div className="relative shrink-0 w-24 h-24 sm:w-28 sm:h-28 overflow-visible">
-            <div className="w-full h-full rounded-full overflow-hidden bg-retro-card border border-retro-border">
-              {profile.avatar_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={profile.avatar_url}
-                  alt="Profilbild"
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <div className="h-full w-full flex items-center justify-center text-retro-muted text-3xl">
-                  🥏
-                </div>
-              )}
-            </div>
+      {/* Profil: mobil = lag flytande vänster, [bild][namn] rad, fav under, info under. Desktop = originalet */}
+      <div className="rounded-2xl border border-retro-border bg-retro-surface p-4 md:p-6 shadow-sm mb-6 relative">
+        {team ? (
+          <div
+            className="md:hidden absolute top-0 left-0 w-12 h-12 z-20 flex items-center justify-center"
+            title={team.name}
+          >
+            {team.logga ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img src={team.logga} alt={team.name} className="h-full w-full object-contain drop-shadow-lg" />
+            ) : (
+              <span className="h-full w-full flex items-center justify-center text-retro-muted text-lg" aria-hidden>👥</span>
+            )}
           </div>
-          {team ? (
-            <div
-              className="absolute top-2 left-2 w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden border-2 border-retro-surface bg-retro-card shadow-md z-10 -translate-x-0.5 -translate-y-0.5"
-              title={team.name}
-            >
-              {team.logga ? (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img src={team.logga} alt={team.name} className="h-full w-full object-cover" />
-              ) : (
-                <span className="h-full w-full flex items-center justify-center text-retro-muted text-lg" aria-hidden>👥</span>
-              )}
+        ) : null}
+        <div className="flex flex-col md:flex-row items-center md:items-start gap-4">
+          <div className="flex flex-row md:flex-col items-center md:items-start gap-3 md:gap-4 w-full md:w-auto">
+            <div className="relative shrink-0 w-32 h-32 md:w-24 md:h-24 lg:w-28 lg:h-28 overflow-visible">
+              <div className="w-full h-full rounded-full overflow-hidden bg-retro-card border border-retro-border">
+                {profile.avatar_url ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img src={profile.avatar_url} alt="Profilbild" className="h-full w-full object-cover" />
+                ) : (
+                  <div className="h-full w-full flex items-center justify-center text-retro-muted text-3xl">🥏</div>
+                )}
+              </div>
+              {team ? (
+                <div
+                  className="hidden md:flex absolute -top-3 -left-3 w-12 h-12 lg:w-14 lg:h-14 z-10 items-center justify-center"
+                  title={team.name}
+                >
+                  {team.logga ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img src={team.logga} alt={team.name} className="h-full w-full object-contain drop-shadow-lg" />
+                  ) : (
+                    <span className="h-full w-full flex items-center justify-center text-retro-muted text-lg" aria-hidden>👥</span>
+                  )}
+                </div>
+              ) : null}
             </div>
-          ) : null}
-          <div className="min-w-0 flex-1 w-full flex flex-col gap-3 text-center md:text-left">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4">
-              <h1 className="text-2xl sm:text-3xl font-bold text-stone-100 truncate min-w-0">
+            <div className="md:hidden min-w-0 flex-1 flex flex-col gap-2 justify-center text-left">
+              <h1 className="text-3xl font-bebas tracking-wide text-stone-100 truncate uppercase">
+                {profile.alias || "Spelare"}
+              </h1>
+              <div className="flex flex-col gap-1 text-sm text-stone-400">
+                {profile.city ? (
+                  <span className="flex items-center gap-1.5">
+                    <MapPinIcon className="w-4 h-4 text-retro-muted shrink-0" />
+                    {profile.city}
+                  </span>
+                ) : null}
+                {profile.country ? (
+                  <span className="flex items-center gap-1.5">
+                    {profile.country === "Sverige" ? (
+                      <span className="leading-none" title="Sverige">🇸🇪</span>
+                    ) : null}
+                    {profile.country}
+                  </span>
+                ) : null}
+                {profile.phone ? (
+                  <span className="flex items-center gap-1.5">
+                    <PhoneIcon className="w-4 h-4 text-retro-muted shrink-0" />
+                    {profile.phone}
+                  </span>
+                ) : null}
+                {!profile.city && !profile.country && !profile.phone ? (
+                  <span className="text-retro-muted">Ingen plats angiven</span>
+                ) : null}
+              </div>
+            </div>
+            {(favoriteDisc || profile.favorite_disc) ? (
+              <div className="md:hidden absolute top-4 right-4 flex flex-col items-end shrink-0">
+                <div className="w-12 h-12 rounded-full overflow-hidden bg-retro-card border border-retro-border flex items-center justify-center">
+                  {favoriteDisc?.bild ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img src={favoriteDisc.bild} alt={favoriteDisc.name} className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="text-retro-muted text-lg">🥏</span>
+                  )}
+                </div>
+                <p className="text-xs text-retro-muted mt-1 text-right">Favorit disc</p>
+                <p className="text-stone-200 font-medium text-sm">{favoriteDisc?.name ?? profile.favorite_disc ?? "—"}</p>
+              </div>
+            ) : null}
+          </div>
+          <div className="min-w-0 flex-1 flex flex-col gap-3 text-left">
+            <div className="hidden md:flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4">
+              <h1 className="text-4xl sm:text-5xl font-bebas tracking-wide text-stone-100 truncate min-w-0 uppercase">
                 {profile.alias || "Spelare"}
               </h1>
               {(favoriteDisc || profile.favorite_disc) ? (
                 <div className="flex items-center justify-center md:justify-end gap-3 shrink-0 md:ml-auto">
                   <div className="text-right">
                     <p className="text-xs text-retro-muted uppercase tracking-wide">Favorit disc</p>
-                    <p className="text-stone-200 font-medium">
-                      {favoriteDisc?.name ?? profile.favorite_disc ?? "—"}
-                    </p>
+                    <p className="text-stone-200 font-medium">{favoriteDisc?.name ?? profile.favorite_disc ?? "—"}</p>
                   </div>
                   <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden bg-retro-card border border-retro-border shrink-0 flex items-center justify-center">
                     {favoriteDisc?.bild ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={favoriteDisc.bild}
-                        alt={favoriteDisc.name}
-                        className="h-full w-full object-cover"
-                      />
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img src={favoriteDisc.bild} alt={favoriteDisc.name} className="h-full w-full object-cover" />
                     ) : (
                       <span className="text-retro-muted text-xl">🥏</span>
                     )}
@@ -184,7 +233,7 @@ export default async function PublicProfilePage({ params }: Props) {
                 </div>
               ) : null}
             </div>
-            <div className="flex flex-col gap-1 text-sm text-stone-400 items-center md:items-start">
+            <div className="hidden md:flex flex-col gap-1 text-sm text-stone-400 items-start">
               {profile.city ? (
                 <span className="flex items-center gap-1.5">
                   <MapPinIcon className="w-4 h-4 text-retro-muted shrink-0" />
@@ -217,7 +266,7 @@ export default async function PublicProfilePage({ params }: Props) {
       <div className="rounded-2xl border border-retro-border bg-retro-surface overflow-hidden shadow-sm mb-6">
         {homeCourse ? (
           <>
-            <div className="aspect-video md:aspect-[3/1] max-h-48 md:max-h-52 bg-retro-card relative overflow-hidden w-full">
+            <div className="aspect-video md:aspect-[3/1] max-h-48 md:max-h-52 bg-retro-card relative overflow-visible w-full">
               {homeCourse.main_image_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -231,17 +280,35 @@ export default async function PublicProfilePage({ params }: Props) {
                   <HomeIcon className="w-12 h-12" />
                 </div>
               )}
-            </div>
-            <div className="p-4">
-              <p className="text-sm text-retro-muted">Hemmabana</p>
-              <Link
-                href={`/courses/${homeCourse.id}`}
-                className="font-semibold text-stone-100 text-retro-accent hover:underline"
+              <div
+                className="absolute bottom-0 left-3 z-10 h-20 w-20 sm:h-24 sm:w-24 flex items-center justify-center translate-y-1/2"
+                title="Hemmabana"
               >
-                {homeCourse.name}
-              </Link>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/icons/homecourse.png"
+                  alt="Hemmabana"
+                  className="h-full w-full object-contain drop-shadow-lg"
+                />
+              </div>
+            </div>
+            <div className="p-4 pt-10">
+              <div className="flex flex-wrap items-baseline justify-between gap-3">
+                <Link
+                  href={`/courses/${homeCourse.id}`}
+                  className="text-4xl sm:text-5xl font-bebas tracking-wide text-stone-100 text-retro-accent uppercase transition-all duration-200 hover:scale-105 hover:text-amber-300"
+                >
+                  {homeCourse.name}
+                </Link>
+                {(homeCourse.location || homeCourse.city) && (
+                  <span className="text-stone-400 text-lg flex items-center gap-1.5 shrink-0">
+                    <MapPinIcon className="w-5 h-5 text-retro-muted shrink-0" />
+                    {homeCourse.location || homeCourse.city}
+                  </span>
+                )}
+              </div>
               {bestRoundScore !== null && (
-                <p className="text-stone-400 text-sm mt-1">
+                <p className="text-stone-400 text-sm mt-2">
                   Bästa runda: {bestRoundScore} slag
                 </p>
               )}
@@ -249,17 +316,16 @@ export default async function PublicProfilePage({ params }: Props) {
           </>
         ) : (
           <div className="p-5">
-            <p className="text-sm text-retro-muted">Hemmabana</p>
             <p className="text-stone-400">Ingen hemmabana vald</p>
           </div>
         )}
       </div>
 
-      {/* Lag – samma höjd och bildstorlek som hemmabana */}
+      {/* Lag */}
       <div className="rounded-2xl border border-retro-border bg-retro-surface overflow-hidden shadow-sm mb-6">
         {team ? (
           <>
-            <div className="aspect-video md:aspect-[3/1] max-h-48 md:max-h-52 bg-retro-card relative overflow-hidden w-full">
+            <div className="aspect-video md:aspect-[3/1] max-h-48 md:max-h-52 bg-retro-card relative overflow-visible w-full">
               {(team.bild || team.logga) ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -273,27 +339,32 @@ export default async function PublicProfilePage({ params }: Props) {
                   <UserGroupIcon className="w-16 h-16" />
                 </div>
               )}
-            </div>
-            <div className="p-4">
-              <p className="text-sm text-retro-muted">Lag</p>
-              <div className="flex items-center gap-3 mt-1">
-                <div className="h-10 w-10 rounded-lg overflow-hidden bg-retro-card border border-retro-border shrink-0 flex items-center justify-center">
-                  {team.logga ? (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img
-                      src={team.logga}
-                      alt=""
-                      className="h-full w-full object-contain"
-                    />
-                  ) : (
-                    <UserGroupIcon className="w-6 h-6 text-retro-muted" />
-                  )}
+              {team.logga && (
+                <div className="absolute bottom-0 left-3 z-10 h-20 w-20 sm:h-24 sm:w-24 flex items-center justify-center translate-y-1/2">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={team.logga}
+                    alt=""
+                    className="h-full w-full object-contain drop-shadow-lg"
+                  />
                 </div>
-                <p className="font-semibold text-stone-100">{team.name}</p>
-              </div>
-              {team.ort && (
-                <p className="text-stone-400 text-sm mt-0.5">{team.ort}</p>
               )}
+            </div>
+            <div className="p-4 pt-10">
+              <div className="flex flex-wrap items-baseline justify-between gap-3">
+                <Link
+                  href={`/teams/${team.id}`}
+                  className="inline-block text-4xl sm:text-5xl font-bebas tracking-wide text-stone-100 text-retro-accent uppercase transition-all duration-200 hover:scale-105 hover:text-amber-300"
+                >
+                  {team.name}
+                </Link>
+                {team.ort && (
+                  <span className="text-stone-400 text-lg flex items-center gap-1.5 shrink-0">
+                    <MapPinIcon className="w-4 h-4 text-retro-muted shrink-0" />
+                    {team.ort}
+                  </span>
+                )}
+              </div>
               {team.about && (
                 <p className="text-stone-400 text-sm mt-2">{team.about}</p>
               )}
@@ -301,18 +372,17 @@ export default async function PublicProfilePage({ params }: Props) {
           </>
         ) : (
           <div className="p-5">
-            <p className="text-sm text-retro-muted">Lag</p>
             <p className="text-stone-400">Inget lag valt</p>
           </div>
         )}
       </div>
 
-      {/* Resultat – samma tabell men rubriken "Dens resultat" */}
+      {/* Resultat – rubrik med spelarens namn */}
       {scoreList.length > 0 ? (
         <div className="rounded-2xl border border-retro-border bg-retro-surface p-6 shadow-sm mb-6">
           <h2 className="flex items-center gap-2 text-lg font-semibold text-stone-100 mb-3">
             <TrophyIcon className="w-5 h-5 text-retro-muted shrink-0" aria-hidden />
-            Dens resultat
+            {(profile.alias?.trim() || "Spelaren")}s resultat
           </h2>
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left">

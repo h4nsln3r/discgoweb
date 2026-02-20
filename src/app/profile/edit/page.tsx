@@ -27,6 +27,17 @@ export default async function EditProfilePage() {
     .from("teams")
     .select("id, name");
 
+  let pendingApplication: { team_id: string; team_name: string } | null = null;
+  const { data: application } = await supabase
+    .from("team_applications")
+    .select("team_id")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (application?.team_id) {
+    const { data: teamRow } = await supabase.from("teams").select("name").eq("id", application.team_id).single();
+    if (teamRow?.name) pendingApplication = { team_id: application.team_id, team_name: teamRow.name };
+  }
+
   let discs: { id: string; name: string }[] = [];
   const { data: discsData } = await supabase.from("discs").select("id, name");
   if (discsData) discs = discsData as { id: string; name: string }[];
@@ -42,6 +53,7 @@ export default async function EditProfilePage() {
         courses={courses || []}
         teams={teams || []}
         discs={discs || []}
+        pendingApplication={pendingApplication}
       />
     </main>
   );

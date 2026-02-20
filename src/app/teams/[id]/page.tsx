@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
-import { UserGroupIcon, PencilSquareIcon, MapPinIcon } from "@heroicons/react/24/outline";
+import { UserGroupIcon, PencilSquareIcon, MapPinIcon, InformationCircleIcon } from "@heroicons/react/24/outline";
 import BackButton from "@/components/Buttons/BackButton";
 import { getMyRoleInTeam, canEditTeam, canManageRoles } from "@/lib/team-roles";
 import TeamMembersSection from "@/components/Teams/TeamMembersSection";
+import TeamApplicationsSection, { type ApplicantRow } from "@/components/Teams/TeamApplicationsSection";
+import ApplyToTeamButton from "@/components/Teams/ApplyToTeamButton";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -62,6 +64,29 @@ export default async function TeamDetailPage({ params }: Props) {
     role: (roleByUser.get(m.id) as "admin" | "editor" | "viewer") ?? (team.created_by === m.id ? "admin" : "viewer"),
   }));
 
+  let applicants: ApplicantRow[] = [];
+  if (showEditLink) {
+    const { data: applicantsData } = await supabase.rpc("get_team_applicants", { p_team_id: id });
+    applicants = (applicantsData ?? []).map((row: { id: string; user_id: string; alias: string | null; avatar_url: string | null }) => ({
+      id: row.id,
+      user_id: row.user_id,
+      alias: row.alias ?? null,
+      avatar_url: row.avatar_url ?? null,
+    }));
+  }
+
+  const { data: myApplication } = user
+    ? await supabase.from("team_applications").select("id").eq("team_id", id).eq("user_id", user.id).maybeSingle()
+    : { data: null };
+  const hasApplied = !!myApplication;
+  const isMember = !!user && (members.some((m) => m.id === user.id) || team.created_by === user.id);
+  let myProfileTeamId: string | null = null;
+  if (user) {
+    const { data: myProfile } = await supabase.from("profiles").select("team_id").eq("id", user.id).single();
+    myProfileTeamId = myProfile?.team_id ?? null;
+  }
+  const showApplyButton = !!user && !isMember && !hasApplied && myProfileTeamId == null;
+
   return (
     <main className="p-4 sm:p-6 max-w-3xl mx-auto">
       <div className="flex items-center justify-between gap-4 mb-4">
@@ -77,9 +102,9 @@ export default async function TeamDetailPage({ params }: Props) {
         )}
       </div>
 
-      {/* Lagbild – stort längst upp */}
+      {/* Lagbild – stort längst upp, laglogga över bilden nere till höger */}
       <div className="rounded-2xl border border-retro-border bg-retro-surface overflow-hidden shadow-sm mb-6">
-        <div className="aspect-video w-full max-h-80 bg-retro-card relative flex items-center justify-center">
+        <div className="aspect-video w-full max-h-80 bg-retro-card relative flex items-center justify-center overflow-hidden">
           {(team.bild || team.logga) ? (
             /* eslint-disable-next-line @next/next/no-img-element */
             <img
@@ -90,50 +115,64 @@ export default async function TeamDetailPage({ params }: Props) {
           ) : (
             <UserGroupIcon className="w-24 h-24 text-retro-muted" />
           )}
-        </div>
-      </div>
-
-      {/* Namn + logga stort */}
-      <div className="rounded-2xl border border-retro-border bg-retro-surface p-6 shadow-sm mb-6">
-        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
-          {team.logga ? (
-            <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-xl overflow-hidden shrink-0 flex items-center justify-center">
+          {team.logga && (
+            <div className="absolute bottom-0 right-0 z-10 h-24 w-24 sm:h-28 sm:w-28 flex items-center justify-center origin-bottom-right translate-x-1 translate-y-1">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={team.logga}
                 alt=""
-                className="w-full h-full object-contain"
+                className="h-full w-full object-contain drop-shadow-lg"
               />
             </div>
-          ) : (
-            <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-xl flex items-center justify-center shrink-0">
-              <UserGroupIcon className="w-14 h-14 text-retro-muted" />
-            </div>
           )}
-          <div className="min-w-0 flex-1 text-center sm:text-left">
-            <h1 className="text-3xl sm:text-4xl font-bold text-stone-100">{team.name}</h1>
-            {team.ort && (
-              <p className="flex items-center justify-center sm:justify-start gap-1.5 text-stone-400 mt-1">
-                <MapPinIcon className="w-5 h-5 text-retro-muted shrink-0" />
-                {team.ort}
-              </p>
-            )}
-          </div>
         </div>
-        {team.about && (
-          <div className="mt-4 pt-4 border-t border-retro-border">
-            <h2 className="text-sm font-medium text-retro-muted uppercase tracking-wide mb-2">Om laget</h2>
-            <p className="text-stone-300 whitespace-pre-wrap">{team.about}</p>
+      </div>
+
+      {/* Namn + location – ingen card */}
+      <div className="mb-6">
+        <h1 className="text-5xl sm:text-6xl font-bebas tracking-wide text-stone-100 uppercase text-center sm:text-left">
+          {team.name}
+        </h1>
+        {team.ort && (
+          <p className="flex items-center justify-center sm:justify-start gap-1.5 text-stone-400 text-lg mt-2">
+            <MapPinIcon className="w-5 h-5 text-retro-muted shrink-0" />
+            {team.ort}
+          </p>
+        )}
+        {showApplyButton && (
+          <div className="mt-4">
+            <ApplyToTeamButton teamId={id} teamName={team.name} />
           </div>
         )}
+        {hasApplied && !isMember && (
+          <p className="mt-4 text-sm text-amber-200">
+            Du har ansökt till detta lag. Väntar på godkännande från admin eller kapten.
+          </p>
+        )}
       </div>
+
+      {/* Om laget – eget card med ikon */}
+      {team.about && (
+        <div className="rounded-2xl border border-retro-border bg-retro-surface p-6 shadow-sm mb-6">
+          <h2 className="flex items-center gap-2 text-lg font-semibold text-stone-100 mb-3">
+            <InformationCircleIcon className="w-5 h-5 text-retro-muted shrink-0" aria-hidden />
+            Om laget
+          </h2>
+          <p className="text-stone-300 whitespace-pre-wrap">{team.about}</p>
+        </div>
+      )}
 
       <TeamMembersSection
         teamId={id}
         members={members}
         currentUserId={user?.id ?? null}
         canManageRoles={showRoleManagement}
+        canRemoveMembers={showEditLink}
       />
+
+      {showEditLink && (
+        <TeamApplicationsSection teamId={id} applicants={applicants} />
+      )}
     </main>
   );
 }

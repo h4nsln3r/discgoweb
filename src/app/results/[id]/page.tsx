@@ -187,13 +187,7 @@ export default function ScoreDetailPage() {
     return (
       <main className="p-4 md:p-6 max-w-3xl mx-auto">
         <p className="text-stone-400">Hittade inte resultatet.</p>
-        <Link
-          href="/results"
-          className="inline-flex items-center gap-2 mt-3 text-retro-accent hover:underline"
-        >
-          <ArrowLeftIcon className="h-4 w-4" />
-          Tillbaka till alla resultat
-        </Link>
+        <BackLink href="/results" className="mt-3 inline-flex items-center gap-2 text-retro-accent hover:text-stone-200" />
       </main>
     );
   }
@@ -204,7 +198,7 @@ export default function ScoreDetailPage() {
   return (
     <main className="p-4 md:p-6 max-w-3xl mx-auto space-y-6">
       <div>
-        <BackLink href="/results">Tillbaka till alla resultat</BackLink>
+        <BackLink href="/results" />
       </div>
 
       <h1 className="text-2xl font-bold text-stone-100">Resultat</h1>

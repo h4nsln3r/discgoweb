@@ -1,8 +1,11 @@
 // src/app/layout.tsx
+import { Bebas_Neue } from "next/font/google";
 import "../styles/global.scss";
 import "./globals.css";
 
 import type { Metadata } from "next";
+
+const bebasNeue = Bebas_Neue({ weight: "400", subsets: ["latin"], variable: "--font-bebas" });
 import TopbarWrapper from "../components/Topbar/TopbarWrapper.server";
 import Providers from "../components/Providers";
 
@@ -21,7 +24,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="sv">
+    <html lang="sv" className={bebasNeue.variable}>
       <body className="min-h-screen bg-retro-bg">
         <TopbarWrapper />
         <Providers>

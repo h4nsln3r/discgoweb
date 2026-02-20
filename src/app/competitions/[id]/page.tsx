@@ -114,8 +114,16 @@ export default async function CompetitionDetailPage({ params }: PageProps) {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
-      <div>
-        <BackLink href="/competitions">Tillbaka till tävlingar</BackLink>
+      <div className="flex items-center justify-between gap-4 mb-4">
+        <BackLink href="/competitions" />
+        {isCreator && (
+          <Link
+            href={`/competitions/${id}/edit`}
+            className="inline-flex items-center gap-2 text-amber-400 font-medium hover:text-amber-300 transition shrink-0"
+          >
+            ✏️ Redigera tävling
+          </Link>
+        )}
       </div>
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-3xl font-bold text-stone-100">{competition.title}</h1>
@@ -125,14 +133,6 @@ export default async function CompetitionDetailPage({ params }: PageProps) {
         >
           🥏 Lägg till resultat
         </Link>
-        {isCreator && (
-          <Link
-            href={`/competitions/${id}/edit`}
-            className="text-sm text-retro-accent hover:underline"
-          >
-            ✏️ Redigera tävling
-          </Link>
-        )}
       </div>
       {competition.image_url && (
         // eslint-disable-next-line @next/next/no-img-element -- dynamisk tävlingsbild-URL

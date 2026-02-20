@@ -24,7 +24,7 @@ export default function PageLoading({ variant, title }: Props) {
   const loadingLabel = title ?? (variant ? LOADING_TITLES[variant] : "Laddar");
   return (
     <div className="min-h-[50vh] flex flex-col items-center justify-center" aria-label={loadingLabel}>
-      <div className="h-96 w-96 md:h-[32rem] md:w-[32rem] lg:h-[40rem] lg:w-[40rem] animate-spin">
+      <div className="h-72 w-72 md:h-[32rem] md:w-[32rem] lg:h-[40rem] lg:w-[40rem] animate-spin shrink-0">
         <Image
           src="/logo/disco.png"
           alt=""

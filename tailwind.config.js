@@ -6,6 +6,9 @@ module.exports = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        bebas: ["var(--font-bebas)", "sans-serif"],
+      },
       colors: {
         retro: {
           bg: "#1c1917",

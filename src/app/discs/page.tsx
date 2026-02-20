@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
+import BackLink from "@/components/Buttons/BackLink";
 
 export default async function DiscsPage() {
   const supabase = await createServerSupabaseClient();
@@ -47,10 +48,8 @@ export default async function DiscsPage() {
         </ul>
       )}
 
-      <p className="mt-6 text-sm text-stone-500">
-        <Link href="/profile/edit" className="text-retro-accent hover:underline">
-          Tillbaka till redigera profil
-        </Link>
+      <p className="mt-6">
+        <BackLink href="/profile/edit" />
       </p>
     </main>
   );

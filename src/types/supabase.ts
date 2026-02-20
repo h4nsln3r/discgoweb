@@ -251,6 +251,27 @@ export type Database = {
         }
         Relationships: []
       }
+      team_applications: {
+        Row: {
+          id: string
+          team_id: string
+          user_id: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          team_id: string
+          user_id: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          team_id?: string
+          user_id?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           alias: string
@@ -375,7 +396,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      approve_team_application: {
+        Args: { p_application_id: string; p_role?: string }
+        Returns: undefined
+      }
+      get_team_applicants: {
+        Args: { p_team_id: string }
+        Returns: { id: string; user_id: string; alias: string | null; avatar_url: string | null }[]
+      }
+      reject_team_application: {
+        Args: { p_application_id: string }
+        Returns: undefined
+      }
+      remove_team_member: {
+        Args: { p_team_id: string; p_user_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

@@ -24,11 +24,13 @@ export default function ProfileForm({
   courses,
   teams,
   discs = [],
+  pendingApplication = null,
 }: {
   profile: Profile | null;
   courses: Course[];
   teams: Team[];
   discs?: Disc[];
+  pendingApplication?: { team_id: string; team_name: string } | null;
 }) {
   const supabase = createSupabaseClient();
   const router = useRouter();
@@ -44,7 +46,7 @@ export default function ProfileForm({
   );
   const [city, setCity] = useState(profile?.city ?? "");
   const [country, setCountry] = useState(profile?.country ?? "");
-  const [teamId, setTeamId] = useState(profile?.team_id ?? "");
+  const [teamId, setTeamId] = useState(profile?.team_id ?? pendingApplication?.team_id ?? "");
   const [locationSearch, setLocationSearch] = useState("");
   const [locationDropdownOpen, setLocationDropdownOpen] = useState(false);
   const locationDropdownRef = useRef<HTMLDivElement | null>(null);
@@ -208,6 +210,15 @@ export default function ProfileForm({
       const avatar_url = await uploadAvatar();
 
       const selectedDisc = discs.find((d) => d.id === favoriteDiscId);
+      const currentTeamId = profile?.team_id ?? null;
+      const selectedTeamId = teamId || null;
+      let payloadTeamId: string | null = null;
+      if (currentTeamId && selectedTeamId === currentTeamId) payloadTeamId = currentTeamId;
+      else if (currentTeamId && !selectedTeamId) payloadTeamId = null;
+      else if (currentTeamId && selectedTeamId && selectedTeamId !== currentTeamId) {
+        const { data: selTeam } = await supabase.from("teams").select("created_by").eq("id", selectedTeamId).single();
+        payloadTeamId = selTeam?.created_by === user.id ? selectedTeamId : null;
+      }
       const payload: Database["public"]["Tables"]["profiles"]["Insert"] = {
         id: user.id,
         alias,
@@ -218,13 +229,8 @@ export default function ProfileForm({
         favorite_disc: selectedDisc?.name ?? profile?.favorite_disc ?? null,
         city: city?.trim() || null,
         country: country?.trim() || null,
-        team_id: teamId || null,
+        team_id: payloadTeamId,
       };
-
-      console.log("[profile] saving payload:", payload);
-
-      const previousTeamId = profile?.team_id ?? null;
-      const newTeamId = teamId || null;
 
       const { error } = await supabase
         .from("profiles")
@@ -236,19 +242,39 @@ export default function ProfileForm({
         return;
       }
 
-      if (previousTeamId !== newTeamId) {
-        if (previousTeamId) {
-          await supabase.from("team_member_roles").delete().eq("team_id", previousTeamId).eq("user_id", user.id);
+      if (currentTeamId && !selectedTeamId) {
+        await supabase.from("team_member_roles").delete().eq("team_id", currentTeamId).eq("user_id", user.id);
+      }
+      if (currentTeamId && selectedTeamId && currentTeamId !== selectedTeamId) {
+        await supabase.from("team_member_roles").delete().eq("team_id", currentTeamId).eq("user_id", user.id);
+        const { data: team } = await supabase.from("teams").select("created_by").eq("id", selectedTeamId).single();
+        if (team?.created_by === user.id) {
+          await supabase.from("profiles").update({ team_id: selectedTeamId }).eq("id", user.id);
+          await supabase.from("team_member_roles").upsert(
+            { team_id: selectedTeamId, user_id: user.id, role: "admin" },
+            { onConflict: "team_id,user_id" }
+          );
+        } else {
+          await supabase.from("team_applications").delete().eq("user_id", user.id);
+          const { error: insErr } = await supabase.from("team_applications").insert({
+            team_id: selectedTeamId,
+            user_id: user.id,
+          });
+          if (!insErr) showToast("Du har lämnat laget och ansökt till det nya. Väntar på godkännande.", "success");
         }
-        if (newTeamId) {
-          const { data: team } = await supabase.from("teams").select("created_by").eq("id", newTeamId).single();
-          if (team?.created_by !== user.id) {
-            await supabase.from("team_member_roles").upsert(
-              { team_id: newTeamId, user_id: user.id, role: "viewer" },
-              { onConflict: "team_id,user_id" }
-            );
-          }
-        }
+      }
+      if (!currentTeamId && selectedTeamId) {
+        await supabase.from("team_applications").delete().eq("user_id", user.id);
+        const { error: insErr } = await supabase.from("team_applications").insert({
+          team_id: selectedTeamId,
+          user_id: user.id,
+        });
+        if (insErr) showToast(insErr.message || "Kunde inte skicka ansökan.", "error");
+        else showToast("Ansökan skickad. Du får besked när laget godkänner.", "success");
+      }
+      if (!currentTeamId && !selectedTeamId && pendingApplication) {
+        await supabase.from("team_applications").delete().eq("user_id", user.id);
+        showToast("Ansökan avbruten.", "success");
       }
 
       setAvatarFile(null);
@@ -549,6 +575,11 @@ export default function ProfileForm({
 
       <div className="space-y-2">
         <label className="block text-sm font-medium text-stone-300">Lag</label>
+        {pendingApplication && !profile?.team_id && (
+          <p className="text-sm text-amber-200 bg-amber-900/30 border border-amber-700/50 rounded-xl px-3 py-2 mb-2">
+            Du har ansökt till <strong>{pendingApplication.team_name}</strong>. Väntar på godkännande från admin eller kapten.
+          </p>
+        )}
         <select
           className={inputClass}
           value={teamId}
@@ -558,10 +589,15 @@ export default function ProfileForm({
           {teams.map((t) => (
             <option key={t.id} value={t.id}>
               {t.name}
+              {pendingApplication?.team_id === t.id ? " (ansökt)" : ""}
             </option>
           ))}
         </select>
-        <p className="text-xs text-stone-500">Du kan bara vara med i ett lag.</p>
+        <p className="text-xs text-stone-500">
+          {profile?.team_id
+            ? "Du kan lämna laget genom att välja &quot;Inget lag&quot;."
+            : "Välj ett lag för att ansöka. Admin eller kapten godkänner dig sedan på lagsidan."}
+        </p>
         {teams.length === 0 && (
           <p className="text-xs text-retro-muted">
             <Link href="/teams" className="text-retro-accent hover:underline">Lägg till lag</Link> först om du vill välja ett.

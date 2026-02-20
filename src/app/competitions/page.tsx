@@ -16,7 +16,7 @@ export default async function CompetitionsPage() {
   }
 
   return (
-    <main className="p-4 sm:p-6 w-full max-w-full">
+    <main className="p-4 sm:p-6 max-w-3xl mx-auto">
       <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
         <h1 className="text-2xl font-bold text-stone-100">🏆 Alla tävlingar</h1>
         <Link

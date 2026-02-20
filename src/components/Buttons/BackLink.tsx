@@ -3,11 +3,11 @@ import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 
 type BackLinkProps = {
   href: string;
-  children: React.ReactNode;
+  children?: React.ReactNode;
   className?: string;
 };
 
-export default function BackLink({ href, children, className }: BackLinkProps) {
+export default function BackLink({ href, className }: BackLinkProps) {
   return (
     <Link
       href={href}
@@ -17,7 +17,7 @@ export default function BackLink({ href, children, className }: BackLinkProps) {
       }
     >
       <ArrowLeftIcon className="h-5 w-5 shrink-0" />
-      <span>{children}</span>
+      <span>Tillbaka</span>
     </Link>
   );
 }

@@ -72,7 +72,7 @@ export default function Topbar({
             <img
               src="/logo/logo.png"
               alt=""
-              className="h-8 w-auto max-w-[100px] md:h-12 md:max-w-[180px] object-contain"
+              className="h-10 w-auto max-w-[120px] md:h-14 md:max-w-[200px] object-contain"
             />
           </Link>
         </div>
@@ -86,10 +86,10 @@ export default function Topbar({
             <img
               src={avatarUrl}
               alt=""
-              className="w-8 h-8 rounded-full object-cover border border-retro-border shrink-0"
+              className="w-10 h-10 md:w-12 md:h-12 rounded-full object-cover border border-retro-border shrink-0"
             />
           ) : (
-            <UserCircleIcon className="w-6 h-6 text-stone-300 shrink-0" />
+            <UserCircleIcon className="w-9 h-9 md:w-10 md:h-10 text-stone-300 shrink-0" />
           )}
           <span className="text-sm font-medium text-stone-100 truncate max-w-[140px] sm:max-w-[200px]">
             {nameLabel}
@@ -98,7 +98,7 @@ export default function Topbar({
       </div>
 
       {/* Spacer så att innehåll inte hamnar under fixed topbar */}
-      <div className="h-12 shrink-0" aria-hidden />
+      <div className="h-14 shrink-0" aria-hidden />
 
       {/* 🔲 Overlay */}
       {menuOpen && (
