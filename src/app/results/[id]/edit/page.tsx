@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
 import { TrashIcon } from "@heroicons/react/24/outline";
 import BackLink from "@/components/Buttons/BackLink";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";

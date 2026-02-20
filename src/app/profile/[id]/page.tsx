@@ -6,7 +6,6 @@ import {
   MapPinIcon,
   PhoneIcon,
   HomeIcon,
-  UserGroupIcon,
   TrophyIcon,
 } from "@heroicons/react/24/outline";
 import BackButton from "@/components/Buttons/BackButton";

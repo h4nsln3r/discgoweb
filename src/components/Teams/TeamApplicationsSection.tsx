@@ -25,7 +25,7 @@ type Props = {
   applicants: ApplicantRow[];
 };
 
-export default function TeamApplicationsSection({ teamId, applicants }: Props) {
+export default function TeamApplicationsSection({ applicants }: Props) {
   const router = useRouter();
   const supabase = createClientComponentClient<Database>();
   const { showToast } = useToast();

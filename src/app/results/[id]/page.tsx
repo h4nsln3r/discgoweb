@@ -5,7 +5,6 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import BackLink from "@/components/Buttons/BackLink";
 import {
-  ArrowLeftIcon,
   MapPinIcon,
   UserCircleIcon,
   TrophyIcon,
