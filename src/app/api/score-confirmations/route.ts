@@ -14,6 +14,8 @@ export async function GET(req: NextRequest) {
     cookies: () => cookieStore,
   });
 
+  // score_confirmations kan saknas i genererade Database-typer
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: rows, error } = await (supabase as any)
     .from("score_confirmations")
     .select("user_id, profiles(alias)")

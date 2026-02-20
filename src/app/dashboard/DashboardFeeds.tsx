@@ -31,15 +31,6 @@ type LatestCompetition = {
 };
 
 /* ---------- Type guards (no any) ---------- */
-function isLatestCourseArray(val: unknown): val is LatestCourse[] {
-  return (
-    Array.isArray(val) &&
-    val.every(
-      (v) => v !== null && typeof v === "object" && "id" in v && "name" in v
-    )
-  );
-}
-
 function isLatestScoreArray(val: unknown): val is LatestScoreRow[] {
   return (
     Array.isArray(val) &&
@@ -74,12 +65,6 @@ export default function DashboardFeeds({
   /** Om satt används denna data och ingen egen fetch görs. */
   initialData?: InitialData | null;
 } = {}) {
-  const [courses, setCourses] = useState<LatestCourse[] | null>(
-    initialData?.courses ?? null
-  );
-  const [coursesLoading, setCoursesLoading] = useState(!initialData);
-  const [coursesError, setCoursesError] = useState<string | null>(null);
-
   const [scores, setScores] = useState<LatestScoreRow[] | null>(
     initialData?.latestScores ?? null
   );
@@ -94,36 +79,21 @@ export default function DashboardFeeds({
 
   useEffect(() => {
     if (initialData) {
-      setCourses(initialData.courses);
       setScores(initialData.latestScores);
       setComps(initialData.competitions);
-      setCoursesLoading(false);
       setScoresLoading(false);
       setCompsLoading(false);
       return;
     }
     (async () => {
-      setCoursesLoading(true);
       setScoresLoading(true);
       setCompsLoading(true);
-      setCoursesError(null);
       setScoresError(null);
       setCompsError(null);
       try {
         const res = await fetch("/api/dashboard-summary", { cache: "no-store" });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data: unknown = await res.json();
-
-        if (
-          data &&
-          typeof data === "object" &&
-          "courses" in data &&
-          isLatestCourseArray((data as { courses: unknown }).courses)
-        ) {
-          setCourses((data as { courses: LatestCourse[] }).courses);
-        } else {
-          setCourses([]);
-        }
 
         if (
           data &&
@@ -153,11 +123,9 @@ export default function DashboardFeeds({
       } catch (err: unknown) {
         console.error("dashboard-summary fetch failed:", err);
         const msg = "Kunde inte hämta dashboard-data.";
-        setCoursesError(msg);
         setScoresError(msg);
         setCompsError(msg);
       } finally {
-        setCoursesLoading(false);
         setScoresLoading(false);
         setCompsLoading(false);
       }

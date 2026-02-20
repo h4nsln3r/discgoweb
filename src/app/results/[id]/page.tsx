@@ -174,7 +174,7 @@ export default function ScoreDetailPage() {
         if (!cancelled) setHoles([]);
       });
     return () => { cancelled = true; };
-  }, [item?.id, item?.courses?.id]);
+  }, [item?.id, item?.courses?.id, item?.course_id]);
 
   if (loading) {
     return (

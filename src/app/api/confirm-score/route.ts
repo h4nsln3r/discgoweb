@@ -68,6 +68,8 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // score_confirmations kan saknas i genererade Database-typer
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error: insertError } = await (supabase as any)
     .from("score_confirmations")
     .upsert({ score_id: scoreId, user_id: user.id }, { onConflict: "score_id,user_id" });
