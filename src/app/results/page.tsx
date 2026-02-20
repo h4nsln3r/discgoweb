@@ -125,6 +125,20 @@ export default function ResultsPage() {
       id: "course",
       accessorFn: (row) => row.courses?.name ?? "Okänd bana",
       header: "Bana",
+      cell: (info) => {
+        const row = info.row.original;
+        const name = row.courses?.name ?? "Okänd bana";
+        return row.courses?.id ? (
+          <Link
+            href={`/courses/${row.courses.id}`}
+            className="text-retro-accent hover:underline"
+          >
+            {name}
+          </Link>
+        ) : (
+          name
+        );
+      },
     },
     {
       id: "player",
@@ -314,9 +328,19 @@ export default function ResultsPage() {
                   <div className="flex items-center justify-between gap-2">
                     <span className="flex items-center gap-1.5 min-w-0">
                       <MapPinIcon className="h-4 w-4 text-retro-accent shrink-0" aria-hidden />
-                      <span className="font-medium text-stone-100 truncate">
-                        {score.courses?.name ?? "Okänd bana"}
-                      </span>
+                      {score.courses?.id ? (
+                        <Link
+                          href={`/courses/${score.courses.id}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="font-medium text-stone-100 truncate text-retro-accent hover:underline"
+                        >
+                          {score.courses.name ?? "Okänd bana"}
+                        </Link>
+                      ) : (
+                        <span className="font-medium text-stone-100 truncate">
+                          {score.courses?.name ?? "Okänd bana"}
+                        </span>
+                      )}
                     </span>
                     <span className="flex items-center gap-1 text-sm text-stone-400 shrink-0">
                       <CalendarDaysIcon className="h-4 w-4 text-stone-500" aria-hidden />

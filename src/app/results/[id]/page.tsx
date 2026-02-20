@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
+import BackLink from "@/components/BackLink";
 import {
   ArrowLeftIcon,
   MapPinIcon,
@@ -66,7 +67,6 @@ type ScoreDetail = {
 export default function ScoreDetailPage() {
   const supabase = createClientComponentClient<Database>();
   const { id } = useParams<{ id: string }>();
-  const router = useRouter();
 
   const [loading, setLoading] = useState(true);
   const [item, setItem] = useState<ScoreDetail | null>(null);
@@ -140,13 +140,7 @@ export default function ScoreDetailPage() {
   return (
     <main className="p-4 md:p-6 max-w-3xl mx-auto space-y-6">
       <div>
-        <button
-          onClick={() => router.push("/results")}
-          className="inline-flex items-center gap-2 text-sm text-stone-400 hover:text-stone-200 transition"
-        >
-          <ArrowLeftIcon className="h-4 w-4" />
-          Tillbaka till alla resultat
-        </button>
+        <BackLink href="/results">Tillbaka till alla resultat</BackLink>
       </div>
 
       <h1 className="text-2xl font-bold text-stone-100">Resultat</h1>
@@ -173,7 +167,16 @@ export default function ScoreDetailPage() {
             Bana
           </div>
           <div className="text-lg font-semibold text-stone-100">
-            {item.courses?.name ?? "Okänd bana"}
+            {item.courses?.id ? (
+              <Link
+                href={`/courses/${item.courses.id}`}
+                className="text-retro-accent hover:underline"
+              >
+                {item.courses.name ?? "Okänd bana"}
+              </Link>
+            ) : (
+              (item.courses?.name ?? "Okänd bana")
+            )}
           </div>
         </div>
 

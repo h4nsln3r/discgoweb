@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { Database } from "@/types/supabase";
 import Link from "next/link";
+import BackLink from "@/components/BackLink";
 
 export default async function CompetitionResultsPage({
   params,
@@ -40,13 +41,23 @@ export default async function CompetitionResultsPage({
   }, {});
 
   return (
-    <div className="max-w-3xl mx-auto p-6">
+    <div className="max-w-3xl mx-auto p-6 space-y-6">
+      <div>
+        <BackLink href={`/competitions/${competitionId}`}>
+          Tillbaka till tävlingen
+        </BackLink>
+      </div>
       <h1 className="text-2xl font-bold mb-6">Resultat</h1>
 
       {Object.entries(grouped).map(([courseId, courseScores]) => (
         <div key={courseId} className="mb-8">
           <h2 className="text-lg font-semibold mb-2">
-            {courseScores[0]?.courses?.name ?? "Okänd bana"}
+            <Link
+              href={`/courses/${courseId}`}
+              className="text-retro-accent hover:underline"
+            >
+              {courseScores[0]?.courses?.name ?? "Okänd bana"}
+            </Link>
           </h2>
 
           <table className="w-full border text-sm">

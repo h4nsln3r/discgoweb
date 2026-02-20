@@ -21,25 +21,35 @@ export async function PUT(req: Request) {
 
   // Parse body
   const body = await req.json();
-  const { id, course_id, score, throws, date_played, with_friends } = body;
+  const { id, course_id, score, throws, date_played, with_friends, hole_scores } = body;
 
-  // Uppdatera endast egna resultat
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from("scores")
     .update({
       course_id,
       score,
       date_played,
       with_friends,
-      throws,
+      throws: throws ?? null,
     })
     .eq("id", id)
-    .eq("user_id", user.id); // Säkerhetsfilter
+    .eq("user_id", user.id);
 
   if (error) {
     console.error("[UPDATE-SCORE ERROR]", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json(data, { status: 200 });
+  await supabase.from("score_holes").delete().eq("score_id", id);
+  if (Array.isArray(hole_scores) && hole_scores.length > 0) {
+    await supabase.from("score_holes").insert(
+      hole_scores.map((h: { hole_number: number; throws: number }) => ({
+        score_id: id,
+        hole_number: h.hole_number,
+        throws: h.throws,
+      }))
+    );
+  }
+
+  return NextResponse.json({ ok: true }, { status: 200 });
 }

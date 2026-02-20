@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import BackLink from "@/components/BackLink";
 import { Database } from "@/types/supabase";
 import { useToast } from "@/components/ui/ToastProvider";
 
@@ -151,15 +152,9 @@ export default function EditCompetitionPage() {
 
   return (
     <div className="max-w-2xl mx-auto p-6 space-y-6">
-      <div className="flex items-center gap-4">
-        <Link
-          href={`/competitions/${id}`}
-          className="text-stone-400 hover:text-stone-100 flex items-center gap-1 text-sm font-medium transition"
-        >
-          ← Tillbaka till tävlingen
-        </Link>
+      <div className="mb-2">
+        <BackLink href={id ? `/competitions/${id}` : "/competitions"}>Tillbaka till tävlingen</BackLink>
       </div>
-
       <h1 className="text-2xl font-bold text-stone-100">Redigera tävling</h1>
 
       <form onSubmit={handleSubmit} className="space-y-4">

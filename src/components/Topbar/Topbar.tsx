@@ -23,9 +23,11 @@ type SlimUser = {
 export default function Topbar({
   user,
   displayName,
+  avatarUrl,
 }: {
   user: SlimUser | null;
   displayName: string | null;
+  avatarUrl?: string | null;
 }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -65,7 +67,16 @@ export default function Topbar({
           href="/profile"
           className="flex items-center gap-2 min-w-0 rounded-lg hover:bg-retro-card transition px-2 py-1.5"
         >
-          <UserCircleIcon className="w-6 h-6 text-stone-300 shrink-0" />
+          {avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={avatarUrl}
+              alt=""
+              className="w-8 h-8 rounded-full object-cover border border-retro-border shrink-0"
+            />
+          ) : (
+            <UserCircleIcon className="w-6 h-6 text-stone-300 shrink-0" />
+          )}
           <span className="text-sm font-medium text-stone-100 truncate max-w-[140px] sm:max-w-[200px]">
             {nameLabel}
           </span>
@@ -133,6 +144,15 @@ export default function Topbar({
               className={linkClass("/courses")}
             >
               🏞️ Alla banor
+            </Link>
+          </li>
+          <li>
+            <Link
+              href="/teams"
+              onClick={() => setMenuOpen(false)}
+              className={linkClass("/teams")}
+            >
+              👥 Lag
             </Link>
           </li>
           <li>

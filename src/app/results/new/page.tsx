@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import Link from "next/link";
+import BackLink from "@/components/BackLink";
 import AddScoreForm from "@/components/AddScoreForm";
 
 interface Score {
@@ -15,10 +18,38 @@ interface Score {
   with_friends?: string[]; // 👈 add here
 }
 
+type CompetitionData = { id: string; title: string; courses: { id: string; name: string }[] } | null;
+
 export default function AddResultPage() {
+  const searchParams = useSearchParams();
+  const courseIdFromUrl = searchParams.get("course_id");
+  const competitionIdFromUrl = searchParams.get("competition_id");
+
   const [scores, setScores] = useState<Score[]>([]);
   const [editingScore, setEditingScore] = useState<Score | null>(null);
   const [loading, setLoading] = useState(true);
+  const [competitionData, setCompetitionData] = useState<CompetitionData>(null);
+
+  useEffect(() => {
+    if (!competitionIdFromUrl) {
+      setCompetitionData(null);
+      return;
+    }
+    const fetchCompetition = async () => {
+      try {
+        const res = await fetch(`/api/competition-with-courses?competition_id=${competitionIdFromUrl}`);
+        if (res.ok) {
+          const data = await res.json();
+          setCompetitionData({ id: data.id, title: data.title, courses: data.courses ?? [] });
+        } else {
+          setCompetitionData(null);
+        }
+      } catch {
+        setCompetitionData(null);
+      }
+    };
+    fetchCompetition();
+  }, [competitionIdFromUrl]);
 
   // Hämta senaste resultat
   const fetchScores = async () => {
@@ -57,7 +88,18 @@ export default function AddResultPage() {
   };
 
   return (
-    <main className="p-6 max-w-6xl mx-auto">
+    <main className="p-6 max-w-6xl mx-auto space-y-6">
+      <div>
+        <BackLink
+          href={
+            competitionIdFromUrl
+              ? `/competitions/${competitionIdFromUrl}`
+              : "/results"
+          }
+        >
+          {competitionIdFromUrl ? "Tillbaka till tävlingen" : "Tillbaka till resultat"}
+        </BackLink>
+      </div>
       <div className="flex flex-col md:flex-row gap-6">
         {/* Vänster kolumn: Add/Edit form */}
         <div className="w-full md:w-1/2">
@@ -80,6 +122,10 @@ export default function AddResultPage() {
                   }
                 : null
             }
+            initialCourseId={courseIdFromUrl}
+            initialCompetitionId={competitionData?.id ?? null}
+            competitionTitle={competitionData?.title ?? null}
+            competitionCourses={competitionData?.courses ?? null}
             onClose={handleResetForm}
             onSuccess={handleSuccess}
           />
@@ -102,7 +148,16 @@ export default function AddResultPage() {
                 >
                   <div>
                     <p className="font-semibold">
-                      {score.courses?.name ?? "Okänd bana"}
+                      {score.courses?.id ? (
+                        <Link
+                          href={`/courses/${score.courses.id}`}
+                          className="text-retro-accent hover:underline"
+                        >
+                          {score.courses.name ?? "Okänd bana"}
+                        </Link>
+                      ) : (
+                        (score.courses?.name ?? "Okänd bana")
+                      )}
                     </p>
                     <p>
                       {score.profiles?.alias ?? "Okänd spelare"} – {score.score}

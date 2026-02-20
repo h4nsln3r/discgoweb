@@ -1,6 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
+
+export type CourseHole = {
+  hole_number: number;
+  par: number;
+  length: number | null;
+};
 
 type CourseFormProps = {
   initialName?: string;
@@ -12,6 +18,7 @@ type CourseFormProps = {
   initialDescription?: string;
   initialCity?: string;
   initialCountry?: string;
+  initialHoles?: CourseHole[];
   onSubmit: (data: {
     name: string;
     location: string;
@@ -22,9 +29,20 @@ type CourseFormProps = {
     description: string;
     city: string;
     country: string;
+    holes: CourseHole[];
   }) => Promise<void>;
   submitText: string;
 };
+
+const HOLE_OPTIONS = [0, 9, 12, 18] as const;
+
+function defaultHoles(count: number): CourseHole[] {
+  return Array.from({ length: count }, (_, i) => ({
+    hole_number: i + 1,
+    par: 3,
+    length: null as number | null,
+  }));
+}
 
 export default function CourseForm({
   initialName = "",
@@ -36,6 +54,7 @@ export default function CourseForm({
   initialDescription = "",
   initialCity = "",
   initialCountry = "",
+  initialHoles = [],
   onSubmit,
   submitText,
 }: CourseFormProps) {
@@ -49,6 +68,41 @@ export default function CourseForm({
   const [imageUrls, setImageUrls] = useState<string[]>(initialImageUrls);
   const [mainImageUrl, setMainImageUrl] = useState(initialMainImageUrl);
   const [loading, setLoading] = useState(false);
+
+  const numHolesOption = useMemo((): 0 | 9 | 12 | 18 => {
+    const n = initialHoles.length;
+    if (n === 0) return 0;
+    if (n <= 9) return 9;
+    if (n <= 12) return 12;
+    return 18;
+  }, [initialHoles.length]);
+  const [numHoles, setNumHoles] = useState<0 | 9 | 12 | 18>(numHolesOption);
+  const [holes, setHoles] = useState<CourseHole[]>(() => {
+    if (initialHoles.length === 0) return [];
+    const sorted = [...initialHoles].sort((a, b) => a.hole_number - b.hole_number);
+    const count = numHolesOption;
+    const next = defaultHoles(count);
+    sorted.forEach((h, i) => {
+      if (i < next.length) next[i] = { hole_number: i + 1, par: h.par, length: h.length };
+    });
+    return next;
+  });
+
+  const syncHolesToCount = (count: 0 | 9 | 12 | 18) => {
+    if (count === 0) {
+      setHoles([]);
+      return;
+    }
+    setHoles((prev) => {
+      const next = defaultHoles(count);
+      prev.forEach((h, i) => {
+        if (i < next.length) {
+          next[i] = { hole_number: i + 1, par: h.par, length: h.length };
+        }
+      });
+      return next;
+    });
+  };
 
   const handleAddImage = () => {
     if (imageUrls.length >= 5) return;
@@ -83,8 +137,24 @@ export default function CourseForm({
       description,
       city,
       country,
+      holes: numHoles === 0 ? [] : holes,
     });
     setLoading(false);
+  };
+
+  const setHolePar = (index: number, par: number) => {
+    setHoles((prev) => {
+      const next = [...prev];
+      next[index] = { ...next[index], par };
+      return next;
+    });
+  };
+  const setHoleLength = (index: number, length: number | null) => {
+    setHoles((prev) => {
+      const next = [...prev];
+      next[index] = { ...next[index], length };
+      return next;
+    });
   };
 
   return (
@@ -269,6 +339,65 @@ export default function CourseForm({
           placeholder="Ange eller klistra in URL för huvudbild"
           className="w-full border border-retro-border bg-retro-surface text-stone-100 p-2 rounded focus:outline-none focus:ring-2 focus:ring-retro-accent placeholder:text-stone-500"
         />
+      </div>
+
+      {/* Hål (valfritt): antal, par och längd per hål */}
+      <div className="space-y-3 rounded-xl border border-retro-border bg-retro-card/30 p-4">
+        <div className="flex items-center gap-2">
+          <label htmlFor="numHoles" className="font-semibold text-stone-200">
+            Antal hål (valfritt)
+          </label>
+          <select
+            id="numHoles"
+            value={numHoles}
+            onChange={(e) => {
+              const v = Number(e.target.value) as 0 | 9 | 12 | 18;
+              setNumHoles(v);
+              syncHolesToCount(v);
+            }}
+            className="border border-retro-border bg-retro-surface text-stone-100 p-2 rounded focus:outline-none focus:ring-2 focus:ring-retro-accent"
+          >
+            <option value={0}>Ingen hålinfo</option>
+            {HOLE_OPTIONS.filter((n) => n > 0).map((n) => (
+              <option key={n} value={n}>{n} hål</option>
+            ))}
+          </select>
+        </div>
+        {holes.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-sm text-stone-400">Par är obligatoriskt, längd (meter) valfritt.</p>
+            <div className="grid gap-2 max-h-64 overflow-y-auto">
+              {holes.map((hole, index) => (
+                <div key={hole.hole_number} className="grid grid-cols-[auto_1fr_1fr] gap-2 items-center">
+                  <span className="text-stone-300 text-sm w-8">Hål {hole.hole_number}</span>
+                  <div>
+                    <label className="sr-only">Par</label>
+                    <select
+                      value={hole.par}
+                      onChange={(e) => setHolePar(index, Number(e.target.value))}
+                      className="w-full border border-retro-border bg-retro-surface text-stone-100 p-1.5 rounded text-sm"
+                    >
+                      {[3, 4, 5].map((p) => (
+                        <option key={p} value={p}>Par {p}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="sr-only">Längd (m)</label>
+                    <input
+                      type="number"
+                      min={0}
+                      placeholder="Längd m"
+                      value={hole.length ?? ""}
+                      onChange={(e) => setHoleLength(index, e.target.value ? Number(e.target.value) : null)}
+                      className="w-full border border-retro-border bg-retro-surface text-stone-100 p-1.5 rounded text-sm placeholder:text-stone-500"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Submit */}

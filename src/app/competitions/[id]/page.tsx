@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { Database } from "@/types/supabase";
 import Link from "next/link";
+import BackLink from "@/components/BackLink";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -53,15 +54,30 @@ export default async function CompetitionDetailPage({ params }: PageProps) {
     notFound();
   }
 
+  const { data: competitionScores } = await supabase
+    .from("scores")
+    .select("id, score, throws, date_played, created_at, course_id, courses ( name ), profiles ( alias )")
+    .eq("competition_id", id)
+    .order("score", { ascending: true });
+
   return (
     <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
-      <div className="flex justify-between items-center">
+      <div>
+        <BackLink href="/competitions">Tillbaka till tävlingar</BackLink>
+      </div>
+      <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-3xl font-bold text-stone-100">{competition.title}</h1>
+        <Link
+          href={`/results/new?competition_id=${id}`}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-retro-accent text-stone-100 text-sm font-medium hover:bg-retro-accent-hover transition"
+        >
+          🥏 Lägg till resultat
+        </Link>
         <Link
           href={`/competitions/${id}/edit`}
           className="text-sm text-retro-accent hover:underline"
         >
-          ✏️ Redigera Tävling
+          ✏️ Redigera tävling
         </Link>
       </div>
       {competition.image_url && (
@@ -87,9 +103,67 @@ export default async function CompetitionDetailPage({ params }: PageProps) {
         <h2 className="text-xl font-semibold mb-2 text-stone-100">🏞️ Banor</h2>
         <ul className="list-disc pl-5 text-stone-300 space-y-1">
           {competition.competition_courses.map((entry) => (
-            <li key={entry.course_id}>{entry.courses?.name}</li>
+            <li key={entry.course_id}>
+              <Link
+                href={`/courses/${entry.course_id}`}
+                className="text-retro-accent hover:underline"
+              >
+                {entry.courses?.name}
+              </Link>
+            </li>
           ))}
         </ul>
+      </div>
+
+      <div>
+        <h2 className="text-xl font-semibold mb-3 text-stone-100">📋 Resultat</h2>
+        {!competitionScores?.length ? (
+          <p className="text-stone-400 rounded-xl border border-retro-border bg-retro-surface p-4">
+            Inga resultat inlagda än. Lägg till resultat med knappen ovan.
+          </p>
+        ) : (
+          <div className="rounded-xl border border-retro-border bg-retro-surface overflow-hidden">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="bg-retro-card border-b border-retro-border">
+                  <th className="px-4 py-3 font-medium text-stone-300">#</th>
+                  <th className="px-4 py-3 font-medium text-stone-300">Spelare</th>
+                  <th className="px-4 py-3 font-medium text-stone-300">Bana</th>
+                  <th className="px-4 py-3 font-medium text-stone-300">Poäng</th>
+                  <th className="px-4 py-3 font-medium text-stone-300">Datum</th>
+                </tr>
+              </thead>
+              <tbody>
+                {competitionScores.map((score, idx) => (
+                  <tr key={score.id} className="border-b border-retro-border last:border-0 hover:bg-retro-card/50">
+                    <td className="px-4 py-2.5 text-stone-400">{idx + 1}</td>
+                    <td className="px-4 py-2.5 text-stone-100">
+                      {(score.profiles as { alias?: string } | null)?.alias ?? "—"}
+                    </td>
+                    <td className="px-4 py-2.5 text-stone-200">
+                      {(score as { course_id?: string }).course_id ? (
+                        <Link
+                          href={`/courses/${(score as { course_id: string }).course_id}`}
+                          className="text-retro-accent hover:underline"
+                        >
+                          {(score.courses as { name?: string } | null)?.name ?? "—"}
+                        </Link>
+                      ) : (
+                        (score.courses as { name?: string } | null)?.name ?? "—"
+                      )}
+                    </td>
+                    <td className="px-4 py-2.5 font-semibold text-stone-100">{score.score}</td>
+                    <td className="px-4 py-2.5 text-stone-400">
+                      {score.date_played
+                        ? formatDate(score.date_played)
+                        : formatDate(score.created_at)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

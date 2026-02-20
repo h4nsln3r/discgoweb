@@ -12,7 +12,7 @@ export default async function PublicProfilePage({ params }: Props) {
 
   const { data: profile, error } = await supabase
     .from("profiles")
-    .select("id, alias, avatar_url, city, team, favorite_disc, home_course")
+    .select("id, alias, avatar_url, city, team_id, favorite_disc, home_course")
     .eq("id", id)
     .single();
 
@@ -26,6 +26,16 @@ export default async function PublicProfilePage({ params }: Props) {
       .eq("id", profile.home_course)
       .single();
     homeCourseName = course?.name ?? null;
+  }
+
+  let teamName: string | null = null;
+  if (profile.team_id) {
+    const { data: team } = await supabase
+      .from("teams")
+      .select("name")
+      .eq("id", profile.team_id)
+      .single();
+    teamName = team?.name ?? null;
   }
 
   return (
@@ -72,10 +82,10 @@ export default async function PublicProfilePage({ params }: Props) {
               <p className="font-medium text-stone-200">{profile.city}</p>
             </div>
           )}
-          {profile.team && (
+          {teamName && (
             <div>
               <p className="text-stone-500">Lag</p>
-              <p className="font-medium text-stone-200">{profile.team}</p>
+              <p className="font-medium text-stone-200">{teamName}</p>
             </div>
           )}
           {profile.favorite_disc && (

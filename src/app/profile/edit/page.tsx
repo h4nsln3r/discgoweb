@@ -1,5 +1,6 @@
 // app/profile/edit/page.tsx
 import ProfileForm from "@/components/ProfileForm";
+import BackButton from "@/components/BackButton";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { redirect } from "next/navigation";
 
@@ -22,10 +23,17 @@ export default async function EditProfilePage() {
     .from("courses")
     .select("id, name");
 
+  const { data: teams } = await supabase
+    .from("teams")
+    .select("id, name");
+
   return (
-    <main className="p-6 max-w-3xl mx-auto">
-      <h1 className="text-3xl font-bold mb-4 text-stone-100">Redigera profil</h1>
-      <ProfileForm profile={profile} courses={courses || []} />
+    <main className="p-4 sm:p-6 max-w-3xl mx-auto">
+      <div className="mb-6">
+        <BackButton />
+      </div>
+      <h1 className="text-2xl font-bold mb-4 text-stone-100">Redigera profil</h1>
+      <ProfileForm profile={profile} courses={courses || []} teams={teams || []} />
     </main>
   );
 }

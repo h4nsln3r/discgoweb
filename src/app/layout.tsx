@@ -23,7 +23,9 @@ export default function RootLayout({
     <html lang="sv">
       <body className="min-h-screen bg-retro-bg">
         <TopbarWrapper />
-        <Providers>{children}</Providers>
+        <Providers>
+          <div className="pt-6">{children}</div>
+        </Providers>
       </body>
     </html>
   );

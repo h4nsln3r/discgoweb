@@ -3,10 +3,13 @@
 import { useState } from "react";
 
 function ImageGallery({ images }: { images: string[] }) {
-  const [selected, setSelected] = useState(images[0] ?? null);
+  const validImages = (images ?? []).filter(
+    (url) => typeof url === "string" && url.trim() !== ""
+  );
+  const [selected, setSelected] = useState(validImages[0] ?? null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  if (!images || images.length === 0) return null;
+  if (validImages.length === 0) return null;
 
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
@@ -26,7 +29,7 @@ function ImageGallery({ images }: { images: string[] }) {
 
       {/* Thumbnails */}
       <div className="flex gap-2 overflow-x-auto pt-2">
-        {images.map((img, idx) => (
+        {validImages.map((img, idx) => (
           <button
             key={`${img}-${idx}`}
             type="button"
@@ -48,7 +51,7 @@ function ImageGallery({ images }: { images: string[] }) {
       </div>
 
       {/* Modal */}
-      {isModalOpen && (
+      {isModalOpen && selected && (
         <div
           className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50"
           onClick={closeModal}
@@ -56,7 +59,7 @@ function ImageGallery({ images }: { images: string[] }) {
           <div className="relative max-w-4xl max-h-full w-full h-full flex items-center justify-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={selected ?? ""}
+              src={selected}
               alt="Full screen"
               className="max-h-full max-w-full object-contain cursor-zoom-in"
             />

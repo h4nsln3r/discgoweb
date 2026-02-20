@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Database } from "@/types/supabase";
 import { useToast } from "@/components/ui/ToastProvider";
+import BackLink from "@/components/BackLink";
 
 export default function AddCompetitionScorePage() {
   const supabase = useMemo(() => createClientComponentClient<Database>(), []);
@@ -80,7 +81,12 @@ export default function AddCompetitionScorePage() {
   };
 
   return (
-    <div className="max-w-xl mx-auto p-6">
+    <div className="max-w-xl mx-auto p-6 space-y-6">
+      <div>
+        <BackLink href={`/competitions/${competitionId}`}>
+          Tillbaka till tävlingen
+        </BackLink>
+      </div>
       <h1 className="text-2xl font-bold mb-4">Lägg till score</h1>
 
       <form onSubmit={handleSubmit} className="space-y-4">

@@ -125,14 +125,97 @@ export type Database = {
         }
         Relationships: []
       }
+      course_holes: {
+        Row: {
+          id: string
+          course_id: string
+          hole_number: number
+          par: number
+          length: number | null
+        }
+        Insert: {
+          id?: string
+          course_id: string
+          hole_number: number
+          par: number
+          length?: number | null
+        }
+        Update: {
+          course_id?: string
+          hole_number?: number
+          par?: number
+          length?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_holes_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      score_holes: {
+        Row: {
+          id: string
+          score_id: string
+          hole_number: number
+          throws: number
+        }
+        Insert: {
+          id?: string
+          score_id: string
+          hole_number: number
+          throws: number
+        }
+        Update: {
+          score_id?: string
+          hole_number?: number
+          throws?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "score_holes_score_id_fkey"
+            columns: ["score_id"]
+            isOneToOne: false
+            referencedRelation: "scores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      teams: {
+        Row: {
+          id: string
+          name: string
+          ort: string | null
+          logga: string | null
+          about: string | null
+        }
+        Insert: {
+          id?: string
+          name: string
+          ort?: string | null
+          logga?: string | null
+          about?: string | null
+        }
+        Update: {
+          name?: string
+          ort?: string | null
+          logga?: string | null
+          about?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           alias: string
           avatar_url: string
           city: string | null
+          country: string | null
           favorite_disc: string | null
           phone: string | null
-          team: string | null
+          team_id: string | null
           home_course: string | null
           id: string
         }
@@ -140,9 +223,10 @@ export type Database = {
           alias: string
           avatar_url: string
           city?: string | null
+          country?: string | null
           favorite_disc?: string | null
           phone?: string | null
-          team?: string | null
+          team_id?: string | null
           home_course?: string | null
           id?: string
         }
@@ -150,9 +234,10 @@ export type Database = {
           alias?: string
           avatar_url?: string
           city?: string | null
+          country?: string | null
           favorite_disc?: string | null
           phone?: string | null
-          team?: string | null
+          team_id?: string | null
           home_course?: string | null
           id?: string
         }
@@ -162,6 +247,13 @@ export type Database = {
             columns: ["home_course"]
             isOneToOne: false
             referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
             referencedColumns: ["id"]
           },
         ]

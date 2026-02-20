@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeftIcon, TrashIcon } from "@heroicons/react/24/outline";
+import BackLink from "@/components/BackLink";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import type { Database } from "@/types/supabase";
 import AddScoreForm from "@/components/AddScoreForm";
@@ -167,13 +168,9 @@ export default function EditScorePage() {
   return (
     <main className="p-4 md:p-6 max-w-3xl mx-auto space-y-6">
       <div>
-        <button
-          onClick={() => router.back()}
-          className="inline-flex items-center gap-2 text-sm text-stone-400 hover:text-stone-200 transition"
-        >
-          <ArrowLeftIcon className="h-4 w-4" />
-          Tillbaka
-        </button>
+        <BackLink href={id ? `/results/${id}` : "/results"}>
+          Tillbaka till resultatet
+        </BackLink>
       </div>
 
       <h1 className="text-2xl font-bold text-stone-100">Redigera resultat</h1>

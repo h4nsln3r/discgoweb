@@ -2,15 +2,18 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import type { Database } from "@/types/supabase";
 import { createSupabaseClient } from "@/lib/supabase";
 import { useToast } from "@/components/ui/ToastProvider";
+import { CITY_COUNTRY_PAIRS, CITY_SUGGESTIONS, COUNTRY_SUGGESTIONS } from "@/data/location-suggestions";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 type Course = Pick<
   Database["public"]["Tables"]["courses"]["Row"],
   "id" | "name"
 >;
+type Team = Pick<Database["public"]["Tables"]["teams"]["Row"], "id" | "name">;
 
 const CROP_SIZE = 320;
 const PREVIEW_SIZE = 96;
@@ -18,9 +21,11 @@ const PREVIEW_SIZE = 96;
 export default function ProfileForm({
   profile,
   courses,
+  teams,
 }: {
   profile: Profile | null;
   courses: Course[];
+  teams: Team[];
 }) {
   const supabase = createSupabaseClient();
   const router = useRouter();
@@ -35,7 +40,11 @@ export default function ProfileForm({
     profile?.favorite_disc ?? ""
   );
   const [city, setCity] = useState(profile?.city ?? "");
-  const [team, setTeam] = useState(profile?.team ?? "");
+  const [country, setCountry] = useState(profile?.country ?? "");
+  const [teamId, setTeamId] = useState(profile?.team_id ?? "");
+  const [locationSearch, setLocationSearch] = useState("");
+  const [locationDropdownOpen, setLocationDropdownOpen] = useState(false);
+  const locationDropdownRef = useRef<HTMLDivElement | null>(null);
 
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [fileToCrop, setFileToCrop] = useState<File | null>(null);
@@ -67,6 +76,26 @@ export default function ProfileForm({
       }
     };
   }, [avatarFile, avatarPreview]);
+
+  const locationSuggestions = useMemo(() => {
+    const q = locationSearch.trim().toLowerCase();
+    if (q.length < 3) return [];
+    return CITY_COUNTRY_PAIRS.filter(
+      (p) =>
+        p.city.toLowerCase().includes(q) ||
+        p.country.toLowerCase().includes(q)
+    ).slice(0, 12);
+  }, [locationSearch]);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (locationDropdownRef.current && !locationDropdownRef.current.contains(e.target as Node)) {
+        setLocationDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const getCroppedFile = useCallback(async (): Promise<File | null> => {
     if (!fileToCrop || !imgRef.current) return null;
@@ -174,7 +203,8 @@ export default function ProfileForm({
         phone: phone?.trim() || null,
         favorite_disc: favoriteDisc?.trim() || null,
         city: city?.trim() || null,
-        team: team?.trim() || null,
+        country: country?.trim() || null,
+        team_id: teamId || null,
       };
 
       console.log("[profile] saving payload:", payload);
@@ -397,6 +427,45 @@ export default function ProfileForm({
         </div>
       </div>
 
+      {/* Sök ort – fyller i både stad och land */}
+      <div className="space-y-2" ref={locationDropdownRef}>
+        <label className="block text-sm font-medium text-stone-300">
+          Sök ort (stad och land)
+        </label>
+        <input
+          className={inputClass}
+          value={locationSearch}
+          onChange={(e) => {
+            setLocationSearch(e.target.value);
+            setLocationDropdownOpen(true);
+          }}
+          onFocus={() => locationSuggestions.length > 0 && setLocationDropdownOpen(true)}
+          placeholder="t.ex. Malmö eller Sverige"
+          autoComplete="off"
+        />
+        {locationDropdownOpen && locationSuggestions.length > 0 && (
+          <ul className="rounded-xl border border-retro-border bg-retro-surface shadow-lg overflow-hidden max-h-56 overflow-y-auto z-10">
+            {locationSuggestions.map((p) => (
+              <li key={`${p.city}-${p.country}`}>
+                <button
+                  type="button"
+                  className="w-full text-left px-3 py-2.5 text-stone-200 hover:bg-retro-card transition flex justify-between gap-2"
+                  onClick={() => {
+                    setCity(p.city);
+                    setCountry(p.country);
+                    setLocationSearch("");
+                    setLocationDropdownOpen(false);
+                  }}
+                >
+                  <span>{p.city}</span>
+                  <span className="text-retro-muted shrink-0">{p.country}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
           <label className="block text-sm font-medium text-stone-300">Stad</label>
@@ -405,17 +474,52 @@ export default function ProfileForm({
             value={city}
             onChange={(e) => setCity(e.target.value)}
             placeholder="Malmö"
+            list="profile-city-list"
+            autoComplete="off"
           />
+          <datalist id="profile-city-list">
+            {CITY_SUGGESTIONS.map((s) => (
+              <option key={s} value={s} />
+            ))}
+          </datalist>
         </div>
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-stone-300">Lag</label>
+          <label className="block text-sm font-medium text-stone-300">Land</label>
           <input
             className={inputClass}
-            value={team}
-            onChange={(e) => setTeam(e.target.value)}
-            placeholder="Ditt lag"
+            value={country}
+            onChange={(e) => setCountry(e.target.value)}
+            placeholder="t.ex. Sverige"
+            list="profile-country-list"
+            autoComplete="off"
           />
+          <datalist id="profile-country-list">
+            {COUNTRY_SUGGESTIONS.map((s) => (
+              <option key={s} value={s} />
+            ))}
+          </datalist>
         </div>
+      </div>
+
+      <div className="space-y-2">
+        <label className="block text-sm font-medium text-stone-300">Lag</label>
+        <select
+          className={inputClass}
+          value={teamId}
+          onChange={(e) => setTeamId(e.target.value)}
+        >
+          <option value="">Inget lag</option>
+          {teams.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.name}
+            </option>
+          ))}
+        </select>
+        {teams.length === 0 && (
+          <p className="text-xs text-retro-muted">
+            <Link href="/teams" className="text-retro-accent hover:underline">Lägg till lag</Link> först om du vill välja ett.
+          </p>
+        )}
       </div>
 
       <button
