@@ -50,6 +50,27 @@ export type Database = {
           },
         ]
       }
+      competition_participants: {
+        Row: {
+          id: string
+          competition_id: string
+          user_id: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          competition_id: string
+          user_id: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          competition_id?: string
+          user_id?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
       competitions: {
         Row: {
           created_at: string | null

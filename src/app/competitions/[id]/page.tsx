@@ -5,6 +5,8 @@ import { Database } from "@/types/supabase";
 import Link from "next/link";
 import BackLink from "@/components/Buttons/BackLink";
 import CompetitionCoursesMap from "@/components/Maps/CompetitionCoursesMap";
+import JoinToCompetitionButton from "@/components/Competitions/JoinToCompetitionButton";
+import CompetitionParticipantsSection from "@/components/Competitions/CompetitionParticipantsSection";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -60,6 +62,42 @@ export default async function CompetitionDetailPage({ params }: PageProps) {
   const { data: { user } } = await supabase.auth.getUser();
   const isCreator = Boolean(
     competition.created_by && user?.id && competition.created_by === user.id
+  );
+
+  const { data: participantsData } = await supabase
+    .from("competition_participants")
+    .select("user_id, profiles(alias, avatar_url)")
+    .eq("competition_id", id);
+
+  const { data: creatorProfile } = competition.created_by
+    ? await supabase
+        .from("profiles")
+        .select("id, alias, avatar_url")
+        .eq("id", competition.created_by)
+        .single()
+    : { data: null };
+
+  type ParticipantRow = { user_id: string; alias: string | null; avatar_url: string | null };
+  const participantsFromJoin = (participantsData ?? []).map((p) => {
+    const prof = (p as { profiles: { alias: string | null; avatar_url: string | null } | null }).profiles;
+    return {
+      user_id: (p as { user_id: string }).user_id,
+      alias: prof?.alias ?? null,
+      avatar_url: prof?.avatar_url ?? null,
+    };
+  });
+  const participantIds = new Set(participantsFromJoin.map((p) => p.user_id));
+  if (creatorProfile && competition.created_by && !participantIds.has(competition.created_by)) {
+    participantsFromJoin.unshift({
+      user_id: creatorProfile.id,
+      alias: creatorProfile.alias ?? null,
+      avatar_url: creatorProfile.avatar_url ?? null,
+    });
+  }
+  const participants = participantsFromJoin as ParticipantRow[];
+
+  const hasJoined = Boolean(
+    user?.id && (participantIds.has(user.id) || competition.created_by === user.id)
   );
 
   const { data: competitionScores } = await supabase
@@ -150,6 +188,17 @@ export default async function CompetitionDetailPage({ params }: PageProps) {
           {competition.description}
         </p>
       )}
+
+      <div className="flex flex-wrap items-center gap-3">
+        {user && !hasJoined && (
+          <JoinToCompetitionButton
+            competitionId={id}
+            competitionTitle={competition.title}
+          />
+        )}
+      </div>
+
+      <CompetitionParticipantsSection participants={participants} />
 
       <CompetitionCoursesMap
         courses={competition.competition_courses
