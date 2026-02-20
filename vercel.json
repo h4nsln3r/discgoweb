@@ -1,0 +1,3 @@
+{
+  "buildCommand": "BROWSERSLIST_IGNORE_OLD_DATA=1 next build"
+}

@@ -50,12 +50,14 @@ function MapViewController({
   courses,
   defaultCenter,
   centerOffsetPx,
+  fitToCourses,
 }: {
   selectedCourseId: string | null;
   courses: Course[];
   defaultCenter: [number, number];
-  /** På desktop: pan efter fly så pricken hamnar mer till höger (px att pana åt vänster). */
+  /** På desktop: pan efter fly. Positiv = pana vänster (panel till vänster), negativ = pana höger (panel till höger). */
   centerOffsetPx?: number;
+  fitToCourses?: boolean;
 }) {
   const map = useMap();
   const lastCenterRef = useRef<[number, number] | null>(null);
@@ -71,17 +73,17 @@ function MapViewController({
       if (!isValidLatLng(center[0], center[1])) return;
       lastCenterRef.current = center;
       const offset = centerOffsetPx ?? 0;
-      if (offset > 0) {
+      if (offset !== 0) {
         map.once("moveend", () => {
           map.panBy([-offset, 0], { duration: 0.25 });
         });
       }
       map.flyTo(center, ZOOM_SELECTED, { duration: 0.6 });
-    } else {
+    } else if (!fitToCourses) {
       const target = lastCenterRef.current ?? defaultCenter;
       const [tLat, tLng] = target;
       const offset = centerOffsetPx ?? 0;
-      if (offset > 0) {
+      if (offset !== 0) {
         map.once("moveend", () => {
           map.panBy([-offset, 0], { duration: 0.25 });
         });
@@ -94,8 +96,24 @@ function MapViewController({
         lastCenterRef.current = null;
       }
     }
-  }, [selectedCourseId, courses, defaultCenter, map, centerOffsetPx]);
+  }, [selectedCourseId, courses, defaultCenter, map, centerOffsetPx, fitToCourses]);
 
+  return null;
+}
+
+function FitBoundsToCourses({ courses }: { courses: Course[] }) {
+  const map = useMap();
+  useEffect(() => {
+    const valid = courses.filter((c) => c.latitude != null && c.longitude != null);
+    if (valid.length === 0) return;
+    if (valid.length === 1) {
+      map.setView([valid[0].latitude!, valid[0].longitude!], 12, { animate: false });
+      return;
+    }
+    const points = valid.map((c) => [c.latitude!, c.longitude!] as [number, number]);
+    const bounds = L.latLngBounds(points);
+    map.fitBounds(bounds, { padding: [24, 24], maxZoom: 14, animate: false });
+  }, [courses, map]);
   return null;
 }
 
@@ -107,6 +125,8 @@ type Props = {
   height?: string;
   /** På desktop: pan efter zoom så pricken hamnar mer till höger (px att pana åt vänster, t.ex. 180). */
   centerOffsetPx?: number;
+  /** Om true, centrera och zooma kartan så att alla banor visas. */
+  fitToCourses?: boolean;
 };
 
 export default function LeafletMap({
@@ -115,6 +135,7 @@ export default function LeafletMap({
   selectedCourseId,
   height = "500px",
   centerOffsetPx,
+  fitToCourses,
 }: Props) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -161,7 +182,9 @@ export default function LeafletMap({
         courses={courses}
         defaultCenter={defaultCenter}
         centerOffsetPx={centerOffsetPx}
+        fitToCourses={fitToCourses}
       />
+      {fitToCourses && !selectedCourseId && <FitBoundsToCourses courses={courses} />}
 
       {/* Glow under vald bana på kartan */}
       {selectedCourseId &&

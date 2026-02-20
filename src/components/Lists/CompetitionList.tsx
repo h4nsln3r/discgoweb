@@ -94,7 +94,7 @@ export default function CompetitionList({
           <Link
             key={comp.id}
             href={`/competitions/${comp.id}`}
-            className="block w-full rounded-xl border border-retro-border bg-retro-surface shadow-sm overflow-hidden hover:border-retro-muted/50 transition"
+            className="group block w-full rounded-xl border border-retro-border bg-retro-surface shadow-sm overflow-hidden hover:border-retro-muted/50 transition"
           >
             {comp.image_url ? (
               // eslint-disable-next-line @next/next/no-img-element -- external image URL
@@ -109,7 +109,7 @@ export default function CompetitionList({
               </div>
             )}
             <div className="p-4 sm:p-5">
-              <h2 className="text-lg sm:text-xl font-semibold text-stone-100">
+              <h2 className="inline-block text-2xl sm:text-3xl font-bebas tracking-wide text-stone-100 uppercase group-hover:scale-105 group-hover:text-amber-300 transition-all duration-200">
                 {comp.title}
               </h2>
               <p className="text-sm text-stone-400 mt-1">

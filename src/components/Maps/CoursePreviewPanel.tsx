@@ -16,6 +16,8 @@ type Props = {
   embedded?: boolean;
   /** Om true, länk till banan inkluderar ?from=dashboard så tillbaka går till dashboard. */
   fromDashboard?: boolean;
+  /** Kompakt vy: mindre bild, utan koordinater och utan knapparna Visa detaljer/Lägg till resultat. */
+  compact?: boolean;
 };
 
 type BestScore = {
@@ -26,7 +28,7 @@ type BestScore = {
   profiles: { alias: string | null } | null;
 };
 
-export default function CoursePreviewPanel({ course, onClose, embedded, fromDashboard }: Props) {
+export default function CoursePreviewPanel({ course, onClose, embedded, fromDashboard, compact }: Props) {
   const courseHref = course ? `/courses/${course.id}${fromDashboard ? "?from=dashboard" : ""}` : "#";
   const router = useRouter();
   const supabase = useMemo(() => createClientComponentClient<Database>(), []);
@@ -99,7 +101,7 @@ export default function CoursePreviewPanel({ course, onClose, embedded, fromDash
     >
           {/* Header image */}
           {course.main_image_url ? (
-            <div className="relative w-full aspect-[16/9] md:rounded-t-2xl overflow-hidden">
+            <div className={`relative w-full overflow-hidden md:rounded-t-2xl ${compact ? "aspect-[3/2] max-h-28" : "aspect-[16/9]"}`}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={course.main_image_url}
@@ -142,14 +144,15 @@ export default function CoursePreviewPanel({ course, onClose, embedded, fromDash
                   <span>{course.location}</span>
                 </p>
               )}
-              {course.latitude && course.longitude && (
+              {!compact && course.latitude && course.longitude && (
                 <p className="text-xs text-retro-muted mt-1">
                   📍 {course.latitude}, {course.longitude}
                 </p>
               )}
             </div>
 
-            {/* Course record – klickbar rad till resultatet */}
+            {/* Course record – klickbar rad till resultatet – döljs i compact-läge */}
+            {!compact && (
             <div className="mt-2">
               <h4 className="text-xs font-medium text-stone-400 mb-1">Banrekord</h4>
               <div className="rounded-lg border border-retro-border bg-retro-card">
@@ -209,24 +212,27 @@ export default function CoursePreviewPanel({ course, onClose, embedded, fromDash
                 )}
               </div>
             </div>
+            )}
 
-            {/* Actions in one row */}
-            <div className="mt-4 flex items-center gap-3">
-              <Link
-                href={courseHref}
-                onClick={onClose}
-                className="inline-flex items-center justify-center rounded-lg border border-retro-border bg-retro-card px-4 py-2 text-sm font-medium text-stone-200 hover:bg-retro-border/50 transition"
-              >
-                Visa detaljer
-              </Link>
-              <Link
-                href={`/results/new?course_id=${course.id}`}
-                onClick={onClose}
-                className="inline-flex items-center justify-center rounded-lg border border-retro-accent bg-retro-accent/20 px-4 py-2 text-sm font-medium text-retro-accent hover:bg-retro-accent/30 transition"
-              >
-                Lägg till resultat
-              </Link>
-            </div>
+            {/* Actions in one row – döljs i compact-läge */}
+            {!compact && (
+              <div className="mt-4 flex items-center gap-3">
+                <Link
+                  href={courseHref}
+                  onClick={onClose}
+                  className="inline-flex items-center justify-center rounded-lg border border-retro-border bg-retro-card px-4 py-2 text-sm font-medium text-stone-200 hover:bg-retro-border/50 transition"
+                >
+                  Visa detaljer
+                </Link>
+                <Link
+                  href={`/results/new?course_id=${course.id}`}
+                  onClick={onClose}
+                  className="inline-flex items-center justify-center rounded-lg border border-retro-accent bg-retro-accent/20 px-4 py-2 text-sm font-medium text-retro-accent hover:bg-retro-accent/30 transition"
+                >
+                  Lägg till resultat
+                </Link>
+              </div>
+            )}
           </div>
     </div>
   );

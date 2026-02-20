@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Database } from "@/types/supabase";
 import Link from "next/link";
 import BackLink from "@/components/Buttons/BackLink";
+import CompetitionCoursesMap from "@/components/Maps/CompetitionCoursesMap";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -19,7 +20,7 @@ type CompetitionWithCourses = {
   created_by: string | null;
   competition_courses: {
     course_id: string;
-    courses: { name: string } | null;
+    courses: { id: string; name: string; latitude: number | null; longitude: number | null; location: string | null; main_image_url: string | null } | null;
   }[];
 };
 
@@ -44,7 +45,7 @@ export default async function CompetitionDetailPage({ params }: PageProps) {
       created_by,
       competition_courses (
         course_id,
-        courses ( name )
+        courses ( id, name, latitude, longitude, location, main_image_url )
       )
     `
     )
@@ -114,7 +115,7 @@ export default async function CompetitionDetailPage({ params }: PageProps) {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
-      <div className="flex items-center justify-between gap-4 mb-4">
+      <div className="flex items-center justify-between gap-4">
         <BackLink href="/competitions" />
         {isCreator && (
           <Link
@@ -125,27 +126,23 @@ export default async function CompetitionDetailPage({ params }: PageProps) {
           </Link>
         )}
       </div>
-      <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-3xl font-bold text-stone-100">{competition.title}</h1>
-        <Link
-          href={`/results/new?competition_id=${id}`}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-retro-accent text-stone-100 text-sm font-medium hover:bg-retro-accent-hover transition"
-        >
-          🥏 Lägg till resultat
-        </Link>
-      </div>
       {competition.image_url && (
-        // eslint-disable-next-line @next/next/no-img-element -- dynamisk tävlingsbild-URL
-        <img
-          src={competition.image_url}
-          alt={competition.title}
-          className="w-full h-60 object-cover rounded-lg border border-retro-border"
-        />
+        <div className="-mx-4 sm:mx-0">
+          {/* eslint-disable-next-line @next/next/no-img-element -- dynamisk tävlingsbild-URL */}
+          <img
+            src={competition.image_url}
+            alt={competition.title}
+            className="w-full h-60 sm:h-72 object-cover rounded-none sm:rounded-lg border-0 sm:border border-retro-border"
+          />
+        </div>
       )}
+      <div>
+        <h1 className="text-4xl sm:text-5xl font-bebas tracking-wide text-stone-100 uppercase">{competition.title}</h1>
+      </div>
 
       <p className="text-stone-400">
-        🗓️ {formatDate(competition.start_date)} –{" "}
-        {formatDate(competition.end_date)}
+        🗓️ {formatDateWithWeekday(competition.start_date)} –{" "}
+        {formatDateWithWeekday(competition.end_date)}
       </p>
 
       {competition.description && (
@@ -153,6 +150,12 @@ export default async function CompetitionDetailPage({ params }: PageProps) {
           {competition.description}
         </p>
       )}
+
+      <CompetitionCoursesMap
+        courses={competition.competition_courses
+          .map((e) => e.courses)
+          .filter((c): c is NonNullable<typeof c> => c != null)}
+      />
 
       <div>
         <h2 className="text-xl font-semibold mb-3 text-stone-100">🏞️ Banor och resultat</h2>
@@ -264,6 +267,15 @@ export default async function CompetitionDetailPage({ params }: PageProps) {
           </div>
         </div>
       )}
+
+      <div className="pt-4">
+        <Link
+          href={`/results/new?competition_id=${id}`}
+          className="inline-flex items-center gap-2 w-full sm:w-auto justify-center px-4 py-3 rounded-xl bg-retro-accent text-stone-100 text-sm font-medium hover:bg-retro-accent-hover transition"
+        >
+          🥏 Lägg till resultat
+        </Link>
+      </div>
     </div>
   );
 }
@@ -272,6 +284,15 @@ function formatDate(date: string | null) {
   if (!date) return "";
   return new Intl.DateTimeFormat("sv-SE", {
     year: "numeric",
+    month: "short",
+    day: "numeric",
+  }).format(new Date(date));
+}
+
+function formatDateWithWeekday(date: string | null) {
+  if (!date) return "";
+  return new Intl.DateTimeFormat("sv-SE", {
+    weekday: "long",
     month: "short",
     day: "numeric",
   }).format(new Date(date));

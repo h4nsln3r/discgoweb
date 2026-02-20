@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { UserGroupIcon } from "@heroicons/react/24/outline";
+import TeamCard from "@/components/Teams/TeamCard";
 
 export default async function TeamsPage() {
   const supabase = await createServerSupabaseClient();
@@ -37,49 +38,10 @@ export default async function TeamsPage() {
           Inga lag tillagda än.
         </p>
       ) : (
-        <ul className="space-y-3">
+        <ul className="space-y-4">
           {teams.map((team) => (
             <li key={team.id}>
-              <Link
-                href={`/teams/${team.id}`}
-                className="flex items-center gap-4 rounded-xl border border-retro-border bg-retro-surface p-4 hover:bg-retro-card transition"
-              >
-                {team.logga ? (
-                  <div className="h-12 w-12 rounded-lg overflow-hidden bg-retro-card shrink-0">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={team.logga}
-                      alt=""
-                      className="h-full w-full object-contain"
-                    />
-                  </div>
-                ) : (
-                  <div className="h-12 w-12 rounded-lg bg-retro-card flex items-center justify-center text-retro-muted shrink-0">
-                    <UserGroupIcon className="w-6 h-6" />
-                  </div>
-                )}
-                <div className="min-w-0 flex-1">
-                  <p className="font-medium text-stone-100 truncate">{team.name}</p>
-                  {team.ort && (
-                    <p className="text-sm text-retro-muted truncate">{team.ort}</p>
-                  )}
-                  <span className="inline-flex items-center gap-1.5 mt-1.5 text-sm text-stone-400">
-                    Klicka för att visa laget
-                  </span>
-                </div>
-                <div className="w-24 h-16 sm:w-28 sm:h-20 rounded-lg overflow-hidden bg-retro-card shrink-0 flex items-center justify-center">
-                  {(team.bild || team.logga) ? (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img
-                      src={team.bild || team.logga || ""}
-                      alt=""
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <UserGroupIcon className="w-8 h-8 text-retro-muted" />
-                  )}
-                </div>
-              </Link>
+              <TeamCard team={team} asLink />
             </li>
           ))}
         </ul>
