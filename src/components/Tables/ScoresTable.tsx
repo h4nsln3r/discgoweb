@@ -1,17 +1,27 @@
 "use client";
 import { useMemo, useState, useEffect, Fragment } from "react";
+import Link from "next/link";
 import { TrophyIcon, ChevronDownIcon, ChevronUpIcon, UserIcon, CalendarDaysIcon, HashtagIcon } from "@heroicons/react/24/outline";
+import { getHoleThrowBg, getHoleThrowStyle } from "@/lib/holeColors";
 
 type ScoreRow = {
   id?: string;
+  user_id?: string;
   score: number;
   created_at: string;
   profiles: { alias: string | null } | null;
 };
 
-type HoleRow = { hole_number: number; throws: number };
+type HoleRow = { hole_number: number; throws: number; par?: number };
 
-function ScoresTable({ scores }: { scores: ScoreRow[] }) {
+function ScoresTable({
+  scores,
+  parByHole,
+}: {
+  scores: ScoreRow[];
+  /** hole_number -> par (för färg under/över par) */
+  parByHole?: Record<number, number>;
+}) {
   const [sortBy, setSortBy] = useState<"alias" | "score" | "created_at">("score");
   const [sortAsc, setSortAsc] = useState(true);
   const [filter, setFilter] = useState<string>("");
@@ -93,7 +103,13 @@ function ScoresTable({ scores }: { scores: ScoreRow[] }) {
           <span className="text-stone-200 font-medium">
             Banrekord: <span className="text-retro-accent font-semibold">{record.score} kast</span>
             {" – "}
-            <span className="text-stone-100">{record.profiles?.alias ?? "Okänd"}</span>
+            {record.user_id ? (
+              <Link href={`/profile/${record.user_id}`} className="text-stone-100 text-retro-accent hover:underline">
+                {record.profiles?.alias ?? "Okänd"}
+              </Link>
+            ) : (
+              <span className="text-stone-100">{record.profiles?.alias ?? "Okänd"}</span>
+            )}
             <span className="text-stone-400 text-sm ml-1">({formatDate(record.created_at)})</span>
           </span>
           {record.id && (
@@ -118,15 +134,21 @@ function ScoresTable({ scores }: { scores: ScoreRow[] }) {
               <div className="flex flex-wrap gap-2">
                 {recordHoles
                   .sort((a, b) => a.hole_number - b.hole_number)
-                  .map((h) => (
-                    <span
-                      key={h.hole_number}
-                      className="inline-flex items-center gap-1 rounded-lg bg-retro-card px-2.5 py-1 text-sm text-stone-200"
-                    >
-                      <span className="text-retro-muted">H{h.hole_number}</span>
-                      <span className="font-medium">{h.throws}</span>
-                    </span>
-                  ))}
+                  .map((h) => {
+                    const par = h.par ?? parByHole?.[h.hole_number];
+                    const bg = getHoleThrowBg(h.throws, par);
+                    const style = getHoleThrowStyle(h.throws, par);
+                    return (
+                      <span
+                        key={h.hole_number}
+                        className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-sm text-stone-200 ${bg || "bg-retro-card"}`}
+                        style={Object.keys(style).length > 0 ? style : undefined}
+                      >
+                        <span className="text-retro-muted">H{h.hole_number}</span>
+                        <span className="font-medium">{h.throws}</span>
+                      </span>
+                    );
+                  })}
               </div>
             )}
           </div>
@@ -197,7 +219,13 @@ function ScoresTable({ scores }: { scores: ScoreRow[] }) {
                 <Fragment key={scoreId}>
                   <tr className="hover:bg-retro-card border-b border-retro-border last:border-b-0">
                     <td className="px-4 py-2 text-stone-200">
-                      {s.profiles?.alias ?? "Okänd"}
+                      {s.user_id ? (
+                        <Link href={`/profile/${s.user_id}`} className="text-retro-accent hover:underline">
+                          {s.profiles?.alias ?? "Okänd"}
+                        </Link>
+                      ) : (
+                        (s.profiles?.alias ?? "Okänd")
+                      )}
                     </td>
                     <td className="px-4 py-2 text-stone-200">{s.score}</td>
                     <td className="px-4 py-2 text-stone-200">
@@ -232,15 +260,21 @@ function ScoresTable({ scores }: { scores: ScoreRow[] }) {
                           <div className="flex flex-wrap gap-2">
                             {[...rowHoles]
                               .sort((a, b) => a.hole_number - b.hole_number)
-                              .map((h) => (
-                                <span
-                                  key={h.hole_number}
-                                  className="inline-flex items-center gap-1 rounded-lg bg-retro-surface border border-retro-border px-2.5 py-1 text-sm text-stone-200"
-                                >
-                                  <span className="text-retro-muted">H{h.hole_number}</span>
-                                  <span className="font-medium">{h.throws}</span>
-                                </span>
-                              ))}
+                              .map((h) => {
+                                const par = (h as HoleRow).par ?? parByHole?.[h.hole_number];
+                                const bg = getHoleThrowBg(h.throws, par);
+                                const style = getHoleThrowStyle(h.throws, par);
+                                return (
+                                  <span
+                                    key={h.hole_number}
+                                    className={`inline-flex items-center gap-1 rounded-lg border border-retro-border px-2.5 py-1 text-sm text-stone-200 ${bg || "bg-retro-surface"}`}
+                                    style={Object.keys(style).length > 0 ? style : undefined}
+                                  >
+                                    <span className="text-retro-muted">H{h.hole_number}</span>
+                                    <span className="font-medium">{h.throws}</span>
+                                  </span>
+                                );
+                              })}
                           </div>
                         )}
                       </td>

@@ -39,11 +39,11 @@ export default async function CourseDetailPage({
   // Hämta alla scores (med id för hole-in-one-koppling)
   const { data: allScores } = await supabase
     .from("scores")
-    .select("id, score, created_at, profiles ( alias )")
+    .select("id, user_id, score, created_at, profiles!scores_user_id_fkey( alias )")
     .eq("course_id", id);
 
   const scoreIds = (allScores ?? []).map((s) => (s as { id: string }).id);
-  let holeInOnes: { hole_number: number; alias: string }[] = [];
+  let holeInOnes: { hole_number: number; alias: string; user_id: string | null }[] = [];
   if (scoreIds.length > 0) {
     const { data: aces } = await supabase
       .from("score_holes")
@@ -52,10 +52,11 @@ export default async function CourseDetailPage({
       .eq("throws", 1);
     const scoreById = new Map((allScores ?? []).map((s) => [(s as { id: string }).id, s]));
     holeInOnes = (aces ?? []).map((a) => {
-      const score = scoreById.get((a as { score_id: string }).score_id) as { profiles: { alias: string | null } | null } | undefined;
+      const score = scoreById.get((a as { score_id: string }).score_id) as { user_id?: string; profiles: { alias: string | null } | null } | undefined;
       return {
         hole_number: (a as { hole_number: number }).hole_number,
         alias: score?.profiles?.alias ?? "Okänd",
+        user_id: score?.user_id ?? null,
       };
     });
   }
@@ -117,7 +118,18 @@ export default async function CourseDetailPage({
               <ul className="space-y-1 text-stone-200">
                 {top3.map((score, idx) => (
                   <li key={idx} className="flex justify-between">
-                    <span>{score.profiles?.alias ?? "Okänd spelare"}</span>
+                    <span>
+                      {(score as { user_id?: string }).user_id ? (
+                        <Link
+                          href={`/profile/${(score as { user_id: string }).user_id}`}
+                          className="text-retro-accent hover:underline"
+                        >
+                          {score.profiles?.alias ?? "Okänd spelare"}
+                        </Link>
+                      ) : (
+                        (score.profiles?.alias ?? "Okänd spelare")
+                      )}
+                    </span>
                     <span>{score.score}</span>
                   </li>
                 ))}
@@ -131,7 +143,13 @@ export default async function CourseDetailPage({
               <ul className="space-y-1 text-stone-200">
                 {holeInOnes.map((ace, idx) => (
                   <li key={idx}>
-                    Hål {ace.hole_number} – {ace.alias}
+                    Hål {ace.hole_number} – {ace.user_id ? (
+                      <Link href={`/profile/${ace.user_id}`} className="text-retro-accent hover:underline">
+                        {ace.alias}
+                      </Link>
+                    ) : (
+                      ace.alias
+                    )}
                   </li>
                 ))}
               </ul>
@@ -205,15 +223,15 @@ export default async function CourseDetailPage({
       {allScores && allScores.length > 0 && (
         <div>
           <h2 className="text-2xl font-bold mb-4 text-stone-100">Alla resultat</h2>
-          <ScoresTable scores={allScores} />
+          <ScoresTable
+            scores={allScores}
+            parByHole={holes ? Object.fromEntries(holes.map((h) => [h.hole_number, h.par])) : undefined}
+          />
         </div>
       )}
 
       {competitions && competitions.length > 0 && (
-        <div>
-          <h2 className="text-2xl font-bold mb-4 text-stone-100">Tävlingar på banan</h2>
-          <CompetitionsTable competitions={competitions} />
-        </div>
+        <CompetitionsTable competitions={competitions} />
       )}
     </div>
   );

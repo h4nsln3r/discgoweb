@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 export type CourseScore = {
   id: string;
+  user_id?: string;
   score: number;
   date_played: string;
   with_friends?: string[];
@@ -86,7 +88,13 @@ export default function CourseScores({ scores }: Props) {
             >
               🥏 {s.score} kast —{" "}
               {new Date(s.date_played).toLocaleDateString("sv-SE")} — av:{" "}
-              <strong>{s.profiles?.alias || "okänd spelare"}</strong>
+              {s.user_id ? (
+                <Link href={`/profile/${s.user_id}`} className="font-bold text-retro-accent hover:underline">
+                  {s.profiles?.alias || "okänd spelare"}
+                </Link>
+              ) : (
+                <strong>{s.profiles?.alias || "okänd spelare"}</strong>
+              )}
               🥏 {s.score} kast —{" "}
               {new Date(s.date_played).toLocaleDateString("sv-SE")} — med:{" "}
               {/* — med: {s.with_friends?.join(', ') || 'ingen'}  */}

@@ -25,7 +25,7 @@ export async function GET() {
   for (const course of courses) {
     const { data: scores, error: scoreError } = await supabase
       .from("scores")
-      .select("id, score, date_played, profiles(alias)")
+      .select("id, score, date_played, profiles!scores_user_id_fkey(alias)")
       .eq("course_id", course.id)
       .order("date_played", { ascending: false })
       .limit(1);

@@ -7,6 +7,7 @@ import PageLoading from "@/components/PageLoading";
 
 export type Top3Score = {
   id: string;
+  user_id?: string;
   score: number;
   date_played: string | null;
   profiles: { alias: string | null } | null;
@@ -130,7 +131,13 @@ export default function CourseList({ refresh }: { refresh?: boolean }) {
                       <li key={s.id} className="flex justify-between items-center">
                         <span className="flex items-center gap-2">
                           <span className="text-retro-muted w-5">{idx + 1}.</span>
-                          {s.profiles?.alias ?? "Okänd"}
+                          {s.user_id ? (
+                            <Link href={`/profile/${s.user_id}`} className="text-retro-accent hover:underline">
+                              {s.profiles?.alias ?? "Okänd"}
+                            </Link>
+                          ) : (
+                            (s.profiles?.alias ?? "Okänd")
+                          )}
                         </span>
                         <span className="font-medium text-stone-100">{s.score} kast</span>
                       </li>

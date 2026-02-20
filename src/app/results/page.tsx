@@ -26,6 +26,7 @@ import {
   HashtagIcon,
 } from "@heroicons/react/24/outline";
 import PageLoading from "@/components/PageLoading";
+import { getHoleThrowBg, getHoleThrowStyle } from "@/lib/holeColors";
 
 interface Score {
   id: string;
@@ -51,15 +52,18 @@ export default function ResultsPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [expandedHolesId, setExpandedHolesId] = useState<string | null>(null);
   const [holesByScoreId, setHolesByScoreId] = useState<
-    Record<string, { hole_number: number; throws: number }[] | null>
+    Record<string, { hole_number: number; throws: number; par?: number }[] | null>
   >({});
   const [onlyCompetitions, setOnlyCompetitions] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
-  const fetchHolesForScore = (scoreId: string) => {
+  const fetchHolesForScore = (scoreId: string, courseId?: string) => {
     if (holesByScoreId[scoreId] !== undefined) return;
     setHolesByScoreId((prev) => ({ ...prev, [scoreId]: null }));
-    fetch(`/api/score-holes?score_id=${encodeURIComponent(scoreId)}`)
+    const url = courseId
+      ? `/api/score-holes?score_id=${encodeURIComponent(scoreId)}&course_id=${encodeURIComponent(courseId)}`
+      : `/api/score-holes?score_id=${encodeURIComponent(scoreId)}`;
+    fetch(url)
       .then((r) => r.json())
       .then((data) =>
         setHolesByScoreId((prev) => ({
@@ -72,11 +76,11 @@ export default function ResultsPage() {
       );
   };
 
-  const toggleHoles = (scoreId: string, e: React.MouseEvent) => {
+  const toggleHoles = (scoreId: string, courseId: string | undefined, e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
     setExpandedHolesId((prev) => (prev === scoreId ? null : scoreId));
-    if (expandedHolesId !== scoreId) fetchHolesForScore(scoreId);
+    if (expandedHolesId !== scoreId) fetchHolesForScore(scoreId, courseId);
   };
 
   useEffect(() => {
@@ -172,17 +176,32 @@ export default function ResultsPage() {
       id: "player",
       accessorFn: (row) => row.profiles?.alias ?? "Okänd spelare",
       header: "Spelare",
+      cell: (info) => {
+        const row = info.row.original;
+        const alias = row.profiles?.alias ?? "Okänd spelare";
+        return row.user_id ? (
+          <Link
+            href={`/profile/${row.user_id}`}
+            className="text-retro-accent hover:underline"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {alias}
+          </Link>
+        ) : (
+          alias
+        );
+      },
     },
     {
       accessorKey: "score",
       header: "Score",
-          cell: (info) => {
+      cell: (info) => {
         const row = info.row.original;
         return (
           <Link
-            href={`/results/${row.id}/edit`}
+            href={`/results/${row.id}`}
             className="font-semibold text-retro-accent hover:underline"
-            title="Redigera resultat"
+            title="Visa resultat"
           >
             {row.score}
           </Link>
@@ -243,7 +262,7 @@ export default function ResultsPage() {
         return (
           <button
             type="button"
-            onClick={(e) => toggleHoles(row.id, e)}
+            onClick={(e) => toggleHoles(row.id, row.courses?.id, e)}
             className="p-1.5 rounded-lg text-retro-accent hover:bg-retro-card transition"
             title={isExpanded ? "Dölj hål" : "Visa hål"}
             aria-label={isExpanded ? "Dölj hål" : "Visa hål"}
@@ -416,7 +435,17 @@ export default function ResultsPage() {
                       <UserCircleIcon className="h-6 w-6 text-stone-500 shrink-0" aria-hidden />
                     )}
                     <span className="truncate">
-                      {score.profiles?.alias ?? "Okänd"}
+                      {score.user_id ? (
+                        <Link
+                          href={`/profile/${score.user_id}`}
+                          className="text-retro-accent hover:underline"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {score.profiles?.alias ?? "Okänd"}
+                        </Link>
+                      ) : (
+                        (score.profiles?.alias ?? "Okänd")
+                      )}
                     </span>
                     <span className="flex items-center gap-1 shrink-0">
                       <TrophyIcon className="h-4 w-4 text-stone-500" aria-hidden />
@@ -525,7 +554,7 @@ export default function ResultsPage() {
                     <div className="border-t border-retro-border pt-3">
                       <button
                         type="button"
-                        onClick={(e) => toggleHoles(score.id, e)}
+                        onClick={(e) => toggleHoles(score.id, score.courses?.id, e)}
                         className="inline-flex items-center gap-2 text-sm text-retro-accent hover:underline"
                       >
                         {expandedHolesId === score.id ? (
@@ -550,17 +579,22 @@ export default function ResultsPage() {
                             <div className="flex flex-wrap gap-2">
                               {[...(holesByScoreId[score.id] ?? [])]
                                 .sort((a, b) => a.hole_number - b.hole_number)
-                                .map((h) => (
-                                  <span
-                                    key={h.hole_number}
-                                    className="inline-flex items-center gap-1 rounded-lg bg-retro-surface border border-retro-border px-2.5 py-1 text-sm text-stone-200"
-                                  >
-                                    <span className="text-retro-muted">
-                                      H{h.hole_number}
+                                .map((h) => {
+                                  const bg = getHoleThrowBg(h.throws, h.par);
+                                  const style = getHoleThrowStyle(h.throws, h.par);
+                                  return (
+                                    <span
+                                      key={h.hole_number}
+                                      className={`inline-flex items-center gap-1 rounded-lg border border-retro-border px-2.5 py-1 text-sm text-stone-200 ${bg || "bg-retro-surface"}`}
+                                      style={Object.keys(style).length > 0 ? style : undefined}
+                                    >
+                                      <span className="text-retro-muted">
+                                        H{h.hole_number}
+                                      </span>
+                                      <span className="font-medium">{h.throws}</span>
                                     </span>
-                                    <span className="font-medium">{h.throws}</span>
-                                  </span>
-                                ))}
+                                  );
+                                })}
                             </div>
                           )}
                         </div>
@@ -671,17 +705,22 @@ export default function ResultsPage() {
                           <div className="flex flex-wrap gap-2">
                             {[...rowHoles]
                               .sort((a, b) => a.hole_number - b.hole_number)
-                              .map((h) => (
-                                <span
-                                  key={h.hole_number}
-                                  className="inline-flex items-center gap-1 rounded-lg bg-retro-surface border border-retro-border px-2.5 py-1 text-sm text-stone-200"
-                                >
-                                  <span className="text-retro-muted">
-                                    H{h.hole_number}
+                              .map((h) => {
+                                const bg = getHoleThrowBg(h.throws, h.par);
+                                const style = getHoleThrowStyle(h.throws, h.par);
+                                return (
+                                  <span
+                                    key={h.hole_number}
+                                    className={`inline-flex items-center gap-1 rounded-lg border border-retro-border px-2.5 py-1 text-sm text-stone-200 ${bg || "bg-retro-surface"}`}
+                                    style={Object.keys(style).length > 0 ? style : undefined}
+                                  >
+                                    <span className="text-retro-muted">
+                                      H{h.hole_number}
+                                    </span>
+                                    <span className="font-medium">{h.throws}</span>
                                   </span>
-                                  <span className="font-medium">{h.throws}</span>
-                                </span>
-                              ))}
+                                );
+                              })}
                           </div>
                         )}
                       </td>

@@ -48,7 +48,7 @@ export default function CoursePreviewPanel({ course, onClose, embedded }: Props)
         const { data, error } = await supabase
           .from("scores")
           // Need throws + score + player alias
-          .select("id, throws, score, date_played, profiles(alias)")
+          .select("id, user_id, throws, score, date_played, profiles!scores_user_id_fkey(alias)")
           .eq("course_id", course.id)
           // Primary: lowest throws first (nulls last), then lowest score
           .order("throws", { ascending: true, nullsFirst: false })
@@ -155,7 +155,16 @@ export default function CoursePreviewPanel({ course, onClose, embedded }: Props)
                   <div className="p-3 flex items-center justify-between">
                     <div className="text-sm">
                       <div className="font-medium text-stone-200">
-                        {bestScore.profiles?.alias ?? "Okänd spelare"}
+                        {(bestScore as { user_id?: string }).user_id ? (
+                          <Link
+                            href={`/profile/${(bestScore as { user_id: string }).user_id}`}
+                            className="text-retro-accent hover:underline"
+                          >
+                            {bestScore.profiles?.alias ?? "Okänd spelare"}
+                          </Link>
+                        ) : (
+                          (bestScore.profiles?.alias ?? "Okänd spelare")
+                        )}
                       </div>
                       <div className="text-stone-400">
                         {bestScore.date_played

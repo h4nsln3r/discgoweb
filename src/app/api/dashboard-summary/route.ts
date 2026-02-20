@@ -35,6 +35,7 @@ export async function GET() {
       courseName: string;
       latestScore: {
         id: string;
+        user_id?: string;
         score: number;
         date_played: string | null;
         profiles?: { alias: string } | null;
@@ -46,7 +47,7 @@ export async function GET() {
       for (const course of allCourses) {
         const { data: scores, error: scoreError } = await supabase
           .from("scores")
-          .select("id, score, date_played, profiles(alias)")
+          .select("id, user_id, score, date_played, profiles!scores_user_id_fkey(alias)")
           .eq("course_id", course.id)
           .order("date_played", { ascending: false })
           .limit(1);
@@ -81,7 +82,7 @@ export async function GET() {
       );
     }
 
-    // Alla banor för kartan (en query – används av Map så vi slipper get-courses)
+    // Alla banor för kartan
     const { data: mapCourses, error: mapCoursesError } = await supabase
       .from("courses")
       .select("id, name, location, latitude, longitude, main_image_url");
@@ -90,11 +91,43 @@ export async function GET() {
       console.error("[dashboard-summary] mapCourses error", mapCoursesError);
     }
 
+    // Nya/senast aktiva medlemmar: unika user_id från senaste scores, sedan profiler
+    const { data: recentScores } = await supabase
+      .from("scores")
+      .select("user_id")
+      .order("created_at", { ascending: false })
+      .limit(80);
+
+    const seen = new Set<string>();
+    const recentUserIds: string[] = [];
+    for (const row of recentScores ?? []) {
+      const uid = (row as { user_id?: string }).user_id;
+      if (uid && !seen.has(uid)) {
+        seen.add(uid);
+        recentUserIds.push(uid);
+      }
+      if (recentUserIds.length >= 16) break;
+    }
+
+    let newMembers: { id: string; alias: string; avatar_url: string | null }[] = [];
+    if (recentUserIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, alias, avatar_url")
+        .in("id", recentUserIds);
+
+      const byId = new Map((profiles ?? []).map((p) => [(p as { id: string }).id, p]));
+      newMembers = recentUserIds
+        .map((id) => byId.get(id) as { id: string; alias: string; avatar_url: string | null } | undefined)
+        .filter(Boolean) as { id: string; alias: string; avatar_url: string | null }[];
+    }
+
     return NextResponse.json({
       courses: courses ?? [],
       latestScores,
       competitions: competitions ?? [],
       mapCourses: mapCourses ?? [],
+      newMembers,
     });
   } catch (err: unknown) {
     const msg = `[dashboard-summary] unhandled: ${

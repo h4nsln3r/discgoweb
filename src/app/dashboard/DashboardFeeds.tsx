@@ -16,6 +16,7 @@ type LatestScoreRow = {
   courseName: string;
   latestScore: {
     id: string;
+    user_id?: string;
     score: number;
     date_played: string | null;
     profiles?: { alias: string } | null;
@@ -212,6 +213,18 @@ export default function DashboardFeeds({
             rows={
               scores?.map((r) => {
                 const alias = r.latestScore?.profiles?.alias ?? "—";
+                const userId = r.latestScore?.user_id;
+                const aliasCell = userId ? (
+                  <Link
+                    key={r.courseId + userId}
+                    href={`/profile/${userId}`}
+                    className="text-retro-accent hover:underline"
+                  >
+                    {alias}
+                  </Link>
+                ) : (
+                  alias
+                );
                 const scoreVal =
                   typeof r.latestScore?.score === "number"
                     ? r.latestScore.score
@@ -222,7 +235,7 @@ export default function DashboardFeeds({
                     )
                   : "—";
                 return [
-                  alias,
+                  aliasCell,
                   <Link
                     key={r.courseId}
                     href={`/courses/${r.courseId}`}

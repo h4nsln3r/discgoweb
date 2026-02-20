@@ -16,6 +16,7 @@ export default function EditCompetitionPage() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [isCreator, setIsCreator] = useState<boolean | null>(null);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -35,9 +36,10 @@ export default function EditCompetitionPage() {
     if (!id) return;
 
     const fetch = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
       const { data: competition, error: compError } = await supabase
         .from("competitions")
-        .select("id, title, description, start_date, end_date, image_url")
+        .select("id, title, description, start_date, end_date, image_url, created_by")
         .eq("id", id)
         .single();
 
@@ -47,6 +49,11 @@ export default function EditCompetitionPage() {
         setLoading(false);
         return;
       }
+
+      const creatorId = (competition as { created_by?: string | null }).created_by;
+      setIsCreator(
+        Boolean(creatorId && user?.id && creatorId === user.id)
+      );
 
       setTitle(competition.title ?? "");
       setDescription(competition.description ?? "");
@@ -152,6 +159,19 @@ export default function EditCompetitionPage() {
     return (
       <div className="max-w-2xl mx-auto p-6">
         <p className="text-stone-400">Laddar...</p>
+      </div>
+    );
+  }
+
+  if (isCreator === false) {
+    return (
+      <div className="max-w-2xl mx-auto p-6 space-y-4">
+        <BackLink href={id ? `/competitions/${id}` : "/competitions"}>
+          Tillbaka till tävlingen
+        </BackLink>
+        <p className="text-stone-400">
+          Du kan bara redigera tävlingar som du själv skapat.
+        </p>
       </div>
     );
   }

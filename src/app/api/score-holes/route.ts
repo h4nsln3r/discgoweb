@@ -5,6 +5,7 @@ import type { Database } from "@/types/supabase";
 
 export async function GET(req: NextRequest) {
   const scoreId = req.nextUrl.searchParams.get("score_id");
+  const courseId = req.nextUrl.searchParams.get("course_id");
   if (!scoreId) {
     return NextResponse.json({ error: "score_id required" }, { status: 400 });
   }
@@ -24,5 +25,27 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json(data ?? []);
+  const rows = (data ?? []) as { hole_number: number; throws: number }[];
+  if (!courseId) {
+    return NextResponse.json(rows);
+  }
+
+  const { data: courseHoles } = await supabase
+    .from("course_holes")
+    .select("hole_number, par")
+    .eq("course_id", courseId)
+    .order("hole_number");
+
+  const parByHole: Record<number, number> = {};
+  for (const ch of (courseHoles ?? []) as { hole_number: number; par: number }[]) {
+    parByHole[ch.hole_number] = Number(ch.par);
+  }
+
+  const withPar = rows.map((r) => ({
+    hole_number: r.hole_number,
+    throws: r.throws,
+    par: parByHole[r.hole_number] as number | undefined,
+  }));
+
+  return NextResponse.json(withPar);
 }

@@ -8,6 +8,7 @@ import {
   PhoneIcon,
   HomeIcon,
   UserGroupIcon,
+  TrophyIcon,
 } from "@heroicons/react/24/outline";
 import ProfileWelcomeToast from "@/components/Toasts/ProfileWelcomeToast";
 
@@ -91,6 +92,31 @@ export default async function ProfileHomePage() {
       .eq("id", profile.team_id as any)
       .single();
     team = teamData as TeamRow | null;
+  }
+
+  type ScoreRow = {
+    id: string;
+    score: number;
+    throws: number | null;
+    date_played: string | null;
+    created_at: string;
+    course_id: string;
+    courses: { id: string; name: string } | null;
+  };
+
+  const { data: myScores } = await supabase
+    .from("scores")
+    .select("id, score, throws, date_played, created_at, course_id, courses ( id, name )")
+    .eq("user_id", user.id)
+    .order("date_played", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(100);
+
+  const scoreList = (myScores ?? []) as ScoreRow[];
+
+  function formatDate(date: string | null) {
+    if (!date) return "—";
+    return new Intl.DateTimeFormat("sv-SE", { year: "numeric", month: "short", day: "numeric" }).format(new Date(date));
   }
 
   return (
@@ -178,7 +204,12 @@ export default async function ProfileHomePage() {
             </div>
             <div className="p-4">
               <p className="text-sm text-retro-muted">Hemmabana</p>
-              <p className="font-semibold text-stone-100">{homeCourse.name}</p>
+              <Link
+                href={`/courses/${homeCourse.id}`}
+                className="font-semibold text-stone-100 text-retro-accent hover:underline"
+              >
+                {homeCourse.name}
+              </Link>
               {bestRoundScore !== null && (
                 <p className="text-stone-400 text-sm mt-1">
                   Bästa runda: {bestRoundScore} slag
@@ -228,6 +259,56 @@ export default async function ProfileHomePage() {
           </div>
         )}
       </div>
+
+      {/* Alla resultat */}
+      {scoreList.length > 0 && (
+        <div className="rounded-2xl border border-retro-border bg-retro-surface p-6 shadow-sm mb-6">
+          <h2 className="flex items-center gap-2 text-lg font-semibold text-stone-100 mb-3">
+            <TrophyIcon className="w-5 h-5 text-retro-muted shrink-0" aria-hidden />
+            Mina resultat
+          </h2>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left">
+              <thead>
+                <tr className="text-stone-400 border-b border-retro-border">
+                  <th className="pb-2 pr-3 font-medium">Bana</th>
+                  <th className="pb-2 pr-3 font-medium">Kast</th>
+                  <th className="pb-2 pr-3 font-medium">Poäng</th>
+                  <th className="pb-2 pr-3 font-medium">Datum</th>
+                  <th className="pb-2 font-medium w-14"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {scoreList.map((s) => (
+                  <tr key={s.id} className="border-b border-retro-border/50 last:border-0">
+                    <td className="py-2 pr-3">
+                      <Link
+                        href={`/courses/${s.courses?.id ?? s.course_id}`}
+                        className="text-retro-accent hover:underline"
+                      >
+                        {s.courses?.name ?? "—"}
+                      </Link>
+                    </td>
+                    <td className="py-2 pr-3 text-stone-200">{s.throws ?? s.score}</td>
+                    <td className="py-2 pr-3 font-medium text-stone-100">{s.score}</td>
+                    <td className="py-2 text-stone-400">
+                      {formatDate(s.date_played ?? s.created_at)}
+                    </td>
+                    <td className="py-2 pl-2">
+                      <Link
+                        href={`/results/${s.id}`}
+                        className="text-retro-accent hover:underline text-xs"
+                      >
+                        Visa
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Redigera profil längst ner */}
       <div className="pt-2">

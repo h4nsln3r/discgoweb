@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await supabase
     .from('scores')
-    .select('id, score, date_played, with_friends, user_id, profiles(alias)')
+    .select('id, score, date_played, with_friends, user_id, profiles!scores_user_id_fkey(alias)')
     .eq('course_id', courseId);
 
   if (error) {

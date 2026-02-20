@@ -1,9 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import Map from "@/components/Maps/Map";
 import DashboardFeeds from "./DashboardFeeds";
 import PageLoading from "@/components/PageLoading";
+import { UserCircleIcon } from "@heroicons/react/24/outline";
+
+type NewMember = { id: string; alias: string; avatar_url: string | null };
 
 type DashboardSummary = {
   courses: { id: string; name: string; location?: string | null; created_at?: string | null }[];
@@ -14,6 +18,7 @@ type DashboardSummary = {
   }[];
   competitions: { id: string; title: string; start_date?: string | null; created_at?: string | null }[];
   mapCourses: { id: string; name: string; location?: string | null; latitude?: number | null; longitude?: number | null; main_image_url?: string | null }[];
+  newMembers?: NewMember[];
 };
 
 export default function DashboardContent({ userName }: { userName: string }) {
@@ -68,8 +73,43 @@ export default function DashboardContent({ userName }: { userName: string }) {
   if (error) return <p className="text-amber-400 p-4">{error}</p>;
   if (!data) return null;
 
+  const newMembers = data.newMembers ?? [];
+
   return (
     <div className="p-4 space-y-6">
+      {newMembers.length > 0 && (
+        <div className="rounded-2xl border border-retro-border bg-retro-surface p-4 md:p-5">
+          <h2 className="text-lg font-semibold text-stone-100 mb-3">Nya medlemmar</h2>
+          <div className="flex flex-wrap gap-3 md:gap-4">
+            {newMembers.map((member) => (
+              <Link
+                key={member.id}
+                href={`/profile/${member.id}`}
+                className="group relative flex flex-col items-center"
+                title={member.alias}
+              >
+                <div className="w-12 h-12 md:w-14 md:h-14 rounded-full overflow-hidden border-2 border-retro-border bg-retro-card ring-2 ring-transparent group-hover:ring-retro-accent/50 transition-all shrink-0">
+                  {member.avatar_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={member.avatar_url}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-stone-500">
+                      <UserCircleIcon className="w-8 h-8 md:w-9 md:h-9" />
+                    </div>
+                  )}
+                </div>
+                <span className="absolute top-full left-1/2 -translate-x-1/2 mt-1.5 px-2 py-1 rounded-lg bg-stone-800 text-stone-100 text-xs font-medium opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                  {member.alias}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
       <Map userName={userName} initialCourses={data.mapCourses} />
       <DashboardFeeds initialData={initialData} />
     </div>

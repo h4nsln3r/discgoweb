@@ -25,7 +25,7 @@ export default async function CompetitionResultsPage({
     .select(
       `id, score, created_at, course_id, competition_id, user_id,
       courses ( name ),
-      profiles ( alias )
+      profiles!scores_user_id_fkey( alias )
     `
     )
     .eq("competition_id", competitionId);
@@ -74,7 +74,13 @@ export default async function CompetitionResultsPage({
                 .map((score) => (
                   <tr key={score.id} className="border-t">
                     <td className="px-2 py-1">
-                      {score.profiles?.alias ?? "Okänd spelare"}
+                      {score.user_id ? (
+                        <Link href={`/profile/${score.user_id}`} className="text-retro-accent hover:underline">
+                          {score.profiles?.alias ?? "Okänd spelare"}
+                        </Link>
+                      ) : (
+                        (score.profiles?.alias ?? "Okänd spelare")
+                      )}
                     </td>
                     <td className="px-2 py-1 font-semibold">{score.score}</td>
                     <td className="px-2 py-1">

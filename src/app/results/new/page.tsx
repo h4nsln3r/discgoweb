@@ -198,7 +198,14 @@ export default function AddResultPage() {
                       )}
                     </p>
                     <p>
-                      {score.profiles?.alias ?? "Okänd spelare"} – {score.score}
+                      {score.user_id ? (
+                        <Link href={`/profile/${score.user_id}`} className="text-retro-accent hover:underline">
+                          {score.profiles?.alias ?? "Okänd spelare"}
+                        </Link>
+                      ) : (
+                        (score.profiles?.alias ?? "Okänd spelare")
+                      )}{" "}
+                      – {score.score}
                     </p>
                     <p className="text-sm text-gray-500">
                       {new Date(score.date_played).toLocaleDateString("sv-SE")}

@@ -1,10 +1,13 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import type { Course } from "../CourseList";
+import type { Course } from "../Lists/CourseList";
 import { useEffect, useMemo, useState } from "react";
+import { XMarkIcon } from "@heroicons/react/24/outline";
 import CoursePreviewPanel from "./CoursePreviewPanel";
 import Link from "next/link";
+
+const DASHBOARD_WELCOME_KEY = "dashboard-welcome-dismissed";
 
 const LeafletMap = dynamic(() => import("./LeafletMap"), { ssr: false });
 
@@ -17,6 +20,15 @@ type Props = {
 export default function Map({ userName, initialCourses }: Props) {
   const [courses, setCourses] = useState<Course[]>(initialCourses ?? []);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [welcomeDismissed, setWelcomeDismissed] = useState(true);
+
+  useEffect(() => {
+    try {
+      setWelcomeDismissed(sessionStorage.getItem(DASHBOARD_WELCOME_KEY) === "1");
+    } catch {
+      setWelcomeDismissed(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (initialCourses !== undefined && initialCourses !== null) {
@@ -41,10 +53,25 @@ export default function Map({ userName, initialCourses }: Props) {
       {/* Kartan – hela bredden. Välkomstkort med z-index under menyn (z-50). */}
       <div className="relative w-full rounded-xl overflow-hidden border border-retro-border bg-retro-card">
         {/* Välkomstkort (syns under menyn: z-20 < topbar z-30, meny z-50) */}
-        {!selectedCourse && (
+        {!selectedCourse && !welcomeDismissed && (
           <div className="absolute top-3 left-3 right-3 z-20 max-w-sm">
-            <div className="bg-retro-surface/95 backdrop-blur border border-retro-border rounded-xl shadow-lg p-4">
-              <h3 className="text-lg font-semibold text-stone-100">
+            <div className="bg-retro-surface/95 backdrop-blur border border-retro-border rounded-xl shadow-lg p-4 relative">
+              <button
+                type="button"
+                onClick={() => {
+                  try {
+                    sessionStorage.setItem(DASHBOARD_WELCOME_KEY, "1");
+                  } catch {
+                    // ignore
+                  }
+                  setWelcomeDismissed(true);
+                }}
+                className="absolute top-2 right-2 p-1 rounded-lg text-stone-400 hover:text-stone-200 hover:bg-retro-card transition"
+                aria-label="Stäng"
+              >
+                <XMarkIcon className="w-5 h-5" />
+              </button>
+              <h3 className="text-lg font-semibold text-stone-100 pr-8">
                 Välkommen {userName}!
               </h3>
               <p className="text-stone-400 text-sm mt-1">

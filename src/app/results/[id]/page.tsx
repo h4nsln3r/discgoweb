@@ -14,9 +14,11 @@ import {
   PencilSquareIcon,
   UserGroupIcon,
   HashtagIcon,
+  CheckCircleIcon,
 } from "@heroicons/react/24/outline";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import type { Database } from "@/types/supabase";
+import { getHoleThrowBg, getHoleThrowStyle } from "@/lib/holeColors";
 
 /** Normalize anything -> string[] (handles null, string, JSON string, object) */
 function normalizeFriends(input: unknown): string[] {
@@ -55,6 +57,7 @@ function normalizeFriends(input: unknown): string[] {
 type ScoreDetail = {
   id: string;
   user_id: string;
+  course_id: string | null;
   throws: number | null;
   score: number | null;
   date_played: string | null;
@@ -71,8 +74,11 @@ export default function ScoreDetailPage() {
 
   const [loading, setLoading] = useState(true);
   const [item, setItem] = useState<ScoreDetail | null>(null);
-  const [holes, setHoles] = useState<{ hole_number: number; throws: number }[] | null>(null);
+  const [holes, setHoles] = useState<{ hole_number: number; throws: number; par?: number }[] | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [currentUserAlias, setCurrentUserAlias] = useState<string | null>(null);
+  const [confirmed, setConfirmed] = useState<{ user_id: string; alias: string }[]>([]);
+  const [confirming, setConfirming] = useState(false);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -81,6 +87,40 @@ export default function ScoreDetailPage() {
     };
     loadUser();
   }, [supabase]);
+
+  useEffect(() => {
+    if (!currentUserId) {
+      setCurrentUserAlias(null);
+      return;
+    }
+    let cancelled = false;
+    supabase
+      .from("profiles")
+      .select("alias")
+      .eq("id", currentUserId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!cancelled && data) setCurrentUserAlias((data as { alias: string }).alias?.trim() ?? "");
+        else if (!cancelled) setCurrentUserAlias("");
+      });
+    return () => { cancelled = true; };
+  }, [currentUserId, supabase]);
+
+  useEffect(() => {
+    if (!item?.id) {
+      setConfirmed([]);
+      return;
+    }
+    let cancelled = false;
+    fetch(`/api/score-confirmations?score_id=${encodeURIComponent(item.id)}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (!cancelled && data?.confirmed) setConfirmed(data.confirmed);
+        else if (!cancelled) setConfirmed([]);
+      })
+      .catch(() => { if (!cancelled) setConfirmed([]); });
+    return () => { cancelled = true; };
+  }, [item?.id]);
 
   useEffect(() => {
     const load = async () => {
@@ -92,13 +132,14 @@ export default function ScoreDetailPage() {
           `
           id,
           user_id,
+          course_id,
           throws,
           score,
           date_played,
           with_friends,
           competition_id,
           courses ( id, name ),
-          profiles ( alias ),
+          profiles!scores_user_id_fkey ( alias ),
           competitions ( title )
         `
         )
@@ -119,7 +160,11 @@ export default function ScoreDetailPage() {
   useEffect(() => {
     if (!item?.id) return;
     let cancelled = false;
-    fetch(`/api/score-holes?score_id=${encodeURIComponent(item.id)}`)
+    const courseId = item.courses?.id ?? item.course_id ?? "";
+    const url = courseId
+      ? `/api/score-holes?score_id=${encodeURIComponent(item.id)}&course_id=${encodeURIComponent(courseId)}`
+      : `/api/score-holes?score_id=${encodeURIComponent(item.id)}`;
+    fetch(url)
       .then((r) => r.json())
       .then((data) => {
         if (!cancelled && Array.isArray(data)) setHoles(data);
@@ -129,7 +174,7 @@ export default function ScoreDetailPage() {
         if (!cancelled) setHoles([]);
       });
     return () => { cancelled = true; };
-  }, [item?.id]);
+  }, [item?.id, item?.courses?.id]);
 
   if (loading) {
     return (
@@ -199,14 +244,23 @@ export default function ScoreDetailPage() {
           </div>
         </div>
 
-        {/* Spelare */}
+        {/* Inlämnad av (skapare) */}
         <div className="rounded-xl border border-retro-border p-4 bg-retro-surface">
           <div className="flex items-center gap-2 text-sm text-stone-500 mb-1">
             <UserCircleIcon className="h-4 w-4" />
-            Spelare
+            Inlämnad av
           </div>
           <div className="text-lg font-semibold text-stone-100">
-            {item.profiles?.alias ?? "Okänd spelare"}
+            {item.user_id ? (
+              <Link
+                href={`/profile/${item.user_id}`}
+                className="text-retro-accent hover:underline"
+              >
+                {item.profiles?.alias ?? "Okänd spelare"}
+              </Link>
+            ) : (
+              item.profiles?.alias ?? "Okänd spelare"
+            )}
           </div>
         </div>
 
@@ -252,14 +306,53 @@ export default function ScoreDetailPage() {
             Spelade med
           </div>
           {friends.length > 0 ? (
-            <ul className="space-y-1 text-stone-200">
-              {friends.map((f, i) => (
-                <li key={`${f}-${i}`} className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-retro-accent shrink-0" />
-                  {f}
-                </li>
-              ))}
-            </ul>
+            <>
+              <ul className="space-y-1.5 text-stone-200 mb-3">
+                {friends.map((f, i) => {
+                  const isConfirmed = !f.startsWith("Gäst:") && confirmed.some((c) => c.alias.trim() === f.trim());
+                  return (
+                    <li key={`${f}-${i}`} className="flex items-center gap-2">
+                      {isConfirmed ? (
+                        <CheckCircleIcon className="h-5 w-5 text-emerald-500 shrink-0" aria-hidden />
+                      ) : (
+                        <span className="w-1.5 h-1.5 rounded-full bg-stone-500 shrink-0" />
+                      )}
+                      <span className={isConfirmed ? "text-stone-100" : ""}>{f}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+              {currentUserId &&
+                currentUserAlias &&
+                item.user_id !== currentUserId &&
+                friends.some((f) => f === currentUserAlias || f.trim() === currentUserAlias) &&
+                !confirmed.some((c) => c.user_id === currentUserId) && (
+                  <button
+                    type="button"
+                    disabled={confirming}
+                    onClick={async () => {
+                      setConfirming(true);
+                      try {
+                        const res = await fetch("/api/confirm-score", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ score_id: item.id }),
+                        });
+                        const data = await res.json();
+                        if (res.ok && data?.ok) {
+                          setConfirmed((prev) => [...prev, { user_id: currentUserId, alias: currentUserAlias }]);
+                        }
+                      } finally {
+                        setConfirming(false);
+                      }
+                    }}
+                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-600/20 border border-emerald-500/40 text-emerald-400 text-sm font-medium hover:bg-emerald-600/30 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 disabled:opacity-50"
+                  >
+                    <CheckCircleIcon className="h-4 w-4" />
+                    {confirming ? "Bekräftar…" : "Bekräfta att jag var med"}
+                  </button>
+                )}
+            </>
           ) : (
             <p className="text-stone-400">—</p>
           )}
@@ -280,15 +373,20 @@ export default function ScoreDetailPage() {
           <div className="flex flex-wrap gap-2">
             {[...holes]
               .sort((a, b) => a.hole_number - b.hole_number)
-              .map((h) => (
-                <span
-                  key={h.hole_number}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-retro-card border border-retro-border px-3 py-1.5 text-sm text-stone-200"
-                >
-                  <span className="text-retro-muted font-medium">H{h.hole_number}</span>
-                  <span className="font-semibold text-stone-100">{h.throws}</span>
-                </span>
-              ))}
+              .map((h) => {
+                const bg = getHoleThrowBg(h.throws, h.par);
+                const style = getHoleThrowStyle(h.throws, h.par);
+                return (
+                  <span
+                    key={h.hole_number}
+                    className={`inline-flex items-center gap-1.5 rounded-lg border border-retro-border px-3 py-1.5 text-sm text-stone-200 ${bg || "bg-retro-card"}`}
+                    style={Object.keys(style).length > 0 ? style : undefined}
+                  >
+                    <span className="text-retro-muted font-medium">H{h.hole_number}</span>
+                    <span className="font-semibold text-stone-100">{h.throws}</span>
+                  </span>
+                );
+              })}
           </div>
         )}
       </div>

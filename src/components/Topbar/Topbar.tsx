@@ -55,13 +55,27 @@ export default function Topbar({
           menuOpen ? "opacity-0 pointer-events-none" : "opacity-100"
         }`}
       >
-        <button
-          onClick={() => setMenuOpen(true)}
-          aria-label="Öppna meny"
-          className="p-1.5 rounded-lg hover:bg-retro-card transition"
-        >
-          <Bars3Icon className="w-6 h-6 text-stone-200" />
-        </button>
+        <div className="flex items-center gap-2 md:gap-3">
+          <button
+            onClick={() => setMenuOpen(true)}
+            aria-label="Öppna meny"
+            className="p-1.5 rounded-lg hover:bg-retro-card transition"
+          >
+            <Bars3Icon className="w-6 h-6 text-stone-200" />
+          </button>
+          <Link
+            href="/dashboard"
+            className="flex items-center shrink-0 rounded-lg hover:opacity-90 transition"
+            aria-label="Till startsida"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo/logo.png"
+              alt=""
+              className="h-8 w-auto max-w-[100px] md:h-12 md:max-w-[180px] object-contain"
+            />
+          </Link>
+        </div>
 
         <Link
           href="/profile"
@@ -101,8 +115,19 @@ export default function Topbar({
         }`}
       >
         <div className="p-5 flex justify-between items-center border-b border-retro-border">
-          <h2 className="text-lg font-semibold text-stone-100">Meny</h2>
-          <button onClick={() => setMenuOpen(false)} aria-label="Stäng meny" className="p-1 rounded hover:bg-retro-card">
+          <Link
+            href="/dashboard"
+            onClick={() => setMenuOpen(false)}
+            className="flex items-center min-w-0"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo/logo.png"
+              alt=""
+              className="h-12 w-auto max-w-[200px] object-contain"
+            />
+          </Link>
+          <button onClick={() => setMenuOpen(false)} aria-label="Stäng meny" className="p-1 rounded hover:bg-retro-card shrink-0">
             <XMarkIcon className="w-6 h-6 text-stone-300" />
           </button>
         </div>

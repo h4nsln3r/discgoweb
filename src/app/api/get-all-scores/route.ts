@@ -12,7 +12,7 @@ export async function GET() {
   const { data, error } = await supabase
     .from("scores")
     .select(
-      "id, user_id, score, throws, date_played, competition_id, courses ( id, name ), profiles(alias, avatar_url), competitions(title)"
+      "id, user_id, score, throws, date_played, competition_id, courses ( id, name ), profiles!scores_user_id_fkey(alias, avatar_url), competitions(title)"
     )
     .order("date_played", { ascending: false });
 

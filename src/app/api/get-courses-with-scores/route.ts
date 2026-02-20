@@ -33,7 +33,7 @@ export async function GET() {
 
   const { data: scores, error: scoresError } = await supabase
     .from("scores")
-    .select("id, score, date_played, with_friends, user_id, course_id, profiles(alias)");
+    .select("id, score, date_played, with_friends, user_id, course_id, profiles!scores_user_id_fkey(alias)");
 
   if (scoresError) {
     console.error("[GET COURSES WITH SCORES] scores error", scoresError);
