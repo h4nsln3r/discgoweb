@@ -53,7 +53,7 @@ export default async function CompetitionResultsPage({
         <div key={courseId} className="mb-8">
           <h2 className="text-lg font-semibold mb-2">
             <Link
-              href={`/courses/${courseId}`}
+              href={`/courses/${courseId}?from=competition&competitionId=${competitionId}`}
               className="text-retro-accent hover:underline"
             >
               {courseScores[0]?.courses?.name ?? "Okänd bana"}

@@ -16,6 +16,8 @@ type Props = {
   embedded?: boolean;
   /** Om true, länk till banan inkluderar ?from=dashboard så tillbaka går till dashboard. */
   fromDashboard?: boolean;
+  /** Om satt, länk till banan inkluderar ?from=competition&competitionId=... så tillbaka går till tävlingen. */
+  competitionId?: string;
   /** Kompakt vy: mindre bild, utan koordinater och utan knapparna Visa detaljer/Lägg till resultat. */
   compact?: boolean;
   /** Extra kompakt bild (halv höjd) – för mobil-bottenpanel. */
@@ -30,8 +32,10 @@ type BestScore = {
   profiles: { alias: string | null } | null;
 };
 
-export default function CoursePreviewPanel({ course, onClose, embedded, fromDashboard, compact, compactImageSmall }: Props) {
-  const courseHref = course ? `/courses/${course.id}${fromDashboard ? "?from=dashboard" : ""}` : "#";
+export default function CoursePreviewPanel({ course, onClose, embedded, fromDashboard, competitionId, compact, compactImageSmall }: Props) {
+  const courseHref = course
+    ? `/courses/${course.id}${fromDashboard ? "?from=dashboard" : competitionId ? `?from=competition&competitionId=${competitionId}` : ""}`
+    : "#";
   const router = useRouter();
   const supabase = useMemo(() => createClientComponentClient<Database>(), []);
 
@@ -136,9 +140,15 @@ export default function CoursePreviewPanel({ course, onClose, embedded, fromDash
             {/* Title & location */}
             <div className="mb-2">
               <h3 className="text-xl font-semibold text-stone-100">
-                <Link href={courseHref} onClick={onClose} className="text-retro-accent hover:underline">
-                  {course.name}
-                </Link>
+                {compact ? (
+                  <Link href={courseHref} onClick={onClose} className="text-retro-accent hover:underline">
+                    Gå till: {course.name}
+                  </Link>
+                ) : (
+                  <Link href={courseHref} onClick={onClose} className="text-retro-accent hover:underline">
+                    {course.name}
+                  </Link>
+                )}
               </h3>
               {course.location && (
                 <p className="mt-1 text-sm text-stone-400 flex items-center gap-1">

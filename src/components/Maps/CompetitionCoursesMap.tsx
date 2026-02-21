@@ -21,9 +21,10 @@ const LeafletMap = dynamic(
 
 type Props = {
   courses: CourseInput[];
+  competitionId?: string;
 };
 
-export default function CompetitionCoursesMap({ courses }: Props) {
+export default function CompetitionCoursesMap({ courses, competitionId }: Props) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
@@ -55,6 +56,22 @@ export default function CompetitionCoursesMap({ courses }: Props) {
         <h2 className="text-xl font-semibold px-4 py-3 border-b border-retro-border bg-retro-card text-stone-100">
           🗺️ Banor i tävlingen
         </h2>
+        <div className="px-4 py-3 flex flex-wrap gap-x-4 gap-y-1 border-b border-retro-border bg-retro-card">
+          {validCourses.map((course) => (
+            <button
+              key={course.id}
+              type="button"
+              onClick={() => setSelectedId((prev) => (prev === course.id ? null : course.id))}
+              className={`inline-block text-lg font-semibold px-3 py-1 rounded-lg transition-all duration-200 origin-left ${
+                selectedId === course.id
+                  ? "bg-retro-accent/20 text-amber-400 scale-105 ring-2 ring-retro-accent/50"
+                  : "text-retro-accent hover:scale-105 hover:text-amber-400 hover:bg-retro-accent/10"
+              }`}
+            >
+              {course.name}
+            </button>
+          ))}
+        </div>
         <div className="relative h-80 md:h-64">
           {/* Desktop: panel till höger som overlay på kartan */}
           {selectedCourse && (
@@ -65,6 +82,7 @@ export default function CompetitionCoursesMap({ courses }: Props) {
                   onClose={() => setSelectedId(null)}
                   embedded
                   compact
+                  competitionId={competitionId}
                 />
               </div>
             </div>
@@ -79,6 +97,7 @@ export default function CompetitionCoursesMap({ courses }: Props) {
                   embedded
                   compact
                   compactImageSmall
+                  competitionId={competitionId}
                 />
               </div>
             </div>

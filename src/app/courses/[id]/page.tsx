@@ -15,15 +15,16 @@ export default async function CourseDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ from?: string }>;
+  searchParams: Promise<{ from?: string; competitionId?: string }>;
 }) {
   const cookieStore = await cookies();
   const supabase = createServerComponentClient<Database>({
     cookies: () => cookieStore,
   });
   const { id } = await params;
-  const { from } = await searchParams;
+  const { from, competitionId } = await searchParams;
   const fromDashboard = from === "dashboard";
+  const fromCompetition = from === "competition" && competitionId;
 
   // Hämta kursen
   const { data: course, error } = await supabase
@@ -89,8 +90,8 @@ export default async function CourseDetailPage({
   return (
     <div className="max-w-5xl mx-auto p-6 space-y-8">
       <div className="flex items-center justify-between gap-4">
-        <BackLink href={fromDashboard ? "/dashboard" : "/courses"}>
-          {fromDashboard ? "Tillbaka till dashboard" : "Tillbaka till banor"}
+        <BackLink href={fromDashboard ? "/dashboard" : fromCompetition ? `/competitions/${competitionId}` : "/courses"}>
+          {fromDashboard ? "Tillbaka till dashboard" : fromCompetition ? "Tillbaka till tävlingen" : "Tillbaka till banor"}
         </BackLink>
         <Link
           href={`/results/new?course_id=${course.id}`}

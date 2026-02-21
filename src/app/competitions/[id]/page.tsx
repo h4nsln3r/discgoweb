@@ -198,13 +198,14 @@ export default async function CompetitionDetailPage({ params }: PageProps) {
         )}
       </div>
 
-      <CompetitionParticipantsSection participants={participants} />
-
       <CompetitionCoursesMap
+        competitionId={id}
         courses={competition.competition_courses
           .map((e) => e.courses)
           .filter((c): c is NonNullable<typeof c> => c != null)}
       />
+
+      <CompetitionParticipantsSection participants={participants} />
 
       <div>
         <h2 className="text-xl font-semibold mb-3 text-stone-100">🏞️ Banor och resultat</h2>
@@ -221,8 +222,8 @@ export default async function CompetitionDetailPage({ params }: PageProps) {
               >
                 <div className="px-4 py-3 border-b border-retro-border bg-retro-card">
                   <Link
-                    href={`/courses/${entry.course_id}`}
-                    className="text-lg font-semibold text-retro-accent hover:underline"
+                    href={`/courses/${entry.course_id}?from=competition&competitionId=${id}`}
+                    className="inline-block text-lg font-semibold text-retro-accent transition-all duration-200 origin-left hover:scale-105 hover:text-amber-400"
                   >
                     {entry.courses?.name ?? "Okänd bana"}
                   </Link>
