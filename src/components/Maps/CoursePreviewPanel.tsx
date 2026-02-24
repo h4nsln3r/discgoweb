@@ -104,6 +104,7 @@ export default function CoursePreviewPanel({ course, onClose, embedded, fromDash
   const panelContent = (
     <div
       className={`overflow-hidden bg-retro-surface ${embedded ? "rounded-xl border border-retro-border" : "rounded-t-3xl border-t border-retro-border"}`}
+      style={{ height: "100%" }}
     >
           {/* Header image */}
           {course.main_image_url ? (
