@@ -211,17 +211,32 @@ export type Database = {
           name: string
           bild: string | null
           created_at: string | null
+          created_by: string | null
+          speed: number | null
+          glide: number | null
+          turn: number | null
+          fade: number | null
         }
         Insert: {
           id?: string
           name: string
           bild?: string | null
           created_at?: string | null
+          created_by?: string | null
+          speed?: number | null
+          glide?: number | null
+          turn?: number | null
+          fade?: number | null
         }
         Update: {
           name?: string
           bild?: string | null
           created_at?: string | null
+          created_by?: string | null
+          speed?: number | null
+          glide?: number | null
+          turn?: number | null
+          fade?: number | null
         }
         Relationships: []
       }

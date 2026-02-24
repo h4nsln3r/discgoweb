@@ -182,6 +182,15 @@ export default function Topbar({
           </li>
           <li>
             <Link
+              href="/discs"
+              onClick={() => setMenuOpen(false)}
+              className={linkClass("/discs")}
+            >
+              🥏 Discar
+            </Link>
+          </li>
+          <li>
+            <Link
               href="/profile"
               onClick={() => setMenuOpen(false)}
               className={linkClass("/profile", isProfileWelcome)}

@@ -8,6 +8,7 @@ import {
   PhoneIcon,
   HomeIcon,
   TrophyIcon,
+  UserGroupIcon,
 } from "@heroicons/react/24/outline";
 import ProfileWelcomeToast from "@/components/Toasts/ProfileWelcomeToast";
 import TeamCard from "@/components/Teams/TeamCard";
@@ -287,6 +288,10 @@ export default async function ProfileHomePage() {
       </div>
 
       {/* Hemmabana – eget kort med bild (lägre på desktop) + bästa runda */}
+      <h2 className="flex items-center gap-2 text-lg font-semibold text-amber-500 mb-2">
+        <HomeIcon className="w-5 h-5 text-amber-500 shrink-0" aria-hidden />
+        Hemmabana
+      </h2>
       <div className="rounded-2xl border border-retro-border bg-retro-surface overflow-hidden shadow-sm mb-6">
         {homeCourse ? (
           <>
@@ -346,6 +351,10 @@ export default async function ProfileHomePage() {
       </div>
 
       {/* Lag */}
+      <h2 className="flex items-center gap-2 text-lg font-semibold text-amber-500 mb-2">
+        <UserGroupIcon className="w-5 h-5 text-amber-500 shrink-0" aria-hidden />
+        Lag
+      </h2>
       <div className="mb-6">
         {team ? (
           <TeamCard team={team} />

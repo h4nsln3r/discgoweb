@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import BackLink from "@/components/Buttons/BackLink";
+import { PencilSquareIcon } from "@heroicons/react/24/outline";
 
 export default async function DiscsPage() {
   const supabase = await createServerSupabaseClient();
-  const { data: discsData } = await supabase.from("discs").select("id, name, bild").order("name");
+  const { data: { user } } = await supabase.auth.getUser();
+  const { data: discsData } = await supabase.from("discs").select("id, name, bild, speed, glide, turn, fade, created_by").order("name");
   const discs = discsData ?? [];
 
   return (
@@ -42,7 +44,23 @@ export default async function DiscsPage() {
               )}
               <div className="min-w-0 flex-1">
                 <p className="font-medium text-stone-100 truncate">{disc.name}</p>
+                {(() => {
+                  const d = disc as { speed?: number | null; glide?: number | null; turn?: number | null; fade?: number | null };
+                  const parts = [d.speed, d.glide, d.turn, d.fade].filter((n) => n != null);
+                  return parts.length > 0 ? (
+                    <p className="text-xs text-stone-500 mt-0.5">{parts.join(" · ")}</p>
+                  ) : null;
+                })()}
               </div>
+              {user && (disc as { created_by?: string | null }).created_by === user.id && (
+                <Link
+                  href={`/discs/${disc.id}/edit`}
+                  className="p-2 rounded-lg text-amber-500 hover:bg-retro-card hover:text-amber-400 transition shrink-0"
+                  aria-label="Redigera disc"
+                >
+                  <PencilSquareIcon className="w-5 h-5" />
+                </Link>
+              )}
             </li>
           ))}
         </ul>
