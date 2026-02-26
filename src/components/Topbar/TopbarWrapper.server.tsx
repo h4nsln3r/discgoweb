@@ -24,7 +24,7 @@ export default async function TopbarWrapper() {
           avatarUrl = (profile as { avatar_url: string }).avatar_url;
       }
     }
-  } catch (err: unknown) {
+  } catch {
     // Ogiltig refresh token eller annat auth-fel – visa som utloggad så användaren kan logga in igen
     user = null;
     displayName = null;

@@ -4,6 +4,7 @@ import "../styles/global.scss";
 import "./globals.css";
 
 import type { Metadata } from "next";
+import { Suspense } from "react";
 
 const bebasNeue = Bebas_Neue({ weight: "400", subsets: ["latin"], variable: "--font-bebas" });
 import TopbarWrapper from "../components/Topbar/TopbarWrapper.server";
@@ -26,7 +27,9 @@ export default function RootLayout({
   return (
     <html lang="sv" className={bebasNeue.variable}>
       <body className="min-h-screen bg-retro-bg">
-        <TopbarWrapper />
+        <Suspense fallback={<div className="h-14 shrink-0" aria-hidden />}>
+          <TopbarWrapper />
+        </Suspense>
         <Providers>
           <div className="pt-6">{children}</div>
         </Providers>
