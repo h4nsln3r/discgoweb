@@ -427,11 +427,6 @@ export default function ProfileForm({
             )}
           </div>
         </div>
-
-        <p className="text-xs text-retro-muted mt-3">
-          Profilbilden sparas i Supabase Storage (bucket:{" "}
-          <span className="font-mono">avatars</span>).
-        </p>
       </div>
 
       <div ref={aliasRef} className="space-y-2">
@@ -597,7 +592,7 @@ export default function ProfileForm({
         <p className="text-xs text-stone-500">
           {profile?.team_id
             ? "Du kan lämna laget genom att välja &quot;Inget lag&quot;."
-            : "Välj ett lag för att ansöka. Admin eller kapten godkänner dig sedan på lagsidan."}
+            : "Välj ett lag för att ansöka."}
         </p>
         {teams.length === 0 && (
           <p className="text-xs text-retro-muted">
