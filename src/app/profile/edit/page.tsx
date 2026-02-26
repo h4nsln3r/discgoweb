@@ -13,7 +13,7 @@ export default async function EditProfilePage() {
 
   if (!user) redirect("/auth");
 
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("*")
     .eq("id", user.id)
@@ -48,6 +48,11 @@ export default async function EditProfilePage() {
         <BackButton />
       </div>
       <h1 className="text-2xl font-bold mb-4 text-stone-100">Redigera profil</h1>
+      {!profile && !profileError && (
+        <p className="text-stone-400 text-sm mb-4">
+          Ingen profilrad hittades. Fyll i och spara nedan så skapas din profil.
+        </p>
+      )}
       <ProfileForm
         profile={profile}
         courses={courses || []}

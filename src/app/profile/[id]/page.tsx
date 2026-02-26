@@ -11,6 +11,7 @@ import {
 } from "@heroicons/react/24/outline";
 import BackButton from "@/components/Buttons/BackButton";
 import TeamCard from "@/components/Teams/TeamCard";
+import ProfileAvatarModal from "@/components/Profile/ProfileAvatarModal";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -37,7 +38,7 @@ export default async function PublicProfilePage({ params }: Props) {
 
   const { data: profileData, error: profileError } = await supabase
     .from("profiles")
-    .select("id, alias, avatar_url, home_course, team_id, favorite_disc_id, phone, favorite_disc, city, country")
+    .select("id, alias, avatar_url, home_course, team_id, favorite_disc_id, phone, favorite_disc, city, country, created_at")
     .eq("id", id)
     .single();
 
@@ -54,6 +55,7 @@ export default async function PublicProfilePage({ params }: Props) {
     favorite_disc: string | null;
     city: string | null;
     country: string | null;
+    created_at: string | null;
   };
 
   let homeCourse: HomeCourseRow | null = null;
@@ -144,15 +146,11 @@ export default async function PublicProfilePage({ params }: Props) {
         ) : null}
         <div className="flex flex-col md:flex-row items-center md:items-start gap-4">
           <div className="flex flex-row md:flex-col items-center md:items-start gap-3 md:gap-4 w-full md:w-auto">
-            <div className="relative shrink-0 w-32 h-32 md:w-24 md:h-24 lg:w-28 lg:h-28 overflow-visible">
-              <div className="w-full h-full rounded-full overflow-hidden bg-retro-card border border-retro-border">
-                {profile.avatar_url ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img src={profile.avatar_url} alt="Profilbild" className="h-full w-full object-cover" />
-                ) : (
-                  <div className="h-full w-full flex items-center justify-center text-retro-muted text-3xl">🥏</div>
-                )}
-              </div>
+            <ProfileAvatarModal
+              avatarUrl={profile.avatar_url}
+              displayName={profile.alias ?? null}
+              className="w-32 h-32 md:w-24 md:h-24 lg:w-28 lg:h-28"
+            >
               {team ? (
                 <div
                   className="hidden md:flex absolute -top-3 -left-3 w-12 h-12 lg:w-14 lg:h-14 z-10 items-center justify-center"
@@ -166,7 +164,7 @@ export default async function PublicProfilePage({ params }: Props) {
                   )}
                 </div>
               ) : null}
-            </div>
+            </ProfileAvatarModal>
             <div className="md:hidden min-w-0 flex-1 flex flex-col gap-2 justify-center text-left">
               <h1 className="text-3xl font-bebas tracking-wide text-stone-100 truncate uppercase">
                 {profile.alias || "Spelare"}
@@ -195,6 +193,11 @@ export default async function PublicProfilePage({ params }: Props) {
                 {!profile.city && !profile.country && !profile.phone ? (
                   <span className="text-retro-muted">Ingen plats angiven</span>
                 ) : null}
+                {profile.created_at && (
+                  <span className="text-retro-muted text-xs mt-1">
+                    Medlem sedan {formatDate(profile.created_at)}
+                  </span>
+                )}
               </div>
             </div>
             {(favoriteDisc || profile.favorite_disc) ? (
@@ -258,6 +261,11 @@ export default async function PublicProfilePage({ params }: Props) {
               {!profile.city && !profile.country && !profile.phone ? (
                 <span className="text-retro-muted">Ingen plats angiven</span>
               ) : null}
+              {profile.created_at && (
+                <span className="text-retro-muted text-xs">
+                  Medlem sedan {formatDate(profile.created_at)}
+                </span>
+              )}
             </div>
           </div>
         </div>

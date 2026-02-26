@@ -278,6 +278,7 @@ export default function ProfileForm({
       }
 
       setAvatarFile(null);
+      router.refresh();
       router.push(`/profile?welcome=1`);
     } catch (err: unknown) {
       const message =

@@ -18,6 +18,7 @@ type TeamRow = {
   bild: string | null;
   about: string | null;
   created_by: string | null;
+  created_at: string | null;
 };
 
 type MemberWithRole = {
@@ -33,7 +34,7 @@ export default async function TeamDetailPage({ params }: Props) {
 
   const { data: teamData, error: teamError } = await supabase
     .from("teams")
-    .select("id, name, ort, logga, bild, about, created_by")
+    .select("id, name, ort, logga, bild, about, created_by, created_at")
     .eq("id", id)
     .single();
 
@@ -137,6 +138,11 @@ export default async function TeamDetailPage({ params }: Props) {
           <p className="flex items-center justify-center sm:justify-start gap-1.5 text-stone-400 text-lg mt-2">
             <MapPinIcon className="w-5 h-5 text-retro-muted shrink-0" />
             {team.ort}
+          </p>
+        )}
+        {team.created_at && (
+          <p className="text-stone-500 text-sm mt-1">
+            Laget skapades {new Intl.DateTimeFormat("sv-SE", { year: "numeric", month: "long", day: "numeric" }).format(new Date(team.created_at))}
           </p>
         )}
         {showApplyButton && (

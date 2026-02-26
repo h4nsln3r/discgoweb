@@ -249,6 +249,7 @@ export type Database = {
           bild: string | null
           about: string | null
           created_by: string | null
+          created_at: string | null
         }
         Insert: {
           id?: string
@@ -258,6 +259,7 @@ export type Database = {
           bild?: string | null
           about?: string | null
           created_by?: string | null
+          created_at?: string | null
         }
         Update: {
           name?: string
@@ -266,6 +268,7 @@ export type Database = {
           bild?: string | null
           about?: string | null
           created_by?: string | null
+          created_at?: string | null
         }
         Relationships: []
       }
@@ -320,6 +323,7 @@ export type Database = {
           team_id: string | null
           home_course: string | null
           id: string
+          created_at: string | null
         }
         Insert: {
           alias: string
@@ -332,6 +336,7 @@ export type Database = {
           team_id?: string | null
           home_course?: string | null
           id?: string
+          created_at?: string | null
         }
         Update: {
           alias?: string
@@ -344,6 +349,7 @@ export type Database = {
           team_id?: string | null
           home_course?: string | null
           id?: string
+          created_at?: string | null
         }
         Relationships: [
           {
