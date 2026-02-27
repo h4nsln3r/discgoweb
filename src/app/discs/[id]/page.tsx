@@ -4,6 +4,7 @@ import { createServerSupabaseClient } from "@/lib/supabase-server";
 import BackButton from "@/components/Buttons/BackButton";
 import DiscCommentForm from "@/components/Disc/DiscCommentForm";
 import DiscCommentList from "@/components/Disc/DiscCommentList";
+import DiscImageModal from "@/components/Disc/DiscImageModal";
 
 type DiscRow = {
   id: string;
@@ -63,10 +64,11 @@ export default async function DiscPage({
     }
   }
 
-  const parts = [discRow.speed, discRow.glide, discRow.turn, discRow.fade].filter(
-    (n) => n != null
-  );
-  const flightStr = parts.length > 0 ? parts.join(" · ") : null;
+  const hasFlightNumbers =
+    discRow.speed != null ||
+    discRow.glide != null ||
+    discRow.turn != null ||
+    discRow.fade != null;
 
   return (
     <main className="p-4 sm:p-6 max-w-3xl mx-auto">
@@ -74,32 +76,30 @@ export default async function DiscPage({
         <BackButton />
       </div>
 
-      {/* Disc-kort */}
-      <div className="rounded-2xl border border-retro-border bg-retro-surface p-4 mb-6">
-        <div className="flex items-center gap-4">
-          {discRow.bild ? (
-            <div className="h-16 w-16 rounded-full overflow-hidden bg-retro-card shrink-0">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={discRow.bild}
-                alt=""
-                className="h-full w-full object-cover"
-              />
+      {/* Disc: stor bild (klick = fullskärm), namn i Lag-stil, flygsiffror separat */}
+      <div className="rounded-2xl border border-retro-border bg-retro-surface p-4 sm:p-6 mb-6">
+        <div className="flex flex-col sm:flex-row gap-6 items-start">
+          <DiscImageModal
+            imageUrl={discRow.bild}
+            discName={discRow.name}
+            className="w-56 h-56 sm:w-64 sm:h-64 shrink-0 rounded-2xl overflow-hidden"
+          />
+          <div className="min-w-0 flex-1 flex flex-col gap-3">
+            <div className="flex flex-wrap items-baseline justify-between gap-3">
+              <h1 className="text-4xl sm:text-5xl font-bebas tracking-wide text-stone-100 text-retro-accent uppercase truncate">
+                {discRow.name}
+              </h1>
+              {user && discRow.created_by === user.id && (
+                <Link
+                  href={`/discs/${id}/edit`}
+                  className="px-3 py-1.5 rounded-lg text-amber-500 border border-amber-500/50 hover:bg-amber-500/10 text-sm shrink-0"
+                >
+                  Redigera
+                </Link>
+              )}
             </div>
-          ) : (
-            <div className="h-16 w-16 rounded-full bg-retro-card flex items-center justify-center text-retro-muted shrink-0 text-2xl">
-              🥏
-            </div>
-          )}
-          <div className="min-w-0 flex-1">
-            <h1 className="text-2xl font-bold text-stone-100 truncate">
-              {discRow.name}
-            </h1>
-            {flightStr && (
-              <p className="text-sm text-stone-500 mt-0.5">{flightStr}</p>
-            )}
             {discRow.created_by && (
-              <p className="text-xs text-stone-500 mt-1">
+              <p className="text-sm text-stone-500">
                 Tillagd av{" "}
                 <Link
                   href={`/profile/${discRow.created_by}`}
@@ -110,15 +110,42 @@ export default async function DiscPage({
               </p>
             )}
           </div>
-          {user && discRow.created_by === user.id && (
-            <Link
-              href={`/discs/${id}/edit`}
-              className="px-3 py-1.5 rounded-lg text-amber-500 border border-amber-500/50 hover:bg-amber-500/10 text-sm shrink-0"
-            >
-              Redigera
-            </Link>
-          )}
         </div>
+
+        {/* Flygsiffror med förklarande etiketter – egen sektion */}
+        {hasFlightNumbers && (
+          <div className="mt-6 pt-4 border-t border-retro-border">
+            <p className="text-xs font-medium text-stone-500 uppercase tracking-wide mb-3">
+              Flygstabiliseringssiffror
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {discRow.speed != null && (
+                <div>
+                  <p className="text-xs text-stone-500 mb-0.5">Speed (1–14)</p>
+                  <p className="text-xl font-semibold text-stone-200">{discRow.speed}</p>
+                </div>
+              )}
+              {discRow.glide != null && (
+                <div>
+                  <p className="text-xs text-stone-500 mb-0.5">Glide (1–7)</p>
+                  <p className="text-xl font-semibold text-stone-200">{discRow.glide}</p>
+                </div>
+              )}
+              {discRow.turn != null && (
+                <div>
+                  <p className="text-xs text-stone-500 mb-0.5">Turn (-5–1)</p>
+                  <p className="text-xl font-semibold text-stone-200">{discRow.turn}</p>
+                </div>
+              )}
+              {discRow.fade != null && (
+                <div>
+                  <p className="text-xs text-stone-500 mb-0.5">Fade (0–5)</p>
+                  <p className="text-xl font-semibold text-stone-200">{discRow.fade}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       <h2 className="text-lg font-semibold text-stone-200 mb-3">

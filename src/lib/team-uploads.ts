@@ -19,6 +19,8 @@ export async function uploadTeamAssets(
   let bildUrl: string | null = null;
   let errorMessage: string | undefined;
 
+  const cacheBust = () => `v=${Date.now()}`;
+
   if (loggaFile) {
     const ext = loggaFile.name.split(".").pop()?.toLowerCase() || "jpg";
     const path = `${teamId}/logga.${ext}`;
@@ -28,7 +30,8 @@ export async function uploadTeamAssets(
       errorMessage = errorMessage ?? error.message;
     } else {
       const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
-      loggaUrl = data.publicUrl;
+      const sep = data.publicUrl.includes("?") ? "&" : "?";
+      loggaUrl = `${data.publicUrl}${sep}${cacheBust()}`;
     }
   }
 
@@ -41,7 +44,8 @@ export async function uploadTeamAssets(
       errorMessage = errorMessage ?? error.message;
     } else {
       const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
-      bildUrl = data.publicUrl;
+      const sep = data.publicUrl.includes("?") ? "&" : "?";
+      bildUrl = `${data.publicUrl}${sep}${cacheBust()}`;
     }
   }
 

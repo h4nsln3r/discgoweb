@@ -304,6 +304,34 @@ export default function ResultsPage() {
 
   if (loading) return <PageLoading variant="results" />;
 
+  if (data.length === 0) {
+    return (
+      <div className="p-4">
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-2xl font-bold text-stone-100">Alla resultat</h1>
+          <Link
+            href="/results/new"
+            className="px-4 py-2 bg-retro-accent text-stone-100 rounded-lg hover:bg-retro-accent-hover transition"
+          >
+            Lägg till resultat
+          </Link>
+        </div>
+        <div className="rounded-xl border border-retro-border bg-retro-surface p-8 text-center">
+          <p className="text-stone-300 text-lg">Inga resultat än.</p>
+          <p className="text-stone-500 text-sm mt-2">
+            Lägg till ett resultat för att se det här.
+          </p>
+          <Link
+            href="/results/new"
+            className="inline-block mt-4 px-4 py-2 bg-retro-accent text-stone-100 rounded-lg hover:bg-retro-accent-hover transition"
+          >
+            Lägg till resultat
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-4">
       <div className="flex justify-between items-center mb-4">

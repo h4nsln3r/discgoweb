@@ -72,9 +72,18 @@ export default function CourseList({ refresh }: { refresh?: boolean }) {
   if (loading) return <PageLoading variant="courses" />;
   if (!courses.length)
     return (
-      <p className="rounded-xl border border-retro-border bg-retro-surface p-6 text-center text-retro-muted shadow-sm">
-        Inga banor tillagda än.
-      </p>
+      <div className="rounded-xl border border-retro-border bg-retro-surface p-8 text-center">
+        <p className="text-stone-300 text-lg">Inga banor än.</p>
+        <p className="text-stone-500 text-sm mt-2">
+          Lägg till en bana för att se den här.
+        </p>
+        <Link
+          href="/courses/new"
+          className="inline-block mt-4 px-4 py-2 bg-retro-accent text-stone-100 rounded-lg hover:bg-retro-accent-hover transition"
+        >
+          Lägg till bana
+        </Link>
+      </div>
     );
 
   return (

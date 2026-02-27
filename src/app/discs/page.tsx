@@ -42,39 +42,57 @@ export default async function DiscsPage() {
       </div>
 
       {!discs?.length ? (
-        <p className="rounded-xl border border-retro-border bg-retro-surface p-6 text-center text-retro-muted">
-          Inga discar tillagda än. Lägg till för att kunna välja favorit disc i profilen.
-        </p>
+        <div className="rounded-xl border border-retro-border bg-retro-surface p-8 text-center">
+          <p className="text-stone-300 text-lg">Inga discar än.</p>
+          <p className="text-stone-500 text-sm mt-2">
+            Lägg till discar för att se dem här och välja favorit disc i profilen.
+          </p>
+          <Link
+            href="/discs/new"
+            className="inline-block mt-4 px-4 py-2 bg-retro-accent text-stone-100 rounded-lg hover:bg-retro-accent-hover transition"
+          >
+            Lägg till disc
+          </Link>
+        </div>
       ) : (
-        <ul className="space-y-3">
+        <ul className="space-y-4">
           {discs.map((disc) => (
             <li
               key={disc.id}
-              className="flex flex-col gap-2 rounded-xl border border-retro-border bg-retro-surface p-4"
+              className="rounded-2xl border border-retro-border bg-retro-surface overflow-hidden shadow-sm flex flex-col sm:flex-row"
             >
-              <div className="flex items-center gap-4">
-                <Link href={`/discs/${disc.id}`} className="flex items-center gap-4 min-w-0 flex-1">
+              <Link
+                href={`/discs/${disc.id}`}
+                className="flex-1 flex flex-col sm:flex-row min-w-0 sm:items-stretch hover:bg-retro-card/30 transition"
+              >
+                <div className="p-4 flex-1 min-w-0 flex flex-col justify-center">
+                  <span className="text-4xl sm:text-5xl font-bebas tracking-wide text-stone-100 text-retro-accent uppercase block truncate">
+                    {disc.name}
+                  </span>
+                  {(() => {
+                    const parts = [disc.speed, disc.glide, disc.turn, disc.fade].filter((n) => n != null);
+                    return parts.length > 0 ? (
+                      <p className="text-sm text-stone-500 mt-1">{parts.join(" · ")}</p>
+                    ) : null;
+                  })()}
+                </div>
+                <div className="w-full sm:w-36 sm:min-w-[8rem] aspect-square sm:aspect-auto sm:flex-shrink-0 sm:self-stretch sm:rounded-full overflow-hidden bg-retro-card relative">
                   {disc.bild ? (
-                    <div className="h-12 w-12 rounded-full overflow-hidden bg-retro-card shrink-0">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={disc.bild} alt="" className="h-full w-full object-cover" />
-                    </div>
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={disc.bild}
+                      alt=""
+                      className="absolute inset-0 w-full h-full object-cover object-center"
+                    />
                   ) : (
-                    <div className="h-12 w-12 rounded-full bg-retro-card flex items-center justify-center text-retro-muted shrink-0 text-xl">
+                    <div className="absolute inset-0 flex items-center justify-center text-retro-muted text-4xl">
                       🥏
                     </div>
                   )}
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium text-stone-100 truncate hover:text-retro-accent">{disc.name}</p>
-                    {(() => {
-                      const parts = [disc.speed, disc.glide, disc.turn, disc.fade].filter((n) => n != null);
-                      return parts.length > 0 ? (
-                        <p className="text-xs text-stone-500 mt-0.5">{parts.join(" · ")}</p>
-                      ) : null;
-                    })()}
-                  </div>
-                </Link>
-                {user && disc.created_by === user.id && (
+                </div>
+              </Link>
+              {user && disc.created_by === user.id && (
+                <div className="px-4 pb-2 flex justify-end">
                   <Link
                     href={`/discs/${disc.id}/edit`}
                     className="p-2 rounded-lg text-amber-500 hover:bg-retro-card hover:text-amber-400 transition shrink-0"
@@ -82,10 +100,10 @@ export default async function DiscsPage() {
                   >
                     <PencilSquareIcon className="w-5 h-5" />
                   </Link>
-                )}
-              </div>
+                </div>
+              )}
               {disc.created_by && (
-                <p className="text-xs text-stone-500 text-right">
+                <p className="px-4 pb-4 text-xs text-stone-500 text-right">
                   Tillagd av{" "}
                   <Link
                     href={`/profile/${disc.created_by}`}

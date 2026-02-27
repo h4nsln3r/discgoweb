@@ -34,9 +34,20 @@ export default async function TeamsPage() {
       </div>
 
       {!teams?.length ? (
-        <p className="rounded-xl border border-retro-border bg-retro-surface p-6 text-center text-retro-muted">
-          Inga lag tillagda än.
-        </p>
+        <div className="rounded-xl border border-retro-border bg-retro-surface p-8 text-center">
+          <p className="text-stone-300 text-lg">Inga lag än.</p>
+          <p className="text-stone-500 text-sm mt-2">
+            Lägg till ett lag för att se det här.
+          </p>
+          {canCreateTeam && (
+            <Link
+              href="/teams/new"
+              className="inline-block mt-4 px-4 py-2 bg-retro-accent text-stone-100 rounded-lg hover:bg-retro-accent-hover transition"
+            >
+              Lägg till lag
+            </Link>
+          )}
+        </div>
       ) : (
         <ul className="space-y-4">
           {teams.map((team) => (

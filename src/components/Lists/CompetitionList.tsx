@@ -66,9 +66,18 @@ export default function CompetitionList({
 
   if (!competitions.length) {
     return (
-      <p className="rounded-xl border border-retro-border bg-retro-surface p-6 text-center text-retro-muted shadow-sm">
-        Inga tävlingar än.
-      </p>
+      <div className="rounded-xl border border-retro-border bg-retro-surface p-8 text-center">
+        <p className="text-stone-300 text-lg">Inga tävlingar än.</p>
+        <p className="text-stone-500 text-sm mt-2">
+          Lägg till en tävling för att se den här.
+        </p>
+        <Link
+          href="/competitions/new"
+          className="inline-block mt-4 px-4 py-2 bg-retro-accent text-stone-100 rounded-lg hover:bg-retro-accent-hover transition"
+        >
+          Lägg till tävling
+        </Link>
+      </div>
     );
   }
 

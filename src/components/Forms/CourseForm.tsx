@@ -1,6 +1,13 @@
 "use client";
 
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
+import { CITY_COUNTRY_PAIRS, CITY_SUGGESTIONS, COUNTRY_SUGGESTIONS } from "@/data/location-suggestions";
+import dynamic from "next/dynamic";
+
+const CourseLocationPicker = dynamic(
+  () => import("@/components/Maps/CourseLocationPicker").then((m) => m.default),
+  { ssr: false, loading: () => <div className="h-64 rounded-xl border border-retro-border bg-retro-card animate-pulse" /> }
+);
 
 export type CourseHole = {
   hole_number: number;
@@ -69,8 +76,31 @@ export default function CourseForm({
   const [mainImageUrl, setMainImageUrl] = useState(initialMainImageUrl);
   const [loading, setLoading] = useState(false);
   const [invalidFields, setInvalidFields] = useState<Set<string>>(new Set());
+  const [locationSearch, setLocationSearch] = useState("");
+  const [locationDropdownOpen, setLocationDropdownOpen] = useState(false);
+  const locationDropdownRef = useRef<HTMLDivElement | null>(null);
   const nameRef = useRef<HTMLDivElement>(null);
   const locationRef = useRef<HTMLDivElement>(null);
+
+  const locationSuggestions = useMemo(() => {
+    const q = locationSearch.trim().toLowerCase();
+    if (q.length < 3) return [];
+    return CITY_COUNTRY_PAIRS.filter(
+      (p) =>
+        p.city.toLowerCase().includes(q) ||
+        p.country.toLowerCase().includes(q)
+    ).slice(0, 12);
+  }, [locationSearch]);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (locationDropdownRef.current && !locationDropdownRef.current.contains(e.target as Node)) {
+        setLocationDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const numHolesOption = useMemo((): 0 | 9 | 12 | 18 => {
     const n = initialHoles.length;
@@ -209,7 +239,47 @@ export default function CourseForm({
         />
       </div>
 
-      {/* City & Country */}
+      {/* Sök ort – fyller i både stad och land */}
+      <div className="space-y-2" ref={locationDropdownRef}>
+        <label className="block font-semibold text-stone-200">
+          Sök ort (stad och land)
+        </label>
+        <input
+          type="text"
+          value={locationSearch}
+          onChange={(e) => {
+            setLocationSearch(e.target.value);
+            setLocationDropdownOpen(true);
+          }}
+          onFocus={() => locationSuggestions.length > 0 && setLocationDropdownOpen(true)}
+          placeholder="t.ex. Malmö eller Sverige"
+          autoComplete="off"
+          className="w-full border border-retro-border bg-retro-surface text-stone-100 p-2 rounded focus:outline-none focus:ring-2 focus:ring-retro-accent placeholder:text-stone-500"
+        />
+        {locationDropdownOpen && locationSuggestions.length > 0 && (
+          <ul className="rounded-xl border border-retro-border bg-retro-surface shadow-lg overflow-hidden max-h-56 overflow-y-auto z-10">
+            {locationSuggestions.map((p) => (
+              <li key={`${p.city}-${p.country}`}>
+                <button
+                  type="button"
+                  className="w-full text-left px-3 py-2.5 text-stone-200 hover:bg-retro-card transition flex justify-between gap-2"
+                  onClick={() => {
+                    setCity(p.city);
+                    setCountry(p.country);
+                    setLocationSearch("");
+                    setLocationDropdownOpen(false);
+                  }}
+                >
+                  <span>{p.city}</span>
+                  <span className="text-retro-muted shrink-0">{p.country}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {/* Stad & Land */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label htmlFor="city" className="block font-semibold mb-1 text-stone-200">
@@ -219,10 +289,25 @@ export default function CourseForm({
             id="city"
             type="text"
             value={city}
-            onChange={(e) => setCity(e.target.value)}
-            placeholder="Stad"
+            onChange={(e) => {
+              const v = e.target.value;
+              setCity(v);
+              const q = v.trim().toLowerCase();
+              if (q) {
+                const pair = CITY_COUNTRY_PAIRS.find((p) => p.city.trim().toLowerCase() === q);
+                if (pair) setCountry(pair.country);
+              }
+            }}
+            placeholder="t.ex. Malmö"
+            list="course-city-list"
+            autoComplete="off"
             className="w-full border border-retro-border bg-retro-surface text-stone-100 p-2 rounded focus:outline-none focus:ring-2 focus:ring-retro-accent placeholder:text-stone-500"
           />
+          <datalist id="course-city-list">
+            {CITY_SUGGESTIONS.map((s) => (
+              <option key={s} value={s} />
+            ))}
+          </datalist>
         </div>
         <div>
           <label htmlFor="country" className="block font-semibold mb-1 text-stone-200">
@@ -233,39 +318,58 @@ export default function CourseForm({
             type="text"
             value={country}
             onChange={(e) => setCountry(e.target.value)}
-            placeholder="Land"
+            placeholder="t.ex. Sverige"
+            list="course-country-list"
+            autoComplete="off"
             className="w-full border border-retro-border bg-retro-surface text-stone-100 p-2 rounded focus:outline-none focus:ring-2 focus:ring-retro-accent placeholder:text-stone-500"
           />
+          <datalist id="course-country-list">
+            {COUNTRY_SUGGESTIONS.map((s) => (
+              <option key={s} value={s} />
+            ))}
+          </datalist>
         </div>
       </div>
 
-      {/* Latitude & Longitude */}
-      <div>
-        <label htmlFor="latitude" className="block font-semibold mb-1 text-stone-200">
-          Latitud
-        </label>
-        <input
-          id="latitude"
-          type="text"
-          value={latitude}
-          onChange={(e) => setLatitude(e.target.value)}
-          placeholder="Latitud"
-          className="w-full border border-retro-border bg-retro-surface text-stone-100 p-2 rounded focus:outline-none focus:ring-2 focus:ring-retro-accent placeholder:text-stone-500"
-        />
-      </div>
+      {/* Karta och adresssökning för position (lat/long) */}
+      <CourseLocationPicker
+        latitude={latitude}
+        longitude={longitude}
+        onLatLngChange={(lat, lng) => {
+          setLatitude(String(lat));
+          setLongitude(String(lng));
+        }}
+        addressSuggestion={[location, city, country].filter(Boolean).join(", ")}
+      />
 
-      <div>
-        <label htmlFor="longitude" className="block font-semibold mb-1 text-stone-200">
-          Longitud
-        </label>
-        <input
-          id="longitude"
-          type="text"
-          value={longitude}
-          onChange={(e) => setLongitude(e.target.value)}
-          placeholder="Longitud"
-          className="w-full border border-retro-border bg-retro-surface text-stone-100 p-2 rounded focus:outline-none focus:ring-2 focus:ring-retro-accent placeholder:text-stone-500"
-        />
+      {/* Latitud & Longitud (kan fyllas i via karta/adress ovan eller manuellt) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label htmlFor="latitude" className="block font-semibold mb-1 text-stone-200">
+            Latitud
+          </label>
+          <input
+            id="latitude"
+            type="text"
+            value={latitude}
+            onChange={(e) => setLatitude(e.target.value)}
+            placeholder="t.ex. 55.61"
+            className="w-full border border-retro-border bg-retro-surface text-stone-100 p-2 rounded focus:outline-none focus:ring-2 focus:ring-retro-accent placeholder:text-stone-500"
+          />
+        </div>
+        <div>
+          <label htmlFor="longitude" className="block font-semibold mb-1 text-stone-200">
+            Longitud
+          </label>
+          <input
+            id="longitude"
+            type="text"
+            value={longitude}
+            onChange={(e) => setLongitude(e.target.value)}
+            placeholder="t.ex. 13.00"
+            className="w-full border border-retro-border bg-retro-surface text-stone-100 p-2 rounded focus:outline-none focus:ring-2 focus:ring-retro-accent placeholder:text-stone-500"
+          />
+        </div>
       </div>
 
       {/* Description */}

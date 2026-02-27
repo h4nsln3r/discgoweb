@@ -8,6 +8,8 @@ import TeamMembersSection from "@/components/Teams/TeamMembersSection";
 import TeamApplicationsSection, { type ApplicantRow } from "@/components/Teams/TeamApplicationsSection";
 import ApplyToTeamButton from "@/components/Teams/ApplyToTeamButton";
 
+export const dynamic = "force-dynamic";
+
 type Props = { params: Promise<{ id: string }> };
 
 type TeamRow = {

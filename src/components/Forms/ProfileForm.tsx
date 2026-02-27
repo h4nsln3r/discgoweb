@@ -540,7 +540,15 @@ export default function ProfileForm({
           <input
             className={inputClass}
             value={city}
-            onChange={(e) => setCity(e.target.value)}
+            onChange={(e) => {
+              const v = e.target.value;
+              setCity(v);
+              const q = v.trim().toLowerCase();
+              if (q) {
+                const pair = CITY_COUNTRY_PAIRS.find((p) => p.city.trim().toLowerCase() === q);
+                if (pair) setCountry(pair.country);
+              }
+            }}
             placeholder="Malmö"
             list="profile-city-list"
             autoComplete="off"
