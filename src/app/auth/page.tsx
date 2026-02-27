@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useRef } from "react";
+import { useMemo, useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import type { Database } from "@/types/supabase";
@@ -16,6 +16,17 @@ export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
 
   const [loading, setLoading] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setCheckingSession(false);
+      if (user) {
+        router.replace("/profile");
+        router.refresh();
+      }
+    });
+  }, [supabase, router]);
   const [error, setError] = useState<string | null>(null);
 
   const [toastOpen, setToastOpen] = useState(false);
@@ -121,6 +132,14 @@ export default function AuthPage() {
     }
     // Vid lyckad inloggning/redirect lämnar vi loading=true tills sidan byts
   };
+
+  if (checkingSession) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-retro-bg">
+        <ArrowPathIcon className="w-8 h-8 text-retro-muted animate-spin" aria-hidden />
+      </div>
+    );
+  }
 
   return (
     <>

@@ -166,67 +166,69 @@ export default async function ProfileHomePage() {
           </div>
         ) : null}
         <div className="flex flex-col md:flex-row items-center md:items-start gap-4">
-          {/* Mobil: rad [bild][namn+info], fav till höger. Desktop: bild med lag-overlay */}
-          <div className="flex flex-row md:flex-col items-start md:items-start gap-3 md:gap-4 w-full md:w-auto">
-            <ProfileAvatarModal
-              avatarUrl={profile?.avatar_url ?? null}
-              displayName={profile?.alias ?? null}
-              className="w-32 h-32 md:w-24 md:h-24 lg:w-28 lg:h-28 order-1 md:order-none"
-            >
-              {team ? (
-                <div
-                  className="hidden md:flex absolute -top-3 -left-3 w-12 h-12 lg:w-14 lg:h-14 z-10 items-center justify-center"
-                  title={team.name}
-                >
-                  {team.logga ? (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img src={team.logga} alt={team.name} className="h-full w-full object-contain drop-shadow-lg" />
-                  ) : (
-                    <span className="h-full w-full flex items-center justify-center text-retro-muted text-lg" aria-hidden>👥</span>
+          {/* Mobil: rad [bild][namn+info], sedan favorit disc på egen rad under. Desktop: bild med lag-overlay */}
+          <div className="flex flex-col md:flex-col items-start w-full md:w-auto gap-3 md:gap-4">
+            <div className="flex flex-row items-start gap-3 w-full md:contents">
+              <ProfileAvatarModal
+                avatarUrl={profile?.avatar_url ?? null}
+                displayName={profile?.alias ?? null}
+                className="w-32 h-32 md:w-24 md:h-24 lg:w-28 lg:h-28 order-1 md:order-none shrink-0"
+              >
+                {team ? (
+                  <div
+                    className="hidden md:flex absolute -top-3 -left-3 w-12 h-12 lg:w-14 lg:h-14 z-10 items-center justify-center"
+                    title={team.name}
+                  >
+                    {team.logga ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img src={team.logga} alt={team.name} className="h-full w-full object-contain drop-shadow-lg" />
+                    ) : (
+                      <span className="h-full w-full flex items-center justify-center text-retro-muted text-lg" aria-hidden>👥</span>
+                    )}
+                  </div>
+                ) : null}
+              </ProfileAvatarModal>
+              {/* Mobil: namn + info bredvid bilden */}
+              <div className="md:hidden min-w-0 flex-1 flex flex-col gap-2 justify-center text-left order-2">
+                <h1 className="text-3xl font-bebas tracking-wide text-stone-100 truncate uppercase">
+                  {profile?.alias || "Anonym kastare"}
+                </h1>
+                <div className="flex flex-col gap-1 text-sm text-stone-400">
+                  {profile?.city ? (
+                    <span className="flex items-center gap-1.5">
+                      <MapPinIcon className="w-4 h-4 text-retro-muted shrink-0" />
+                      {profile.city}
+                    </span>
+                  ) : null}
+                  {profile?.country ? (
+                    <span className="flex items-center gap-1.5">
+                      {profile.country === "Sverige" ? (
+                        <span className="leading-none" title="Sverige">🇸🇪</span>
+                      ) : null}
+                      {profile.country}
+                    </span>
+                  ) : null}
+                  {profile?.phone ? (
+                    <span className="flex items-center gap-1.5">
+                      <PhoneIcon className="w-4 h-4 text-retro-muted shrink-0" />
+                      {profile.phone}
+                    </span>
+                  ) : null}
+                  {!profile?.city && !profile?.country && !profile?.phone ? (
+                    <span className="text-retro-muted">Ingen plats eller telefon angiven</span>
+                  ) : null}
+                  {profile?.created_at && (
+                    <span className="text-retro-muted text-xs mt-1">
+                      Medlem sedan {formatDate(profile.created_at)}
+                    </span>
                   )}
                 </div>
-              ) : null}
-            </ProfileAvatarModal>
-            {/* Mobil: namn + info under. Favorit disc ligger till höger (absolut) */}
-            <div className="md:hidden min-w-0 flex-1 flex flex-col gap-2 justify-center text-left order-2">
-              <h1 className="text-3xl font-bebas tracking-wide text-stone-100 truncate uppercase">
-                {profile?.alias || "Anonym kastare"}
-              </h1>
-              <div className="flex flex-col gap-1 text-sm text-stone-400">
-                {profile?.city ? (
-                  <span className="flex items-center gap-1.5">
-                    <MapPinIcon className="w-4 h-4 text-retro-muted shrink-0" />
-                    {profile.city}
-                  </span>
-                ) : null}
-                {profile?.country ? (
-                  <span className="flex items-center gap-1.5">
-                    {profile.country === "Sverige" ? (
-                      <span className="leading-none" title="Sverige">🇸🇪</span>
-                    ) : null}
-                    {profile.country}
-                  </span>
-                ) : null}
-                {profile?.phone ? (
-                  <span className="flex items-center gap-1.5">
-                    <PhoneIcon className="w-4 h-4 text-retro-muted shrink-0" />
-                    {profile.phone}
-                  </span>
-                ) : null}
-                {!profile?.city && !profile?.country && !profile?.phone ? (
-                  <span className="text-retro-muted">Ingen plats eller telefon angiven</span>
-                ) : null}
-                {profile?.created_at && (
-                  <span className="text-retro-muted text-xs mt-1">
-                    Medlem sedan {formatDate(profile.created_at)}
-                  </span>
-                )}
               </div>
             </div>
-            {/* Mobil: favorit disc till höger av cardet */}
+            {/* Mobil: favorit disc på egen rad under namn + info */}
             {(favoriteDisc || profile?.favorite_disc) ? (
-              <div className="md:hidden absolute top-4 right-4 flex flex-col items-end shrink-0">
-                <div className="w-12 h-12 rounded-full overflow-hidden bg-retro-card border border-retro-border flex items-center justify-center">
+              <div className="md:hidden flex flex-row items-center gap-3 w-full pt-1 border-t border-retro-border/60">
+                <div className="w-12 h-12 rounded-full overflow-hidden bg-retro-card border border-retro-border flex items-center justify-center shrink-0">
                   {favoriteDisc?.bild ? (
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img src={favoriteDisc.bild} alt={favoriteDisc.name} className="h-full w-full object-cover" />
@@ -234,8 +236,10 @@ export default async function ProfileHomePage() {
                     <span className="text-retro-muted text-lg">🥏</span>
                   )}
                 </div>
-                <p className="text-xs text-retro-muted mt-1 text-right">Favorit disc</p>
-                <p className="text-stone-200 font-medium text-sm">{favoriteDisc?.name ?? profile?.favorite_disc ?? "—"}</p>
+                <div className="min-w-0">
+                  <p className="text-xs text-retro-muted uppercase tracking-wide">Favorit disc</p>
+                  <p className="text-stone-200 font-medium text-sm truncate">{favoriteDisc?.name ?? profile?.favorite_disc ?? "—"}</p>
+                </div>
               </div>
             ) : null}
           </div>
