@@ -63,8 +63,6 @@ type PickerMapInnerProps = {
 function PickerMapInner({ lat, lng, onLatLngChange }: PickerMapInnerProps) {
   const position: [number, number] | null =
     lat != null && lng != null && isValidLatLng(lat, lng) ? [lat, lng] : null;
-  const center: [number, number] = position ?? DEFAULT_CENTER;
-  const zoom = position ? 15 : DEFAULT_ZOOM;
 
   return (
     <>

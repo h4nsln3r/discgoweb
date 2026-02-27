@@ -64,12 +64,6 @@ export default async function DiscPage({
     }
   }
 
-  const hasFlightNumbers =
-    discRow.speed != null ||
-    discRow.glide != null ||
-    discRow.turn != null ||
-    discRow.fade != null;
-
   return (
     <main className="p-4 sm:p-6 max-w-3xl mx-auto">
       <div className="mb-4">
@@ -112,40 +106,30 @@ export default async function DiscPage({
           </div>
         </div>
 
-        {/* Flygsiffror med förklarande etiketter – egen sektion */}
-        {hasFlightNumbers && (
-          <div className="mt-6 pt-4 border-t border-retro-border">
+        {/* Flygsiffror med förklarande etiketter – alltid alla fyra */}
+        <div className="mt-6 pt-4 border-t border-retro-border">
             <p className="text-xs font-medium text-stone-500 uppercase tracking-wide mb-3">
               Flygstabiliseringssiffror
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              {discRow.speed != null && (
-                <div>
-                  <p className="text-xs text-stone-500 mb-0.5">Speed (1–14)</p>
-                  <p className="text-xl font-semibold text-stone-200">{discRow.speed}</p>
-                </div>
-              )}
-              {discRow.glide != null && (
-                <div>
-                  <p className="text-xs text-stone-500 mb-0.5">Glide (1–7)</p>
-                  <p className="text-xl font-semibold text-stone-200">{discRow.glide}</p>
-                </div>
-              )}
-              {discRow.turn != null && (
-                <div>
-                  <p className="text-xs text-stone-500 mb-0.5">Turn (-5–1)</p>
-                  <p className="text-xl font-semibold text-stone-200">{discRow.turn}</p>
-                </div>
-              )}
-              {discRow.fade != null && (
-                <div>
-                  <p className="text-xs text-stone-500 mb-0.5">Fade (0–5)</p>
-                  <p className="text-xl font-semibold text-stone-200">{discRow.fade}</p>
-                </div>
-              )}
+              <div>
+                <p className="text-xs text-stone-500 mb-0.5">Speed (1–14)</p>
+                <p className="text-xl font-semibold text-stone-200">{discRow.speed != null ? discRow.speed : "—"}</p>
+              </div>
+              <div>
+                <p className="text-xs text-stone-500 mb-0.5">Glide (1–7)</p>
+                <p className="text-xl font-semibold text-stone-200">{discRow.glide != null ? discRow.glide : "—"}</p>
+              </div>
+              <div>
+                <p className="text-xs text-stone-500 mb-0.5">Turn (-5–1)</p>
+                <p className="text-xl font-semibold text-stone-200">{discRow.turn != null ? discRow.turn : "—"}</p>
+              </div>
+              <div>
+                <p className="text-xs text-stone-500 mb-0.5">Fade (0–5)</p>
+                <p className="text-xl font-semibold text-stone-200">{discRow.fade != null ? discRow.fade : "—"}</p>
+              </div>
             </div>
           </div>
-        )}
       </div>
 
       <h2 className="text-lg font-semibold text-stone-200 mb-3">

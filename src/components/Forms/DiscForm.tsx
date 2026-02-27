@@ -174,14 +174,19 @@ export default function DiscForm({
     }
     setInvalidFields(new Set());
     setLoading(true);
+    const parseNum = (s: string): number | null => {
+      if (s === "") return null;
+      const n = parseInt(s, 10);
+      return Number.isFinite(n) ? n : null;
+    };
     const data: DiscFormData = {
       name: name.trim(),
       ...(imageMode === "url" && bild.trim() ? { bild: bild.trim() } : {}),
       ...(imageMode === "upload" && bildFile ? { bildFile } : {}),
-      speed: speed === "" ? null : parseInt(speed, 10) || null,
-      glide: glide === "" ? null : parseInt(glide, 10) || null,
-      turn: turn === "" ? null : parseInt(turn, 10) || null,
-      fade: fade === "" ? null : parseInt(fade, 10) || null,
+      speed: parseNum(speed),
+      glide: parseNum(glide),
+      turn: parseNum(turn),
+      fade: parseNum(fade),
     };
     await onSubmit(data);
     setLoading(false);

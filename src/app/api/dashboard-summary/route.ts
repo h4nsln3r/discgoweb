@@ -91,36 +91,28 @@ export async function GET() {
       console.error("[dashboard-summary] mapCourses error", mapCoursesError);
     }
 
-    // Nya/senast aktiva medlemmar: unika user_id från senaste scores, sedan profiler
-    const { data: recentScores } = await supabase
-      .from("scores")
-      .select("user_id")
+    // Nya medlemmar: max 6 st, endast registrerade senaste veckan
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+    const oneWeekAgoIso = oneWeekAgo.toISOString();
+
+    const { data: newMembersRows, error: newMembersError } = await supabase
+      .from("profiles")
+      .select("id, alias, avatar_url")
+      .gte("created_at", oneWeekAgoIso)
       .order("created_at", { ascending: false })
-      .limit(80);
+      .limit(6);
 
-    const seen = new Set<string>();
-    const recentUserIds: string[] = [];
-    for (const row of recentScores ?? []) {
-      const uid = (row as { user_id?: string }).user_id;
-      if (uid && !seen.has(uid)) {
-        seen.add(uid);
-        recentUserIds.push(uid);
-      }
-      if (recentUserIds.length >= 16) break;
+    if (newMembersError) {
+      console.error("[dashboard-summary] newMembers error", newMembersError);
     }
 
-    let newMembers: { id: string; alias: string; avatar_url: string | null }[] = [];
-    if (recentUserIds.length > 0) {
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id, alias, avatar_url")
-        .in("id", recentUserIds);
-
-      const byId = new Map((profiles ?? []).map((p) => [(p as { id: string }).id, p]));
-      newMembers = recentUserIds
-        .map((id) => byId.get(id) as { id: string; alias: string; avatar_url: string | null } | undefined)
-        .filter(Boolean) as { id: string; alias: string; avatar_url: string | null }[];
-    }
+    const newMembers: { id: string; alias: string; avatar_url: string | null }[] =
+      (newMembersRows ?? []).map((p) => ({
+        id: (p as { id: string }).id,
+        alias: (p as { alias: string }).alias ?? "",
+        avatar_url: (p as { avatar_url: string | null }).avatar_url ?? null,
+      }));
 
     return NextResponse.json({
       courses: courses ?? [],

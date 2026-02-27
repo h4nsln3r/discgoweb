@@ -59,60 +59,65 @@ export default async function DiscsPage() {
           {discs.map((disc) => (
             <li
               key={disc.id}
-              className="rounded-2xl border border-retro-border bg-retro-surface overflow-hidden shadow-sm flex flex-col sm:flex-row"
+              className="rounded-2xl border border-retro-border bg-retro-surface overflow-hidden shadow-sm flex flex-col sm:flex-row sm:items-stretch"
             >
               <Link
                 href={`/discs/${disc.id}`}
-                className="flex-1 flex flex-col sm:flex-row min-w-0 sm:items-stretch hover:bg-retro-card/30 transition"
+                className="w-full sm:w-28 sm:h-28 sm:min-w-[7rem] sm:min-h-[7rem] aspect-square sm:flex-shrink-0 overflow-hidden bg-retro-card/50 relative rounded-full group block sm:ml-4 sm:my-4 sm:self-center"
               >
-                <div className="p-4 flex-1 min-w-0 flex flex-col justify-center">
-                  <span className="text-4xl sm:text-5xl font-bebas tracking-wide text-stone-100 text-retro-accent uppercase block truncate">
-                    {disc.name}
-                  </span>
-                  {(() => {
-                    const parts = [disc.speed, disc.glide, disc.turn, disc.fade].filter((n) => n != null);
-                    return parts.length > 0 ? (
-                      <p className="text-sm text-stone-500 mt-1">{parts.join(" · ")}</p>
-                    ) : null;
-                  })()}
-                </div>
-                <div className="w-full sm:w-36 sm:min-w-[8rem] aspect-square sm:aspect-auto sm:flex-shrink-0 sm:self-stretch sm:rounded-full overflow-hidden bg-retro-card relative">
-                  {disc.bild ? (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img
-                      src={disc.bild}
-                      alt=""
-                      className="absolute inset-0 w-full h-full object-cover object-center"
-                    />
-                  ) : (
-                    <div className="absolute inset-0 flex items-center justify-center text-retro-muted text-4xl">
-                      🥏
-                    </div>
+                {disc.bild ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={disc.bild}
+                    alt=""
+                    className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-200 sm:min-h-full"
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center text-retro-muted text-4xl">
+                    🥏
+                  </div>
+                )}
+              </Link>
+              <div className="flex-1 flex flex-col min-w-0">
+                <div className="flex flex-1 items-center min-w-0 py-4 pr-4 pl-4 sm:pl-4">
+                  <Link
+                    href={`/discs/${disc.id}`}
+                    className="flex-1 min-w-0 hover:bg-retro-card/20 transition group -m-2 p-2 rounded-lg"
+                  >
+                    <span className="text-2xl sm:text-4xl font-bebas tracking-wide text-stone-100 group-hover:text-retro-accent uppercase block truncate transition-colors">
+                      {disc.name}
+                    </span>
+                    {(() => {
+                      const parts = [disc.speed, disc.glide, disc.turn, disc.fade].filter((n) => n != null);
+                      return parts.length > 0 ? (
+                        <p className="text-sm text-stone-400 font-medium tabular-nums mt-0.5">{parts.join(" · ")}</p>
+                      ) : null;
+                    })()}
+                  </Link>
+                  {user && disc.created_by === user.id && (
+                    <Link
+                      href={`/discs/${disc.id}/edit`}
+                      className="p-2 rounded-xl text-amber-500/90 hover:bg-amber-500/10 hover:text-amber-400 transition shrink-0 ml-1"
+                      aria-label="Redigera disc"
+                    >
+                      <PencilSquareIcon className="w-5 h-5" />
+                    </Link>
                   )}
                 </div>
-              </Link>
-              {user && disc.created_by === user.id && (
-                <div className="px-4 pb-2 flex justify-end">
-                  <Link
-                    href={`/discs/${disc.id}/edit`}
-                    className="p-2 rounded-lg text-amber-500 hover:bg-retro-card hover:text-amber-400 transition shrink-0"
-                    aria-label="Redigera disc"
-                  >
-                    <PencilSquareIcon className="w-5 h-5" />
-                  </Link>
-                </div>
-              )}
-              {disc.created_by && (
-                <p className="px-4 pb-4 text-xs text-stone-500 text-right">
-                  Tillagd av{" "}
-                  <Link
-                    href={`/profile/${disc.created_by}`}
-                    className="text-retro-accent hover:text-retro-accent-hover hover:underline"
-                  >
-                    {creatorMap[disc.created_by]?.alias?.trim() || "—"}
-                  </Link>
-                </p>
-              )}
+                {disc.created_by && (
+                  <div className="px-4 pb-3 text-right">
+                    <p className="text-xs text-stone-500">
+                      Tillagd av{" "}
+                      <Link
+                        href={`/profile/${disc.created_by}`}
+                        className="text-retro-accent/90 hover:text-retro-accent hover:underline"
+                      >
+                        {creatorMap[disc.created_by]?.alias?.trim() || "—"}
+                      </Link>
+                    </p>
+                  </div>
+                )}
+              </div>
             </li>
           ))}
         </ul>
