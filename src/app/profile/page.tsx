@@ -12,7 +12,7 @@ import {
 } from "@heroicons/react/24/outline";
 import ProfileWelcomeToast from "@/components/Toasts/ProfileWelcomeToast";
 import TeamCard from "@/components/Teams/TeamCard";
-import ProfileAvatarModal from "@/components/Profile/ProfileAvatarModal";
+import ProfileAvatarModal from "@/components/profile/ProfileAvatarModal";
 
 type ProfileRow = {
   id: string;

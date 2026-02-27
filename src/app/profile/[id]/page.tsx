@@ -11,7 +11,7 @@ import {
 } from "@heroicons/react/24/outline";
 import BackButton from "@/components/Buttons/BackButton";
 import TeamCard from "@/components/Teams/TeamCard";
-import ProfileAvatarModal from "@/components/Profile/ProfileAvatarModal";
+import ProfileAvatarModal from "@/components/profile/ProfileAvatarModal";
 
 type Props = { params: Promise<{ id: string }> };
 
