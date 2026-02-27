@@ -53,25 +53,27 @@ export default async function DiscsPage() {
               className="flex flex-col gap-2 rounded-xl border border-retro-border bg-retro-surface p-4"
             >
               <div className="flex items-center gap-4">
-                {disc.bild ? (
-                  <div className="h-12 w-12 rounded-full overflow-hidden bg-retro-card shrink-0">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={disc.bild} alt="" className="h-full w-full object-cover" />
+                <Link href={`/discs/${disc.id}`} className="flex items-center gap-4 min-w-0 flex-1">
+                  {disc.bild ? (
+                    <div className="h-12 w-12 rounded-full overflow-hidden bg-retro-card shrink-0">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={disc.bild} alt="" className="h-full w-full object-cover" />
+                    </div>
+                  ) : (
+                    <div className="h-12 w-12 rounded-full bg-retro-card flex items-center justify-center text-retro-muted shrink-0 text-xl">
+                      🥏
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-stone-100 truncate hover:text-retro-accent">{disc.name}</p>
+                    {(() => {
+                      const parts = [disc.speed, disc.glide, disc.turn, disc.fade].filter((n) => n != null);
+                      return parts.length > 0 ? (
+                        <p className="text-xs text-stone-500 mt-0.5">{parts.join(" · ")}</p>
+                      ) : null;
+                    })()}
                   </div>
-                ) : (
-                  <div className="h-12 w-12 rounded-full bg-retro-card flex items-center justify-center text-retro-muted shrink-0 text-xl">
-                    🥏
-                  </div>
-                )}
-                <div className="min-w-0 flex-1">
-                  <p className="font-medium text-stone-100 truncate">{disc.name}</p>
-                  {(() => {
-                    const parts = [disc.speed, disc.glide, disc.turn, disc.fade].filter((n) => n != null);
-                    return parts.length > 0 ? (
-                      <p className="text-xs text-stone-500 mt-0.5">{parts.join(" · ")}</p>
-                    ) : null;
-                  })()}
-                </div>
+                </Link>
                 {user && disc.created_by === user.id && (
                   <Link
                     href={`/discs/${disc.id}/edit`}

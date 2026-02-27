@@ -240,6 +240,50 @@ export type Database = {
         }
         Relationships: []
       }
+      disc_comments: {
+        Row: {
+          id: string
+          disc_id: string
+          user_id: string
+          body: string | null
+          media_type: "image" | "video" | null
+          media_url: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          disc_id: string
+          user_id: string
+          body?: string | null
+          media_type?: "image" | "video" | null
+          media_url?: string | null
+          created_at?: string
+        }
+        Update: {
+          disc_id?: string
+          user_id?: string
+          body?: string | null
+          media_type?: "image" | "video" | null
+          media_url?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "disc_comments_disc_id_fkey"
+            columns: ["disc_id"]
+            isOneToOne: false
+            referencedRelation: "discs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "disc_comments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       teams: {
         Row: {
           id: string
