@@ -150,42 +150,44 @@ export default function DashboardFeeds({
           <MiniTable
             headers={["Spelare", "Bana", "Score", "Datum"]}
             rows={
-              scores?.map((r) => {
-                const alias = r.latestScore?.profiles?.alias ?? "—";
-                const userId = r.latestScore?.user_id;
-                const aliasCell = userId ? (
-                  <Link
-                    key={r.courseId + userId}
-                    href={`/profile/${userId}`}
-                    className="text-retro-accent hover:underline"
-                  >
-                    {alias}
-                  </Link>
-                ) : (
-                  alias
-                );
-                const scoreVal =
-                  typeof r.latestScore?.score === "number"
-                    ? r.latestScore.score
+              scores
+                ?.filter((r) => r.latestScore != null)
+                .map((r) => {
+                  const alias = r.latestScore?.profiles?.alias ?? "—";
+                  const userId = r.latestScore?.user_id;
+                  const aliasCell = userId ? (
+                    <Link
+                      key={r.courseId + userId}
+                      href={`/profile/${userId}`}
+                      className="text-retro-accent hover:underline"
+                    >
+                      {alias}
+                    </Link>
+                  ) : (
+                    alias
+                  );
+                  const scoreVal =
+                    typeof r.latestScore?.score === "number"
+                      ? r.latestScore.score
+                      : "—";
+                  const date = r.latestScore?.date_played
+                    ? new Date(r.latestScore.date_played).toLocaleDateString(
+                        "sv-SE"
+                      )
                     : "—";
-                const date = r.latestScore?.date_played
-                  ? new Date(r.latestScore.date_played).toLocaleDateString(
-                      "sv-SE"
-                    )
-                  : "—";
-                return [
-                  aliasCell,
-                  <Link
-                    key={r.courseId}
-                    href={`/courses/${r.courseId}?from=dashboard`}
-                    className="text-retro-accent hover:underline"
-                  >
-                    {r.courseName}
-                  </Link>,
-                  scoreVal,
-                  date,
-                ];
-              }) ?? null
+                  return [
+                    aliasCell,
+                    <Link
+                      key={r.courseId}
+                      href={`/courses/${r.courseId}?from=dashboard`}
+                      className="text-retro-accent hover:underline"
+                    >
+                      {r.courseName}
+                    </Link>,
+                    scoreVal,
+                    date,
+                  ];
+                }) ?? null
             }
             loading={scoresLoading}
             emptyText="Inga resultat ännu."

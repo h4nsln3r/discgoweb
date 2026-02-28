@@ -151,15 +151,12 @@ export default function CoursePreviewPanel({ course, onClose, embedded, fromDash
                   </Link>
                 )}
               </h3>
-              {course.location && (
+              {(course.location || course.city) && (
                 <p className="mt-1 text-sm text-stone-400 flex items-center gap-1">
-                  <MapPinIcon className="h-4 w-4" />
-                  <span>{course.location}</span>
-                </p>
-              )}
-              {!compact && course.latitude && course.longitude && (
-                <p className="text-xs text-retro-muted mt-1">
-                  📍 {course.latitude}, {course.longitude}
+                  <MapPinIcon className="h-4 w-4 shrink-0" />
+                  <span>
+                    {[course.location, course.city].filter(Boolean).join(" · ")}
+                  </span>
                 </p>
               )}
             </div>

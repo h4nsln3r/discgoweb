@@ -94,11 +94,11 @@ export default async function CourseDetailPage({
           {fromDashboard ? "Tillbaka till dashboard" : fromCompetition ? "Tillbaka till tävlingen" : "Tillbaka till banor"}
         </BackLink>
         <Link
-          href={`/results/new?course_id=${course.id}`}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-retro-accent text-stone-100 text-sm font-medium hover:bg-retro-accent-hover transition"
+          href={`/courses/${course.id}/edit`}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-retro-border text-stone-200 text-sm font-medium hover:bg-retro-card transition"
         >
-          <PlusCircleIcon className="w-5 h-5 shrink-0" />
-          Lägg till resultat
+          <PencilSquareIcon className="w-5 h-5 shrink-0" />
+          Redigera bana
         </Link>
       </div>
       {allImages.length > 0 && <ImageGallery images={allImages} />}
@@ -217,11 +217,11 @@ export default async function CourseDetailPage({
           )}
           <p className="pt-2">
             <Link
-              href={`/courses/${course.id}/edit`}
-              className="inline-flex items-center gap-1.5 text-sm text-amber-400 hover:text-amber-300 transition"
+              href={`/results/new?course_id=${course.id}`}
+              className="inline-flex items-center gap-1.5 text-sm text-retro-accent hover:text-retro-accent-hover transition"
             >
-              <PencilSquareIcon className="w-4 h-4 shrink-0" aria-hidden />
-              Redigera bana
+              <PlusCircleIcon className="w-4 h-4 shrink-0" aria-hidden />
+              Lägg till resultat
             </Link>
           </p>
         </div>

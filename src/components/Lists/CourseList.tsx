@@ -17,6 +17,7 @@ export type Course = {
   id: string;
   name: string;
   location: string;
+  city?: string | null;
   main_image_url?: string;
   latitude?: number;
   longitude?: number;

@@ -85,7 +85,7 @@ export async function GET() {
     // Alla banor för kartan
     const { data: mapCourses, error: mapCoursesError } = await supabase
       .from("courses")
-      .select("id, name, location, latitude, longitude, main_image_url");
+      .select("id, name, location, city, latitude, longitude, main_image_url");
 
     if (mapCoursesError) {
       console.error("[dashboard-summary] mapCourses error", mapCoursesError);
