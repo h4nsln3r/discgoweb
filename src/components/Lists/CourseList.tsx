@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import PageLoading from "@/components/PageLoading";
+import { formatScorePar } from "@/lib/scoreDisplay";
 import { MagnifyingGlassIcon, PlusCircleIcon } from "@heroicons/react/24/outline";
 
 export type Top3Score = {
@@ -152,27 +153,36 @@ export default function CourseList({ refresh }: { refresh?: boolean }) {
 
             {course.top3 && course.top3.length > 0 && (
               <div className="px-5 pb-2">
-                <div className="rounded-xl bg-retro-card/60 border border-retro-border p-3">
-                  <h4 className="text-xs font-semibold text-retro-muted uppercase tracking-wider mb-2">
+                <div className="rounded-xl bg-retro-card/60 border border-retro-border overflow-hidden">
+                  <h4 className="text-xs font-semibold text-retro-muted uppercase tracking-wider px-3 pt-3 pb-2">
                     🏆 Topp 3
                   </h4>
-                  <ul className="space-y-1.5 text-sm text-stone-200">
-                    {course.top3.map((s, idx) => (
-                      <li key={s.id} className="flex justify-between items-center">
-                        <span className="flex items-center gap-2">
-                          <span className="text-retro-muted w-5">{idx + 1}.</span>
-                          {s.user_id ? (
-                            <Link href={`/profile/${s.user_id}`} className="text-retro-accent hover:underline" onClick={(e) => e.stopPropagation()}>
-                              {s.profiles?.alias ?? "Okänd"}
-                            </Link>
-                          ) : (
-                            (s.profiles?.alias ?? "Okänd")
-                          )}
-                        </span>
-                        <span className="font-medium text-stone-100">{s.score} kast</span>
-                      </li>
-                    ))}
-                  </ul>
+                  <table className="w-full text-sm text-stone-200">
+                    <thead>
+                      <tr className="border-t border-retro-border text-left text-xs font-medium text-stone-500 uppercase tracking-wider">
+                        <th className="px-3 py-1.5 w-8">#</th>
+                        <th className="px-3 py-1.5">Spelare</th>
+                        <th className="px-3 py-1.5 text-right">Score</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {course.top3.map((s, idx) => (
+                        <tr key={s.id} className="border-t border-retro-border/70">
+                          <td className="px-3 py-2 text-retro-muted">{idx + 1}</td>
+                          <td className="px-3 py-2">
+                            {s.user_id ? (
+                              <Link href={`/profile/${s.user_id}`} className="text-retro-accent hover:underline" onClick={(e) => e.stopPropagation()}>
+                                {s.profiles?.alias ?? "Okänd"}
+                              </Link>
+                            ) : (
+                              (s.profiles?.alias ?? "Okänd")
+                            )}
+                          </td>
+                          <td className="px-3 py-2 text-right font-medium text-stone-100">{formatScorePar(s.score)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             )}
