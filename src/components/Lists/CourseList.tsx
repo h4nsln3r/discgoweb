@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import AddScoreForm from "@/components/Forms/AddScoreForm";
 import Link from "next/link";
 import PageLoading from "@/components/PageLoading";
 import { MagnifyingGlassIcon, PlusCircleIcon } from "@heroicons/react/24/outline";
@@ -37,7 +36,6 @@ type SortValue = (typeof SORT_OPTIONS)[number]["value"];
 export default function CourseList({ refresh }: { refresh?: boolean }) {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
-  const [openForms, setOpenForms] = useState<Record<string, boolean>>({});
   const [sort, setSort] = useState<SortValue>("name_asc");
   const [search, setSearch] = useState("");
 
@@ -68,13 +66,6 @@ export default function CourseList({ refresh }: { refresh?: boolean }) {
     if (!q) return list;
     return list.filter((c) => (c.name ?? "").toLowerCase().includes(q));
   }, [courses, sort, search]);
-
-  const toggleForm = (courseId: string) => {
-    setOpenForms((prev) => ({
-      ...prev,
-      [courseId]: !prev[courseId],
-    }));
-  };
 
   if (loading) return <PageLoading variant="courses" />;
   if (!courses.length)
@@ -187,27 +178,15 @@ export default function CourseList({ refresh }: { refresh?: boolean }) {
             )}
 
             <div className="p-5 pt-0 flex justify-end">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  toggleForm(course.id);
-                }}
+              <Link
+                href={`/results/new?course_id=${course.id}`}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-retro-border text-stone-300 text-sm font-medium hover:bg-retro-card hover:text-stone-100 transition"
-                aria-label={openForms[course.id] ? "Stäng formulär" : "Lägg till resultat"}
+                aria-label="Lägg till resultat"
               >
                 <PlusCircleIcon className="w-5 h-5 shrink-0" aria-hidden />
-                {openForms[course.id] ? "Stäng" : "Lägg till resultat"}
-              </button>
+                Lägg till resultat
+              </Link>
             </div>
-            {openForms[course.id] && (
-              <div className="px-5 pb-5 pt-0 border-t border-retro-border mt-2 pt-4">
-                <AddScoreForm
-                  courseId={course.id}
-                  onClose={() => toggleForm(course.id)}
-                />
-              </div>
-            )}
           </article>
         ))}
       </div>

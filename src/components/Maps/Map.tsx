@@ -67,7 +67,7 @@ export default function Map({ userName, initialCourses, onSelectionChange, fromD
     [courses, selectedId]
   );
 
-  const mapHeight = "500px";
+  const mapHeight = isMobile ? "320px" : "500px";
 
   return (
     <>
