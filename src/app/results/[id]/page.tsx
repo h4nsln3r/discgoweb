@@ -18,6 +18,7 @@ import {
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import type { Database } from "@/types/supabase";
 import { getHoleThrowBg, getHoleThrowStyle } from "@/lib/holeColors";
+import { formatScorePar } from "@/lib/scoreDisplay";
 
 /** Normalize anything -> string[] (handles null, string, JSON string, object) */
 function normalizeFriends(input: unknown): string[] {
@@ -283,7 +284,7 @@ export default function ScoreDetailPage() {
             Poäng
           </div>
           <div className="text-lg font-semibold text-stone-100">
-            {item.score !== null && item.score !== undefined ? item.score : "—"}
+            {formatScorePar(item.score)}
           </div>
         </div>
 

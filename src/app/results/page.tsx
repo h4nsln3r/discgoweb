@@ -27,6 +27,7 @@ import {
 } from "@heroicons/react/24/outline";
 import PageLoading from "@/components/PageLoading";
 import { getHoleThrowBg, getHoleThrowStyle } from "@/lib/holeColors";
+import { formatScorePar } from "@/lib/scoreDisplay";
 
 interface Score {
   id: string;
@@ -198,7 +199,7 @@ export default function ResultsPage() {
     },
     {
       accessorKey: "score",
-      header: "Score",
+      header: "Poäng",
       cell: (info) => {
         const row = info.row.original;
         return (
@@ -207,7 +208,7 @@ export default function ResultsPage() {
             className="font-semibold text-retro-accent hover:underline"
             title="Visa resultat"
           >
-            {row.score}
+            {formatScorePar(row.score)}
           </Link>
         );
       },
@@ -484,7 +485,7 @@ export default function ResultsPage() {
                       {score.throws != null ? (
                         <span>{score.throws} kast</span>
                       ) : (
-                        <span>Score {score.score}</span>
+                        <span>Poäng {formatScorePar(score.score)}</span>
                       )}
                     </span>
                   </div>
@@ -563,9 +564,9 @@ export default function ResultsPage() {
                       </dd>
                       <dt className="flex items-center gap-2 text-stone-500">
                         <TrophyIcon className="h-4 w-4" />
-                        Score
+                        Poäng
                       </dt>
-                      <dd className="text-stone-200">{score.score}</dd>
+                      <dd className="text-stone-200">{formatScorePar(score.score)}</dd>
                       {score.throws != null && (
                         <>
                           <dt className="flex items-center gap-2 text-stone-500">

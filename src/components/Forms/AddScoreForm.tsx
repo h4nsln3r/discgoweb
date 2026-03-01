@@ -87,8 +87,13 @@ export default function AddScoreForm({
     if (holeThrows.length !== courseHoles.length) return null;
     const totalPar = courseHoles.reduce((s, h) => s + h.par, 0);
     const relativeToPar = totalThrows - totalPar; // + = över par, - = under par
-    return { throws: totalThrows, score: totalThrows, totalPar, relativeToPar };
+    return { throws: totalThrows, score: relativeToPar, totalPar, relativeToPar };
   }, [usePerHole, holeThrows, courseHoles]);
+
+  const totalParFromCourse = useMemo(
+    () => courseHoles.reduce((s, h) => s + h.par, 0),
+    [courseHoles]
+  );
 
   // Hämta current user
   useEffect(() => {
@@ -244,14 +249,12 @@ export default function AddScoreForm({
     if (usePerHole) {
       if (totalFromHoles === null) invalid.add("holes");
     } else {
-      const scoreNum = Number(score);
       const throwsNum = Number(throws);
       if (throws.trim() === "" || Number.isNaN(throwsNum)) invalid.add("throws");
-      if (score.trim() === "" || Number.isNaN(scoreNum)) invalid.add("score");
     }
     if (invalid.size > 0) {
       setInvalidFields(invalid);
-      const order: string[] = ["course", "date", usePerHole ? "holes" : "throws", usePerHole ? "" : "score"].filter(Boolean);
+      const order: string[] = ["course", "date", usePerHole ? "holes" : "throws"].filter(Boolean);
       const first = order.find((id) => invalid.has(id));
       const refMap = { course: courseRef, date: dateRef, throws: throwsRef, score: scoreRef, holes: holesRef } as const;
       const ref = first ? refMap[first as keyof typeof refMap]?.current : null;
@@ -265,7 +268,7 @@ export default function AddScoreForm({
             ? "Fyll i datum."
             : usePerHole
               ? "Fyll i slag för alla hål."
-              : "Fyll i antal kast och poäng.",
+              : "Fyll i antal kast.",
         "error"
       );
       return;
@@ -283,7 +286,9 @@ export default function AddScoreForm({
       hole_scores?: { hole_number: number; throws: number }[];
     } = {
       course_id: selectedCourse,
-      score: usePerHole && totalFromHoles ? totalFromHoles.score : Number(score),
+      score: usePerHole && totalFromHoles
+        ? totalFromHoles.relativeToPar
+        : Number(throws) - totalParFromCourse,
       throws: usePerHole && totalFromHoles ? totalFromHoles.throws : Number(throws),
       date_played: datePlayed,
       with_friends: combinedFriendsForSubmit,
@@ -448,7 +453,7 @@ export default function AddScoreForm({
       ) : (
         <>
           <p className="text-sm text-stone-400 mb-2">
-            Båda fälten behövs för att skicka in resultatet.
+            Fyll i antal kast. Poängen räknas automatiskt mot banans par (t.ex. +1 = en över par).
           </p>
           <div ref={throwsRef}>
             <label className="block font-medium text-stone-200 mb-1">Antal kast</label>
@@ -465,20 +470,19 @@ export default function AddScoreForm({
               placeholder="t.ex. 54"
             />
           </div>
-          <div ref={scoreRef}>
-            <label className="block font-medium text-stone-200 mb-1">Poäng</label>
-            <input
-              type="number"
-              className={`w-full rounded-lg border bg-retro-card px-3 py-2 text-stone-100 focus:outline-none focus:ring-2 ${invalidFields.has("score") ? "border-red-500 ring-2 ring-red-500/50 focus:ring-red-500" : "border-retro-border focus:ring-retro-accent"}`}
-              value={score}
-              onChange={(e) => {
-                setScore(e.target.value);
-                clearInvalid("score");
-              }}
-              required={!usePerHole}
-              placeholder="t.ex. 54"
-            />
-          </div>
+          {selectedCourse && (
+            <div ref={scoreRef} className="text-sm text-stone-300">
+              <span className="font-medium text-stone-200">Poäng (mot par): </span>
+              {throws.trim() !== "" && !Number.isNaN(Number(throws))
+                ? (() => {
+                    const rel = Number(throws) - totalParFromCourse;
+                    if (rel === 0) return "Par";
+                    if (rel > 0) return `+${rel} (över par)`;
+                    return `${rel} (under par)`;
+                  })()
+                : "—"}
+            </div>
+          )}
         </>
       )}
 

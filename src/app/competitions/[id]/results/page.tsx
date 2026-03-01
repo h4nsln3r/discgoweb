@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import { Database } from "@/types/supabase";
 import Link from "next/link";
 import BackLink from "@/components/Buttons/BackLink";
+import { formatScorePar } from "@/lib/scoreDisplay";
 
 export default async function CompetitionResultsPage({
   params,
@@ -82,7 +83,7 @@ export default async function CompetitionResultsPage({
                         (score.profiles?.alias ?? "Okänd spelare")
                       )}
                     </td>
-                    <td className="px-2 py-1 font-semibold">{score.score}</td>
+                    <td className="px-2 py-1 font-semibold">{formatScorePar(score.score)}</td>
                     <td className="px-2 py-1">
                       {new Date(score.created_at).toLocaleDateString("sv-SE")}
                     </td>
