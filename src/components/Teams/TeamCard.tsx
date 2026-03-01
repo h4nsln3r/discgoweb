@@ -21,13 +21,13 @@ type Props = {
 export default function TeamCard({ team, asLink = false }: Props) {
   const content = (
     <>
-      <div className="aspect-video md:aspect-[3/1] max-h-48 md:max-h-52 bg-retro-card relative overflow-visible w-full">
+      <div className="aspect-video md:aspect-[3/1] max-h-48 md:max-h-52 bg-retro-card relative overflow-hidden w-full">
         {(team.bild || team.logga) ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={team.bild || team.logga || ""}
             alt={team.name}
-            className="absolute inset-0 w-full h-full object-cover object-center"
+            className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-300 ease-out group-hover:scale-105"
             style={{ width: "100%", minWidth: "100%" }}
           />
         ) : (
@@ -49,7 +49,7 @@ export default function TeamCard({ team, asLink = false }: Props) {
       <div className="p-4 pt-10">
         <div className="flex flex-wrap items-baseline justify-between gap-3">
           {asLink ? (
-            <span className="text-4xl sm:text-5xl font-bebas tracking-wide text-stone-100 text-retro-accent uppercase">
+            <span className="inline-block text-4xl sm:text-5xl font-bebas tracking-wide text-stone-100 text-retro-accent uppercase transition-all duration-200 group-hover:scale-105 group-hover:text-amber-300">
               {team.name}
             </span>
           ) : (
@@ -79,7 +79,7 @@ export default function TeamCard({ team, asLink = false }: Props) {
 
   if (asLink) {
     return (
-      <Link href={`/teams/${team.id}`} className={`${cardClassName} hover:bg-retro-card/50 transition`}>
+      <Link href={`/teams/${team.id}`} className={`group ${cardClassName} hover:bg-retro-card/50 transition`}>
         {content}
       </Link>
     );
