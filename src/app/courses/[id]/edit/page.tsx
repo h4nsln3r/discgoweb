@@ -43,6 +43,8 @@ export default function EditCoursePage() {
 
   const [loading, setLoading] = useState(true);
   const [courseData, setCourseData] = useState<CourseDataFromDb | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -135,6 +137,30 @@ export default function EditCoursePage() {
     router.refresh();
   };
 
+  const handleDeleteClick = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!id) return;
+    setDeleting(true);
+    setShowDeleteConfirm(false);
+    const cid = id as string;
+    await supabase.from("course_holes").delete().eq("course_id", cid);
+    await supabase.from("competition_courses").delete().eq("course_id", cid);
+    await supabase.from("scores").delete().eq("course_id", cid);
+    const { error } = await supabase.from("courses").delete().eq("id", cid);
+    setDeleting(false);
+    if (error) {
+      console.error(error);
+      showToast("Kunde inte ta bort banan.", "error");
+      return;
+    }
+    showToast("Banan har tagits bort.", "success");
+    router.push("/courses");
+    router.refresh();
+  };
+
   if (loading) return <div className="max-w-2xl mx-auto p-6 text-stone-400">Laddar...</div>;
   if (!courseData) return <div className="max-w-2xl mx-auto p-6 text-amber-400">Ingen kurs hittad</div>;
 
@@ -158,6 +184,57 @@ export default function EditCoursePage() {
         onSubmit={handleUpdate}
         submitText="Spara ändringar"
       />
+
+      <div className="pt-8 mt-8 border-t border-retro-border">
+        <p className="text-sm text-stone-400 mb-2">Ta bort banan permanent.</p>
+        <button
+          type="button"
+          onClick={handleDeleteClick}
+          disabled={deleting}
+          className="px-4 py-2 rounded-lg border border-red-500/50 text-red-400 hover:bg-red-500/10 transition disabled:opacity-50"
+        >
+          {deleting ? "Tar bort…" : "Ta bort banan"}
+        </button>
+      </div>
+
+      {showDeleteConfirm && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-confirm-title"
+          onClick={() => setShowDeleteConfirm(false)}
+        >
+          <div
+            className="bg-retro-surface border border-retro-border rounded-xl shadow-xl max-w-md w-full p-6 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 id="delete-confirm-title" className="text-lg font-semibold text-stone-100">
+              Vill du verkligen ta bort banan?
+            </h2>
+            <p className="text-stone-400 text-sm">
+              Alla hålinfo, kopplingar till tävlingar och resultat kopplade till banan påverkas. Detta kan inte ångras.
+            </p>
+            <div className="flex gap-3 justify-end pt-2">
+              <button
+                type="button"
+                onClick={() => setShowDeleteConfirm(false)}
+                className="px-4 py-2 rounded-lg border border-retro-border bg-retro-card text-stone-200 hover:bg-retro-surface transition"
+              >
+                Nej
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteConfirm}
+                disabled={deleting}
+                className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition disabled:opacity-50"
+              >
+                Ja, ta bort banan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

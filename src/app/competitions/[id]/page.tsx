@@ -2,6 +2,7 @@ import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { Database } from "@/types/supabase";
+import { getCurrentUserWithAdmin } from "@/lib/auth-server";
 import Link from "next/link";
 import BackLink from "@/components/Buttons/BackLink";
 import CompetitionCoursesMap from "@/components/Maps/CompetitionCoursesMap";
@@ -59,9 +60,9 @@ export default async function CompetitionDetailPage({ params }: PageProps) {
     notFound();
   }
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const { user, isAdmin } = await getCurrentUserWithAdmin(supabase);
   const isCreator = Boolean(
-    competition.created_by && user?.id && competition.created_by === user.id
+    competition.created_by && user?.id && (competition.created_by === user.id || isAdmin)
   );
 
   const { data: participantsData } = await supabase

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import type { Database } from "@/types/supabase";
+import { getCurrentUserWithAdmin } from "@/lib/auth-server";
 
 export async function PUT(req: Request) {
   const cookieStore = await cookies();
@@ -9,21 +10,15 @@ export async function PUT(req: Request) {
     cookies: () => cookieStore,
   });
 
-  // Hämta inloggad användare
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-
-  if (userError || !user) {
+  const { user, isAdmin } = await getCurrentUserWithAdmin(supabase);
+  if (!user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  // Parse body
   const body = await req.json();
   const { id, course_id, score, throws, date_played, with_friends, hole_scores } = body;
 
-  const { error } = await supabase
+  const updateQuery = supabase
     .from("scores")
     .update({
       course_id,
@@ -32,8 +27,8 @@ export async function PUT(req: Request) {
       with_friends,
       throws: throws ?? null,
     })
-    .eq("id", id)
-    .eq("user_id", user.id);
+    .eq("id", id);
+  const { error } = await (isAdmin ? updateQuery : updateQuery.eq("user_id", user.id));
 
   if (error) {
     console.error("[UPDATE-SCORE ERROR]", error);

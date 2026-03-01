@@ -34,18 +34,21 @@ export default function EditDiscPage() {
     if (!id) return;
 
     const fetchDiscAndCheck = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const [
+        { data: { user } },
+        currentUserRes,
+        { data, error },
+      ] = await Promise.all([
+        supabase.auth.getUser(),
+        fetch("/api/get-current-user").then((r) => (r.ok ? r.json() : null)),
+        supabase.from("discs").select("id, name, bild, speed, glide, turn, fade, created_by").eq("id", id).single(),
+      ]);
+
       if (!user) {
         router.push("/auth");
         setLoading(false);
         return;
       }
-
-      const { data, error } = await supabase
-        .from("discs")
-        .select("id, name, bild, speed, glide, turn, fade, created_by")
-        .eq("id", id)
-        .single();
 
       if (error || !data) {
         showToast("Kunde inte hämta discen.", "error");
@@ -53,8 +56,9 @@ export default function EditDiscPage() {
         return;
       }
 
+      const isAdmin = (currentUserRes as { is_admin?: boolean } | null)?.is_admin === true;
       setDisc(data as DiscRow);
-      setCanEdit(data.created_by === user.id);
+      setCanEdit(data.created_by === user.id || isAdmin);
       setLoading(false);
     };
 

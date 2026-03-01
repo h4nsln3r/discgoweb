@@ -36,12 +36,15 @@ export default function EditCompetitionPage() {
     if (!id) return;
 
     const fetch = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      const { data: competition, error: compError } = await supabase
-        .from("competitions")
-        .select("id, title, description, start_date, end_date, image_url, created_by")
-        .eq("id", id)
-        .single();
+      const [
+        { data: { user } },
+        currentUserRes,
+        { data: competition, error: compError },
+      ] = await Promise.all([
+        supabase.auth.getUser(),
+        fetch("/api/get-current-user").then((r) => (r.ok ? r.json() : null)),
+        supabase.from("competitions").select("id, title, description, start_date, end_date, image_url, created_by").eq("id", id).single(),
+      ]);
 
       if (compError || !competition) {
         console.error("Fetch competition error:", compError);
@@ -50,10 +53,9 @@ export default function EditCompetitionPage() {
         return;
       }
 
+      const isAdmin = (currentUserRes as { is_admin?: boolean } | null)?.is_admin === true;
       const creatorId = (competition as { created_by?: string | null }).created_by;
-      setIsCreator(
-        Boolean(creatorId && user?.id && creatorId === user.id)
-      );
+      setIsCreator(Boolean(creatorId && user?.id && (creatorId === user.id || isAdmin)));
 
       setTitle(competition.title ?? "");
       setDescription(competition.description ?? "");

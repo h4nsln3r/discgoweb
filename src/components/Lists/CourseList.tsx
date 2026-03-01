@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import AddScoreForm from "@/components/Forms/AddScoreForm";
 import Link from "next/link";
 import PageLoading from "@/components/PageLoading";
+import { MagnifyingGlassIcon, PlusCircleIcon } from "@heroicons/react/24/outline";
 
 export type Top3Score = {
   id: string;
@@ -38,6 +39,7 @@ export default function CourseList({ refresh }: { refresh?: boolean }) {
   const [loading, setLoading] = useState(true);
   const [openForms, setOpenForms] = useState<Record<string, boolean>>({});
   const [sort, setSort] = useState<SortValue>("name_asc");
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -54,14 +56,18 @@ export default function CourseList({ refresh }: { refresh?: boolean }) {
   const sortedCourses = useMemo(() => {
     const list = [...courses];
     if (sort === "name_asc") {
-      return list.sort((a, b) =>
+      list.sort((a, b) =>
         (a.name ?? "").localeCompare(b.name ?? "", "sv")
       );
+    } else {
+      list.sort((a, b) =>
+        (b.name ?? "").localeCompare(a.name ?? "", "sv")
+      );
     }
-    return list.sort((a, b) =>
-      (b.name ?? "").localeCompare(a.name ?? "", "sv")
-    );
-  }, [courses, sort]);
+    const q = search.trim().toLowerCase();
+    if (!q) return list;
+    return list.filter((c) => (c.name ?? "").toLowerCase().includes(q));
+  }, [courses, sort, search]);
 
   const toggleForm = (courseId: string) => {
     setOpenForms((prev) => ({
@@ -102,37 +108,60 @@ export default function CourseList({ refresh }: { refresh?: boolean }) {
             </option>
           ))}
         </select>
+        <div className="flex items-center gap-2 rounded-lg border border-retro-border bg-retro-surface text-stone-300 focus-within:ring-2 focus-within:ring-retro-accent focus-within:border-transparent min-w-[180px]">
+          <MagnifyingGlassIcon className="w-4 h-4 shrink-0 ml-2.5 text-retro-muted" aria-hidden />
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Sök på banans namn..."
+            className="flex-1 min-w-0 py-1.5 pr-3 bg-transparent text-stone-100 text-sm placeholder:text-stone-500 focus:outline-none"
+            aria-label="Sök banor efter namn"
+          />
+        </div>
       </div>
 
+      {sortedCourses.length === 0 && search.trim() ? (
+        <p className="text-stone-400 py-6">Inga banor matchar sökningen.</p>
+      ) : (
       <div className="grid gap-6 md:grid-cols-2">
         {sortedCourses.map((course) => (
           <article
             key={course.id}
             className="rounded-2xl border border-retro-border bg-retro-surface shadow-md overflow-hidden hover:border-retro-muted/50 hover:shadow-lg transition-all flex flex-col"
           >
-            <div className="relative aspect-[16/10] bg-retro-card shrink-0">
-              {course.main_image_url ? (
-                // eslint-disable-next-line @next/next/no-img-element -- external image URL
-                <img
-                  src={course.main_image_url}
-                  alt={course.name}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-retro-muted text-sm">
-                  Ingen bild
+            <Link
+              href={`/courses/${course.id}`}
+              className="block flex flex-col flex-1 group"
+            >
+              <div className="relative aspect-[16/10] bg-retro-card shrink-0">
+                {course.main_image_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- external image URL
+                  <img
+                    src={course.main_image_url}
+                    alt={course.name}
+                    className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-200"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-retro-muted text-sm">
+                    Ingen bild
+                  </div>
+                )}
+                <div className="absolute bottom-2 left-2 rounded-lg bg-black/60 px-2 py-1 text-xs font-medium text-stone-200">
+                  {course.hole_count ? `${course.hole_count} hål` : "—"}
                 </div>
-              )}
-              <div className="absolute bottom-2 left-2 rounded-lg bg-black/60 px-2 py-1 text-xs font-medium text-stone-200">
-                {course.hole_count ? `${course.hole_count} hål` : "—"}
               </div>
-            </div>
-            <div className="p-5 flex flex-col flex-1">
-              <h3 className="text-xl font-semibold text-stone-100">{course.name}</h3>
-              <p className="text-sm text-stone-400 mt-0.5">{course.location || "—"}</p>
+              <div className="p-5 flex flex-col flex-1">
+                <h3 className="text-3xl sm:text-4xl font-bebas tracking-wide text-stone-100 text-retro-accent uppercase group-hover:text-amber-300 transition-colors">
+                  {course.name}
+                </h3>
+                <p className="text-sm text-stone-400 mt-0.5">{course.location || "—"}</p>
+              </div>
+            </Link>
 
-              {course.top3 && course.top3.length > 0 && (
-                <div className="mt-4 rounded-xl bg-retro-card/60 border border-retro-border p-3">
+            {course.top3 && course.top3.length > 0 && (
+              <div className="px-5 pb-2">
+                <div className="rounded-xl bg-retro-card/60 border border-retro-border p-3">
                   <h4 className="text-xs font-semibold text-retro-muted uppercase tracking-wider mb-2">
                     🏆 Topp 3
                   </h4>
@@ -142,7 +171,7 @@ export default function CourseList({ refresh }: { refresh?: boolean }) {
                         <span className="flex items-center gap-2">
                           <span className="text-retro-muted w-5">{idx + 1}.</span>
                           {s.user_id ? (
-                            <Link href={`/profile/${s.user_id}`} className="text-retro-accent hover:underline">
+                            <Link href={`/profile/${s.user_id}`} className="text-retro-accent hover:underline" onClick={(e) => e.stopPropagation()}>
                               {s.profiles?.alias ?? "Okänd"}
                             </Link>
                           ) : (
@@ -154,35 +183,35 @@ export default function CourseList({ refresh }: { refresh?: boolean }) {
                     ))}
                   </ul>
                 </div>
-              )}
-
-              <div className="mt-4 flex flex-wrap gap-2">
-                <Link
-                  href={`/courses/${course.id}`}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-retro-accent text-stone-100 text-sm font-medium hover:bg-retro-accent-hover transition"
-                >
-                  Visa detaljer
-                </Link>
-                <button
-                  type="button"
-                  onClick={() => toggleForm(course.id)}
-                  className="inline-flex items-center px-4 py-2 rounded-xl border border-retro-border text-stone-300 text-sm font-medium hover:bg-retro-card hover:text-stone-100 transition"
-                >
-                  {openForms[course.id] ? "Stäng" : "Lägg till resultat"}
-                </button>
               </div>
-              {openForms[course.id] && (
-                <div className="mt-4 pt-4 border-t border-retro-border">
-                  <AddScoreForm
-                    courseId={course.id}
-                    onClose={() => toggleForm(course.id)}
-                  />
-                </div>
-              )}
+            )}
+
+            <div className="p-5 pt-0 flex justify-end">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  toggleForm(course.id);
+                }}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-retro-border text-stone-300 text-sm font-medium hover:bg-retro-card hover:text-stone-100 transition"
+                aria-label={openForms[course.id] ? "Stäng formulär" : "Lägg till resultat"}
+              >
+                <PlusCircleIcon className="w-5 h-5 shrink-0" aria-hidden />
+                {openForms[course.id] ? "Stäng" : "Lägg till resultat"}
+              </button>
             </div>
+            {openForms[course.id] && (
+              <div className="px-5 pb-5 pt-0 border-t border-retro-border mt-2 pt-4">
+                <AddScoreForm
+                  courseId={course.id}
+                  onClose={() => toggleForm(course.id)}
+                />
+              </div>
+            )}
           </article>
         ))}
       </div>
+      )}
     </div>
   );
 }

@@ -76,6 +76,7 @@ export default function ScoreDetailPage() {
   const [holes, setHoles] = useState<{ hole_number: number; throws: number; par?: number }[] | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUserAlias, setCurrentUserAlias] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [confirmed, setConfirmed] = useState<{ user_id: string; alias: string }[]>([]);
   const [confirming, setConfirming] = useState(false);
 
@@ -83,6 +84,13 @@ export default function ScoreDetailPage() {
     const loadUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setCurrentUserId(user?.id ?? null);
+      const res = await fetch("/api/get-current-user");
+      if (res.ok) {
+        const data = await res.json();
+        setIsAdmin((data as { is_admin?: boolean }).is_admin === true);
+      } else {
+        setIsAdmin(false);
+      }
     };
     loadUser();
   }, [supabase]);
@@ -384,7 +392,7 @@ export default function ScoreDetailPage() {
         )}
       </div>
 
-      {currentUserId != null && item.user_id === currentUserId && (
+      {currentUserId != null && (item.user_id === currentUserId || isAdmin) && (
         <div className="pt-2">
           <Link
             href={`/results/${item.id}/edit`}

@@ -56,6 +56,7 @@ export default function ResultsPage() {
   >({});
   const [onlyCompetitions, setOnlyCompetitions] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const fetchHolesForScore = (scoreId: string, courseId?: string) => {
     if (holesByScoreId[scoreId] !== undefined) return;
@@ -88,7 +89,10 @@ export default function ResultsPage() {
       try {
         const res = await fetch("/api/get-current-user");
         const data = await res.json();
-        if (!data.error && data.id) setCurrentUserId(data.id);
+        if (!data.error && data.id) {
+          setCurrentUserId(data.id);
+          setIsAdmin((data as { is_admin?: boolean }).is_admin === true);
+        }
       } catch {
         // not logged in or error
       }
@@ -637,7 +641,7 @@ export default function ResultsPage() {
                         Öppna resultat
                         <ArrowRightIcon className="h-4 w-4" />
                       </Link>
-                      {currentUserId != null && score.user_id === currentUserId && (
+                      {currentUserId != null && (score.user_id === currentUserId || isAdmin) && (
                         <Link
                           href={`/results/${score.id}/edit`}
                           onClick={(e) => e.stopPropagation()}

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
+import { getCurrentUserWithAdmin } from "@/lib/auth-server";
 import BackLink from "@/components/Buttons/BackLink";
 import { PencilSquareIcon } from "@heroicons/react/24/outline";
 
@@ -16,9 +17,10 @@ type DiscRow = {
 
 export default async function DiscsPage() {
   const supabase = await createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { user, isAdmin } = await getCurrentUserWithAdmin(supabase);
   const { data: discsData } = await supabase.from("discs").select("id, name, bild, speed, glide, turn, fade, created_by").order("name");
   const discs = (discsData ?? []) as DiscRow[];
+  const canEditDisc = (createdBy: string | null) => user && (createdBy === user.id || isAdmin);
 
   const creatorIds = [...new Set(discs.map((d) => d.created_by).filter(Boolean))] as string[];
   const creatorMap: Record<string, { alias: string | null }> = {};
@@ -94,7 +96,7 @@ export default async function DiscsPage() {
                       ) : null;
                     })()}
                   </Link>
-                  {user && disc.created_by === user.id && (
+                  {canEditDisc(disc.created_by) && (
                     <Link
                       href={`/discs/${disc.id}/edit`}
                       className="p-2 rounded-xl text-amber-500/90 hover:bg-amber-500/10 hover:text-amber-400 transition shrink-0 ml-1"

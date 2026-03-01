@@ -31,6 +31,7 @@ export default function EditScorePage() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [userChecked, setUserChecked] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -66,48 +67,34 @@ export default function EditScorePage() {
 
   // 2) Handlers
   const handleSuccess = () => {
-    router.back();
+    router.push("/results");
+    router.refresh();
   };
 
   const handleClose = () => {
-    router.back();
+    router.push("/results");
   };
 
-  const handleDelete = async () => {
-    console.log("[DELETE] clicked"); // debug 1
+  const handleDeleteClick = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDeleteConfirm = async () => {
     if (!id) {
-      console.warn("[DELETE] no id");
       showToast("Saknar id för resultatet.", "error");
       return;
     }
-
-    const ok = window.confirm(
-      "Är du säker på att du vill ta bort detta resultat?"
-    );
-    if (!ok) {
-      console.log("[DELETE] cancelled confirm"); // debug 2
-      return;
-    }
-
+    setDeleting(true);
+    setShowDeleteConfirm(false);
     try {
-      setDeleting(true);
-      console.log("[DELETE] calling /api/delete-result", id); // debug 3
-
-      // Rekommenderat: DELETE med query param
       const res = await fetch(`/api/delete-result?id=${id}`, {
         method: "DELETE",
       });
-
-      console.log("[DELETE] response status", res.status); // debug 4
-
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        console.error("[DELETE] server error", j);
         showToast(j?.error || "Kunde inte ta bort resultatet.", "error");
         return;
       }
-
-      // succé
       showToast("Resultatet har tagits bort.", "success");
       router.push("/results");
     } catch (e) {
@@ -203,7 +190,7 @@ export default function EditScorePage() {
       <div className="pt-4 border-t border-retro-border">
         <button
           type="button"
-          onClick={handleDelete}
+          onClick={handleDeleteClick}
           disabled={deleting}
           className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-red-500/50 text-red-400 hover:bg-red-500/15 hover:border-red-500/70 disabled:opacity-50 disabled:cursor-not-allowed transition focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:ring-offset-2 focus:ring-offset-retro-bg"
           title="Ta bort resultat"
@@ -212,6 +199,45 @@ export default function EditScorePage() {
           {deleting ? "Tar bort..." : "Ta bort resultat"}
         </button>
       </div>
+
+      {showDeleteConfirm && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-result-confirm-title"
+          onClick={() => setShowDeleteConfirm(false)}
+        >
+          <div
+            className="bg-retro-surface border border-retro-border rounded-xl shadow-xl max-w-md w-full p-6 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 id="delete-result-confirm-title" className="text-lg font-semibold text-stone-100">
+              Vill du verkligen ta bort detta resultat?
+            </h2>
+            <p className="text-stone-400 text-sm">
+              Detta kan inte ångras.
+            </p>
+            <div className="flex gap-3 justify-end pt-2">
+              <button
+                type="button"
+                onClick={() => setShowDeleteConfirm(false)}
+                className="px-4 py-2 rounded-lg border border-retro-border bg-retro-card text-stone-200 hover:bg-retro-surface transition"
+              >
+                Nej
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteConfirm}
+                disabled={deleting}
+                className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition disabled:opacity-50"
+              >
+                Ja, ta bort resultat
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

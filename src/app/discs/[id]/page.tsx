@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
+import { getCurrentUserWithAdmin } from "@/lib/auth-server";
 import BackButton from "@/components/Buttons/BackButton";
 import DiscCommentForm from "@/components/Disc/DiscCommentForm";
 import DiscCommentList from "@/components/Disc/DiscCommentList";
@@ -24,7 +25,7 @@ export default async function DiscPage({
 }) {
   const { id } = await params;
   const supabase = await createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { user, isAdmin } = await getCurrentUserWithAdmin(supabase);
 
   const { data: disc, error } = await supabase
     .from("discs")
@@ -35,6 +36,7 @@ export default async function DiscPage({
   if (error || !disc) notFound();
 
   const discRow = disc as DiscRow;
+  const canEdit = user && (discRow.created_by === user.id || isAdmin);
   let creatorAlias: string | null = null;
   if (discRow.created_by) {
     const { data: profile } = await supabase
@@ -83,7 +85,7 @@ export default async function DiscPage({
               <h1 className="text-4xl sm:text-5xl font-bebas tracking-wide text-stone-100 text-retro-accent uppercase truncate">
                 {discRow.name}
               </h1>
-              {user && discRow.created_by === user.id && (
+              {canEdit && (
                 <Link
                   href={`/discs/${id}/edit`}
                   className="px-3 py-1.5 rounded-lg text-amber-500 border border-amber-500/50 hover:bg-amber-500/10 text-sm shrink-0"

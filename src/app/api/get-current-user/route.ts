@@ -18,10 +18,10 @@ export async function GET() {
     return NextResponse.json({ error: "No user found" }, { status: 401 });
   }
 
-  // Hämta alias från profiles-tabellen
+  // Hämta alias och is_admin från profiles
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("id, alias")
+    .select("id, alias, is_admin")
     .eq("id", user.id)
     .single();
 
@@ -29,5 +29,6 @@ export async function GET() {
     return NextResponse.json({ error: "Profile not found" }, { status: 404 });
   }
 
-  return NextResponse.json(profile);
+  const p = profile as { id: string; alias: string; is_admin?: boolean };
+  return NextResponse.json({ id: p.id, alias: p.alias, is_admin: p.is_admin === true });
 }

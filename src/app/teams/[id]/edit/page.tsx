@@ -38,20 +38,20 @@ export default function EditTeamPage() {
         setLoading(false);
         return;
       }
-      const { data, error } = await supabase
-        .from("teams")
-        .select("id, name, ort, logga, bild, about")
-        .eq("id", id)
-        .single();
+      const [currentUserRes, { data, error }] = await Promise.all([
+        fetch("/api/get-current-user").then((r) => (r.ok ? r.json() : null)),
+        supabase.from("teams").select("id, name, ort, logga, bild, about").eq("id", id).single(),
+      ]);
 
       if (error || !data) {
         showToast("Kunde inte hämta laget.", "error");
         setLoading(false);
         return;
       }
+      const isAdmin = (currentUserRes as { is_admin?: boolean } | null)?.is_admin === true;
       setTeam(data as TeamRow);
       const role = await getMyRoleInTeam(supabase, id, user.id);
-      setCanEdit(canEditTeam(role));
+      setCanEdit(canEditTeam(role) || isAdmin);
       setLoading(false);
     };
 

@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import BackLink from "@/components/Buttons/BackLink";
 import AddScoreForm from "@/components/Forms/AddScoreForm";
 
 type CompetitionData = { id: string; title: string; courses: { id: string; name: string }[] } | null;
 
 export default function AddResultPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const courseIdFromUrl = searchParams.get("course_id");
   const competitionIdFromUrl = searchParams.get("competition_id");
@@ -91,8 +92,11 @@ export default function AddResultPage() {
           competitionTitle={competitionData?.title ?? null}
           competitionCourses={competitionData?.courses ?? null}
           preloadedCourses={coursesForForm ?? undefined}
-          onClose={() => {}}
-          onSuccess={() => {}}
+          onClose={() => router.push("/results")}
+          onSuccess={() => {
+            router.push("/results");
+            router.refresh();
+          }}
         />
       )}
     </main>

@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useMemo, useRef, useEffect } from "react";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { Database } from "@/types/supabase";
+import { uploadCourseImage } from "@/lib/course-uploads";
 import { CITY_COUNTRY_PAIRS, CITY_SUGGESTIONS, COUNTRY_SUGGESTIONS } from "@/data/location-suggestions";
 import dynamic from "next/dynamic";
 
@@ -74,7 +77,11 @@ export default function CourseForm({
   const [country, setCountry] = useState(initialCountry);
   const [imageUrls, setImageUrls] = useState<string[]>(initialImageUrls);
   const [mainImageUrl, setMainImageUrl] = useState(initialMainImageUrl);
+  const [newUrlInput, setNewUrlInput] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
+  const supabase = createClientComponentClient<Database>();
   const [invalidFields, setInvalidFields] = useState<Set<string>>(new Set());
   const [locationSearch, setLocationSearch] = useState("");
   const [locationDropdownOpen, setLocationDropdownOpen] = useState(false);
@@ -137,15 +144,25 @@ export default function CourseForm({
     });
   };
 
-  const handleAddImage = () => {
-    if (imageUrls.length >= 5) return;
-    setImageUrls([...imageUrls, ""]);
+  const addImageByUrl = () => {
+    const url = newUrlInput.trim();
+    if (!url || imageUrls.length >= 5) return;
+    setImageUrls((prev) => [...prev, url]);
+    setNewUrlInput("");
+    if (!mainImageUrl) setMainImageUrl(url);
   };
 
-  const handleImageChange = (index: number, url: string) => {
-    const updated = [...imageUrls];
-    updated[index] = url;
-    setImageUrls(updated);
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !file.type.startsWith("image/") || imageUrls.length >= 5) return;
+    setUploading(true);
+    const url = await uploadCourseImage(supabase, file);
+    setUploading(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    if (url) {
+      setImageUrls((prev) => [...prev, url]);
+      if (!mainImageUrl) setMainImageUrl(url);
+    }
   };
 
   const handleRemoveImage = (index: number) => {
@@ -153,8 +170,12 @@ export default function CourseForm({
     const [removed] = updated.splice(index, 1);
     setImageUrls(updated);
     if (mainImageUrl === removed) {
-      setMainImageUrl("");
+      setMainImageUrl(updated[0] ?? "");
     }
+  };
+
+  const setMainByClick = (url: string) => {
+    setMainImageUrl(url);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -387,80 +408,100 @@ export default function CourseForm({
         />
       </div>
 
-      {/* Bilder */}
-      <div className="space-y-2">
-        <div className="flex justify-between items-center">
-          <span className="font-semibold text-stone-200">Bilder (max 5):</span>
-          <button
-            type="button"
-            onClick={handleAddImage}
-            disabled={imageUrls.length >= 5}
-            className="text-sm text-retro-accent hover:underline"
-          >
-            Lägg till bild
-          </button>
-        </div>
+      {/* Bilder: grid med klick för huvudbild + lägg till via URL eller uppladdning */}
+      <div className="space-y-4">
+        <span className="font-semibold text-stone-200 block">Bilder (max 5)</span>
+        <p className="text-sm text-stone-400">
+          Klicka på en bild för att välja den som huvudbild. Du kan lägga till bilder via URL eller ladda upp en fil.
+        </p>
 
-        {imageUrls.map((url, index) => (
-          <div key={index} className="flex items-center gap-2">
-            <div className="flex-1">
-              <label
-                htmlFor={`imageUrl-${index}`}
-                className="block text-sm font-medium mb-0.5 text-stone-300"
+        {imageUrls.length > 0 && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {imageUrls.map((url, index) => (
+              <div
+                key={`${url}-${index}`}
+                className="relative group rounded-xl overflow-hidden border-2 transition-all bg-retro-card"
               >
-                Bild-URL {index + 1}
-              </label>
-              <input
-                id={`imageUrl-${index}`}
-                type="url"
-                value={url}
-                onChange={(e) => handleImageChange(index, e.target.value)}
-                placeholder="Bild-URL"
-                className="w-full border border-retro-border bg-retro-surface text-stone-100 p-2 rounded focus:outline-none focus:ring-2 focus:ring-retro-accent placeholder:text-stone-500"
-              />
-            </div>
-
-            {url && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={url}
-                alt={`Preview ${index + 1}`}
-                className="w-16 h-16 object-cover rounded border border-retro-border"
-              />
-            )}
-
-            <button
-              type="button"
-              onClick={() => handleRemoveImage(index)}
-              className="text-amber-400 text-sm hover:underline"
-            >
-              Ta bort
-            </button>
-
-            <input
-              type="radio"
-              name="mainImage"
-              checked={mainImageUrl === url}
-              onChange={() => setMainImageUrl(url)}
-              title="Ange som huvudbild"
-            />
+                <button
+                  type="button"
+                  onClick={() => setMainByClick(url)}
+                  className={`w-full aspect-[4/3] block text-left outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-retro-bg focus:ring-retro-accent rounded-lg overflow-hidden ${
+                    mainImageUrl === url
+                      ? "ring-2 ring-retro-accent border-retro-accent"
+                      : "border-transparent hover:border-stone-500"
+                  }`}
+                  title={mainImageUrl === url ? "Huvudbild (klicka för att behålla)" : "Klicka för att sätta som huvudbild"}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={url}
+                    alt={`Bana ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                  {mainImageUrl === url && (
+                    <span className="absolute top-2 left-2 px-2 py-0.5 rounded text-xs font-medium bg-retro-accent text-stone-100 shadow">
+                      Huvudbild
+                    </span>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveImage(index)}
+                  className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/60 text-stone-100 hover:bg-red-600/90 flex items-center justify-center text-sm transition opacity-0 group-hover:opacity-100 focus:opacity-100"
+                  title="Ta bort bild"
+                  aria-label="Ta bort bild"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        )}
 
-      {/* Main Image URL */}
-      <div className="space-y-1">
-        <label htmlFor="mainImageUrlInput" className="block font-semibold text-stone-200">
-          Huvudbild-URL (redigera direkt)
-        </label>
-        <input
-          id="mainImageUrlInput"
-          type="url"
-          value={mainImageUrl}
-          onChange={(e) => setMainImageUrl(e.target.value)}
-          placeholder="Ange eller klistra in URL för huvudbild"
-          className="w-full border border-retro-border bg-retro-surface text-stone-100 p-2 rounded focus:outline-none focus:ring-2 focus:ring-retro-accent placeholder:text-stone-500"
-        />
+        {imageUrls.length < 5 && (
+          <div className="rounded-xl border border-retro-border bg-retro-card/30 p-4 space-y-3">
+            <span className="text-sm font-medium text-stone-300 block">Lägg till bild</span>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex-1 flex gap-2">
+                <input
+                  type="url"
+                  value={newUrlInput}
+                  onChange={(e) => setNewUrlInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addImageByUrl())}
+                  placeholder="https://... (bild-URL)"
+                  className="flex-1 border border-retro-border bg-retro-surface text-stone-100 p-2 rounded focus:outline-none focus:ring-2 focus:ring-retro-accent placeholder:text-stone-500 text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={addImageByUrl}
+                  disabled={!newUrlInput.trim()}
+                  className="px-3 py-2 rounded bg-retro-surface border border-retro-border text-stone-200 text-sm font-medium hover:bg-retro-card disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Lägg till URL
+                </button>
+              </div>
+              <div className="flex items-center">
+                <input
+                  id="course-image-upload"
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleFileSelect}
+                  disabled={uploading}
+                />
+                <label
+                  htmlFor="course-image-upload"
+                  className={`inline-flex items-center gap-2 px-4 py-2 rounded border border-retro-border bg-retro-surface text-stone-200 text-sm transition ${
+                    uploading ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:bg-retro-card"
+                  }`}
+                >
+                  {uploading ? "Laddar upp…" : "Ladda upp bild"}
+                </label>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Hål (valfritt): antal, par och längd per hål */}

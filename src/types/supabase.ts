@@ -368,6 +368,7 @@ export type Database = {
           home_course: string | null
           id: string
           created_at: string | null
+          is_admin: boolean
         }
         Insert: {
           alias: string
@@ -381,6 +382,7 @@ export type Database = {
           home_course?: string | null
           id?: string
           created_at?: string | null
+          is_admin?: boolean
         }
         Update: {
           alias?: string
@@ -394,6 +396,7 @@ export type Database = {
           home_course?: string | null
           id?: string
           created_at?: string | null
+          is_admin?: boolean
         }
         Relationships: [
           {
