@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { Bars3Icon, XMarkIcon, UserCircleIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
@@ -22,8 +22,8 @@ type SlimUser = {
 
 export default function Topbar({
   user,
-  displayName,
-  avatarUrl,
+  displayName: initialDisplayName,
+  avatarUrl: initialAvatarUrl,
 }: {
   user: SlimUser | null;
   displayName: string | null;
@@ -32,6 +32,30 @@ export default function Topbar({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [displayName, setDisplayName] = useState<string | null>(initialDisplayName ?? null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(initialAvatarUrl ?? null);
+
+  // Synka med server-props vid mount/navigering
+  useEffect(() => {
+    setDisplayName(initialDisplayName ?? null);
+    setAvatarUrl(initialAvatarUrl ?? null);
+  }, [initialDisplayName, initialAvatarUrl]);
+
+  // När användaren är på profilsidan, hämta färsk profil (t.ex. efter redigering)
+  useEffect(() => {
+    if (!user || pathname !== "/profile") return;
+    let cancelled = false;
+    fetch("/api/get-current-user")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (cancelled || !data) return;
+        if (data.alias != null) setDisplayName(data.alias);
+        if (data.avatar_url !== undefined) setAvatarUrl(data.avatar_url ?? null);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [user, pathname]);
+
   const isProfileWelcome = (pathname === "/profile" || pathname?.startsWith("/profile")) && searchParams.get("welcome") != null;
 
   const linkClass = (href: string, highlight = false) =>

@@ -3,6 +3,7 @@ import { useMemo, useState, useEffect, Fragment } from "react";
 import Link from "next/link";
 import { TrophyIcon, ChevronDownIcon, ChevronUpIcon, UserIcon, CalendarDaysIcon, HashtagIcon } from "@heroicons/react/24/outline";
 import { getHoleThrowBg, getHoleThrowStyle } from "@/lib/holeColors";
+import { formatScorePar } from "@/lib/scoreDisplay";
 
 type ScoreRow = {
   id?: string;
@@ -101,7 +102,14 @@ function ScoresTable({
         <div className="flex flex-wrap items-center gap-2">
           <TrophyIcon className="w-5 h-5 text-amber-400 shrink-0" aria-hidden />
           <span className="text-stone-200 font-medium">
-            Banrekord: <span className="text-retro-accent font-semibold">{record.score} kast</span>
+            Banrekord:{" "}
+            {record.id ? (
+              <Link href={`/results/${record.id}`} className="text-retro-accent font-semibold hover:underline">
+                {formatScorePar(record.score)}
+              </Link>
+            ) : (
+              <span className="text-retro-accent font-semibold">{formatScorePar(record.score)}</span>
+            )}
             {" – "}
             {record.user_id ? (
               <Link href={`/profile/${record.user_id}`} className="text-stone-100 text-retro-accent hover:underline">
@@ -131,24 +139,32 @@ function ScoresTable({
             ) : recordHoles.length === 0 ? (
               <p className="text-sm text-stone-400">Ingen hålfördelning sparad.</p>
             ) : (
-              <div className="flex flex-wrap gap-2">
-                {recordHoles
-                  .sort((a, b) => a.hole_number - b.hole_number)
-                  .map((h) => {
-                    const par = h.par ?? parByHole?.[h.hole_number];
-                    const bg = getHoleThrowBg(h.throws, par);
-                    const style = getHoleThrowStyle(h.throws, par);
-                    return (
-                      <span
-                        key={h.hole_number}
-                        className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-sm text-stone-200 ${bg || "bg-retro-card"}`}
-                        style={Object.keys(style).length > 0 ? style : undefined}
-                      >
-                        <span className="text-retro-muted">H{h.hole_number}</span>
-                        <span className="font-medium">{h.throws}</span>
-                      </span>
-                    );
-                  })}
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-wrap gap-2">
+                  {recordHoles
+                    .sort((a, b) => a.hole_number - b.hole_number)
+                    .map((h) => {
+                      const par = h.par ?? parByHole?.[h.hole_number];
+                      const bg = getHoleThrowBg(h.throws, par);
+                      const style = getHoleThrowStyle(h.throws, par);
+                      return (
+                        <span
+                          key={h.hole_number}
+                          className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-sm text-stone-200 ${bg || "bg-retro-card"}`}
+                          style={Object.keys(style).length > 0 ? style : undefined}
+                        >
+                          <span className="text-retro-muted">H{h.hole_number}</span>
+                          <span className="font-medium">{h.throws}</span>
+                        </span>
+                      );
+                    })}
+                </div>
+                <Link
+                  href={`/results/${record.id}`}
+                  className="shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium bg-retro-accent text-stone-100 hover:bg-retro-accent-hover transition"
+                >
+                  Gå till resultat
+                </Link>
               </div>
             )}
           </div>
@@ -192,7 +208,7 @@ function ScoresTable({
                 className="px-4 py-2 border-b border-retro-border cursor-pointer text-stone-200"
                 onClick={() => handleSort("score")}
               >
-                Score {sortBy === "score" ? (sortAsc ? "▲" : "▼") : ""}
+                Poäng {sortBy === "score" ? (sortAsc ? "▲" : "▼") : ""}
               </th>
               <th
                 className="px-4 py-2 border-b border-retro-border cursor-pointer text-stone-200"
@@ -227,7 +243,15 @@ function ScoresTable({
                         (s.profiles?.alias ?? "Okänd")
                       )}
                     </td>
-                    <td className="px-4 py-2 text-stone-200">{s.score}</td>
+                    <td className="px-4 py-2 text-stone-200">
+                      {s.id ? (
+                        <Link href={`/results/${s.id}`} className="text-retro-accent hover:underline">
+                          {formatScorePar(s.score)}
+                        </Link>
+                      ) : (
+                        formatScorePar(s.score)
+                      )}
+                    </td>
                     <td className="px-4 py-2 text-stone-200">
                       {formatDate(s.created_at)}
                     </td>

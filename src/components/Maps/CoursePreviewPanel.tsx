@@ -8,6 +8,7 @@ import type { Course } from "../CourseList";
 import { XMarkIcon, MapPinIcon } from "@heroicons/react/24/outline";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import type { Database } from "@/types/supabase";
+import { formatScorePar } from "@/lib/scoreDisplay";
 
 type Props = {
   course: Course | null;
@@ -95,11 +96,6 @@ export default function CoursePreviewPanel({ course, onClose, embedded, fromDash
 
   // Early return placed AFTER all hooks are declared
   if (!course) return null;
-
-  const recordValue =
-    typeof bestScore?.throws === "number"
-      ? bestScore?.throws
-      : bestScore?.score ?? null;
 
   const panelContent = (
     <div
@@ -211,8 +207,8 @@ export default function CoursePreviewPanel({ course, onClose, embedded, fromDash
                       </div>
                     </div>
                     <div className="text-right shrink-0">
-                      <div className="text-sm font-semibold text-stone-100">{recordValue ?? "—"}</div>
-                      <div className="text-xs text-retro-muted">kast</div>
+                      <div className="text-sm font-semibold text-stone-100">{formatScorePar(bestScore?.score ?? null)}</div>
+                      <div className="text-xs text-retro-muted">mot par</div>
                     </div>
                   </div>
                 ) : (

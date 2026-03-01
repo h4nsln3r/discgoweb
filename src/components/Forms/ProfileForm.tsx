@@ -176,11 +176,11 @@ export default function ProfileForm({
     if (userError || !user) throw userError ?? new Error("Ingen användare.");
 
     const ext = avatarFile.name.split(".").pop() || "jpg";
-    const filePath = `${user.id}/avatar.${ext}`;
+    const filePath = `${user.id}/avatar-${Date.now()}.${ext}`;
 
     const { error: uploadError } = await supabase.storage
       .from("avatars")
-      .upload(filePath, avatarFile, { upsert: true });
+      .upload(filePath, avatarFile, { upsert: false });
 
     if (uploadError) throw uploadError;
 

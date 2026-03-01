@@ -7,6 +7,7 @@ import { MapPinIcon, PencilSquareIcon, PlusCircleIcon, HashtagIcon } from "@hero
 import BackLink from "@/components/Buttons/BackLink";
 import ImageGallery from "@/components/ImageGallery";
 import ScoresTable from "@/components/Tables/ScoresTable";
+import { formatScorePar } from "@/lib/scoreDisplay";
 import CompetitionsTable from "@/components/Tables/CompetitionsTable";
 import MapEmbed from "@/components/Maps/MapEmbed";
 
@@ -124,7 +125,7 @@ export default async function CourseDetailPage({
               <h2 className="font-semibold text-lg mb-2 text-stone-100">🏆 Topp 3 resultat</h2>
               <ul className="space-y-1 text-stone-200">
                 {top3.map((score, idx) => (
-                  <li key={idx} className="flex justify-between">
+                  <li key={idx} className="flex justify-between items-center">
                     <span>
                       {(score as { user_id?: string }).user_id ? (
                         <Link
@@ -137,7 +138,18 @@ export default async function CourseDetailPage({
                         (score.profiles?.alias ?? "Okänd spelare")
                       )}
                     </span>
-                    <span>{score.score}</span>
+                    <span>
+                      {(score as { id?: string }).id ? (
+                        <Link
+                          href={`/results/${(score as { id: string }).id}`}
+                          className="text-retro-accent hover:underline font-medium"
+                        >
+                          {formatScorePar(score.score)}
+                        </Link>
+                      ) : (
+                        formatScorePar(score.score)
+                      )}
+                    </span>
                   </li>
                 ))}
               </ul>
