@@ -162,13 +162,14 @@ export default function Map({ userName, initialCourses, onSelectionChange, fromD
           )}
         </div>
 
-        {/* Kartan – alltid full bredd och höjd */}
+        {/* Kartan – på dashboard zoomas den så att alla banor syns */}
         <div className="relative z-0 h-full w-full">
           <LeafletMap
             courses={courses}
             onSelectCourse={(c) => setSelectedAndNotify(c.id)}
             selectedCourseId={selectedId}
             centerOffsetPx={isMobile ? undefined : 180}
+            fitToCourses={fromDashboard === true}
           />
         </div>
       </div>
