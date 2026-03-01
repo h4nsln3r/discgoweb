@@ -42,7 +42,6 @@ export default function AddScoreForm({
   preloadedCourses,
 }: Props) {
   const { showToast } = useToast();
-  const [score, setScore] = useState("");
   const [throws, setThrows] = useState("");
   const [datePlayed, setDatePlayed] = useState("");
   const [withFriends, setWithFriends] = useState<string[]>([]);
@@ -193,7 +192,6 @@ export default function AddScoreForm({
   // Autofyll formulär vid redigering
   useEffect(() => {
     if (editingScore) {
-      setScore(String(editingScore.score));
       setThrows(String(editingScore.throws ?? ""));
       setDatePlayed(
         editingScore.date_played
@@ -326,7 +324,6 @@ export default function AddScoreForm({
       if (editingScore) {
         onClose();
       } else {
-        setScore("");
         setThrows("");
         setDatePlayed(new Date().toISOString().split("T")[0]);
         setWithFriends([]);
