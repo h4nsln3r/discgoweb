@@ -23,8 +23,12 @@ type Props = {
 export default function PageLoading({ variant, title }: Props) {
   const loadingLabel = title ?? (variant ? LOADING_TITLES[variant] : "Laddar");
   return (
-    <div className="min-h-[50vh] flex flex-col items-center justify-center" aria-label={loadingLabel}>
-      <div className="h-72 w-72 md:h-[32rem] md:w-[32rem] lg:h-[40rem] lg:w-[40rem] animate-spin shrink-0">
+    <div
+      className="flex flex-col items-center justify-center min-h-[min(50vh,420px)] w-full max-w-full overflow-hidden py-8 px-4"
+      aria-label={loadingLabel}
+    >
+      {/* Storlek begränsad med vmin så den aldrig orsakar scroll (max 40 % av minsta skärmdimension) */}
+      <div className="h-[min(14rem,40vmin)] w-[min(14rem,40vmin)] max-w-full animate-spin shrink-0">
         <Image
           src="/logo/disco.png"
           alt=""
