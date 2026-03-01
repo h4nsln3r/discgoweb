@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ClipboardDocumentListIcon, TrophyIcon } from "@heroicons/react/24/outline";
 
 /* ---------- Shapes ---------- */
@@ -160,6 +161,7 @@ export default function DashboardFeeds({
                       key={r.courseId + userId}
                       href={`/profile/${userId}`}
                       className="text-retro-accent hover:underline"
+                      onClick={(e) => e.stopPropagation()}
                     >
                       {alias}
                     </Link>
@@ -181,6 +183,7 @@ export default function DashboardFeeds({
                       key={r.courseId}
                       href={`/courses/${r.courseId}?from=dashboard`}
                       className="text-retro-accent hover:underline"
+                      onClick={(e) => e.stopPropagation()}
                     >
                       {r.courseName}
                     </Link>,
@@ -188,6 +191,11 @@ export default function DashboardFeeds({
                     date,
                   ];
                 }) ?? null
+            }
+            rowHrefs={
+              scores
+                ?.filter((r) => r.latestScore != null)
+                .map((r) => (r.latestScore ? `/results/${r.latestScore.id}` : null)) ?? null
             }
             loading={scoresLoading}
             emptyText="Inga resultat ännu."
@@ -219,6 +227,7 @@ export default function DashboardFeeds({
                   key={t.id}
                   href={`/competitions/${t.id}`}
                   className="text-retro-accent hover:underline"
+                  onClick={(e) => e.stopPropagation()}
                 >
                   {t.title}
                 </Link>,
@@ -230,6 +239,7 @@ export default function DashboardFeeds({
                   : "—",
               ]) ?? null
             }
+            rowHrefs={comps?.map((t) => `/competitions/${t.id}`) ?? null}
             loading={compsLoading}
             emptyText="Inga tävlingar ännu."
             error={compsError}
@@ -259,16 +269,20 @@ function CardBody({ children }: { children: React.ReactNode }) {
 function MiniTable({
   headers,
   rows,
+  rowHrefs,
   loading,
   emptyText,
   error,
 }: {
   headers: string[];
   rows: (React.ReactNode[] | (string | number | null)[])[] | null;
+  /** Om satt, samma längd som rows; rad i får onClick som navigerar till rowHrefs[i]. */
+  rowHrefs?: (string | null)[] | null;
   loading: boolean;
   emptyText: string;
   error: string | null;
 }) {
+  const router = useRouter();
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full text-sm">
@@ -302,15 +316,34 @@ function MiniTable({
               </td>
             </tr>
           ) : rows && rows.length ? (
-            rows.map((r, i) => (
-              <tr key={i} className="border-t border-retro-border">
-                {r.map((cell, j) => (
-                  <td key={j} className="px-4 py-3 whitespace-nowrap text-stone-200">
-                    {cell as React.ReactNode}
-                  </td>
-                ))}
-              </tr>
-            ))
+            rows.map((r, i) => {
+              const href = rowHrefs?.[i] ?? null;
+              return (
+                <tr
+                  key={i}
+                  className={`border-t border-retro-border ${href ? "cursor-pointer hover:bg-retro-card/60 transition-colors" : ""}`}
+                  role={href ? "link" : undefined}
+                  onClick={href ? () => router.push(href) : undefined}
+                  tabIndex={href ? 0 : undefined}
+                  onKeyDown={
+                    href
+                      ? (e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            router.push(href);
+                          }
+                        }
+                      : undefined
+                  }
+                >
+                  {r.map((cell, j) => (
+                    <td key={j} className="px-4 py-3 whitespace-nowrap text-stone-200">
+                      {cell as React.ReactNode}
+                    </td>
+                  ))}
+                </tr>
+              );
+            })
           ) : (
             <tr>
               <td className="px-4 py-3 text-retro-muted" colSpan={headers.length}>

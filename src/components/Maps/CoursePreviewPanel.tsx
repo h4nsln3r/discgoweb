@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Course } from "../CourseList";
-import { XMarkIcon, MapPinIcon } from "@heroicons/react/24/outline";
+import { XMarkIcon, MapPinIcon, TrophyIcon, PlusCircleIcon } from "@heroicons/react/24/outline";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import type { Database } from "@/types/supabase";
 import { formatScorePar } from "@/lib/scoreDisplay";
@@ -102,24 +102,33 @@ export default function CoursePreviewPanel({ course, onClose, embedded, fromDash
       className={`overflow-hidden bg-retro-surface ${embedded ? "rounded-xl border border-retro-border" : "rounded-t-3xl border-t border-retro-border"}`}
       style={{ height: "100%" }}
     >
-          {/* Header image */}
+          {/* Header image – klickbar, går till bansidan */}
           {course.main_image_url ? (
-            <div className={`relative w-full overflow-hidden md:rounded-t-2xl ${compact ? (compactImageSmall ? "aspect-[3/2] max-h-14" : "aspect-[3/2] max-h-28") : "aspect-[16/9]"}`}>
+            <Link
+              href={courseHref}
+              onClick={onClose}
+              className={`relative block w-full overflow-hidden md:rounded-t-2xl cursor-pointer ${compact ? (compactImageSmall ? "aspect-[3/2] max-h-14" : "aspect-[3/2] max-h-28") : "aspect-[16/9]"}`}
+            >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={course.main_image_url}
                 alt={course.name}
-                className="h-full w-full object-cover"
+                className="h-full w-full object-cover transition-opacity hover:opacity-95"
               />
-              {/* Close btn over image */}
+              {/* Close btn over image – stoppar propagation så X bara stänger */}
               <button
+                type="button"
                 className="absolute top-3 right-3 p-2 rounded-full bg-retro-surface/90 hover:bg-retro-card border border-retro-border shadow"
-                onClick={onClose}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onClose();
+                }}
                 aria-label="Stäng"
               >
                 <XMarkIcon className="h-5 w-5 text-stone-200" />
               </button>
-            </div>
+            </Link>
           ) : (
             <div className="flex justify-end p-3 border-b border-retro-border">
               <button
@@ -134,15 +143,15 @@ export default function CoursePreviewPanel({ course, onClose, embedded, fromDash
 
           {/* Content */}
           <div className="p-4">
-            {/* Title & location */}
+            {/* Title & location – samma stil som lagnamn på lagsidan, mindre storlek + hover */}
             <div className="mb-2">
-              <h3 className="text-xl font-semibold text-stone-100">
+              <h3 className="text-xl font-bebas tracking-wide text-stone-100 uppercase">
                 {compact ? (
-                  <Link href={courseHref} onClick={onClose} className="text-retro-accent hover:underline">
+                  <Link href={courseHref} onClick={onClose} className="inline-block text-retro-accent transition-all duration-200 hover:scale-105 hover:text-amber-300">
                     Gå till: {course.name}
                   </Link>
                 ) : (
-                  <Link href={courseHref} onClick={onClose} className="text-retro-accent hover:underline">
+                  <Link href={courseHref} onClick={onClose} className="inline-block text-retro-accent transition-all duration-200 hover:scale-105 hover:text-amber-300">
                     {course.name}
                   </Link>
                 )}
@@ -160,7 +169,10 @@ export default function CoursePreviewPanel({ course, onClose, embedded, fromDash
             {/* Course record – klickbar rad till resultatet – döljs i compact-läge */}
             {!compact && (
             <div className="mt-2">
-              <h4 className="text-xs font-medium text-stone-400 mb-1">Banrekord</h4>
+              <h4 className="text-xs font-medium text-stone-400 mb-1 flex items-center gap-1.5">
+                <TrophyIcon className="h-4 w-4 text-retro-accent shrink-0" aria-hidden />
+                Banrekord
+              </h4>
               <div className="rounded-lg border border-retro-border bg-retro-card">
                 {loadingScore ? (
                   <div className="p-2 animate-pulse">
@@ -220,21 +232,15 @@ export default function CoursePreviewPanel({ course, onClose, embedded, fromDash
             </div>
             )}
 
-            {/* Actions in one row – döljs i compact-läge */}
+            {/* Actions – döljs i compact-läge; endast Lägg till resultat */}
             {!compact && (
-              <div className="mt-4 flex items-center gap-3">
-                <Link
-                  href={courseHref}
-                  onClick={onClose}
-                  className="inline-flex items-center justify-center rounded-lg border border-retro-border bg-retro-card px-4 py-2 text-sm font-medium text-stone-200 hover:bg-retro-border/50 transition"
-                >
-                  Visa detaljer
-                </Link>
+              <div className="mt-4">
                 <Link
                   href={`/results/new?course_id=${course.id}`}
                   onClick={onClose}
-                  className="inline-flex items-center justify-center rounded-lg border border-retro-accent bg-retro-accent/20 px-4 py-2 text-sm font-medium text-retro-accent hover:bg-retro-accent/30 transition"
+                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-retro-accent bg-retro-accent/20 px-4 py-2 text-sm font-medium text-retro-accent hover:bg-retro-accent/30 transition"
                 >
+                  <PlusCircleIcon className="h-5 w-5 shrink-0" aria-hidden />
                   Lägg till resultat
                 </Link>
               </div>
