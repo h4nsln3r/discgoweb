@@ -78,7 +78,7 @@ export default async function DiscPage({
           <DiscImageModal
             imageUrl={discRow.bild}
             discName={discRow.name}
-            className="w-56 h-56 sm:w-64 sm:h-64 shrink-0 rounded-2xl overflow-hidden"
+            className="w-56 h-56 sm:w-64 sm:h-64 shrink-0"
           />
           <div className="min-w-0 flex-1 flex flex-col gap-3">
             <div className="flex flex-wrap items-baseline justify-between gap-3">

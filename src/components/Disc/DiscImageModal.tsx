@@ -20,7 +20,7 @@ export default function DiscImageModal({
   if (!imageUrl) {
     return (
       <div
-        className={`${className} rounded-2xl bg-retro-card border border-retro-border flex items-center justify-center text-retro-muted text-6xl shrink-0`}
+        className={`${className} rounded-full bg-retro-card border border-retro-border flex items-center justify-center text-retro-muted text-6xl shrink-0 overflow-hidden`}
       >
         🥏
       </div>
@@ -32,7 +32,7 @@ export default function DiscImageModal({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className={`${className} rounded-2xl overflow-hidden bg-retro-card border-2 border-retro-border block shrink-0 cursor-pointer hover:border-retro-accent/50 hover:ring-2 hover:ring-retro-accent/30 transition group relative`}
+        className={`${className} rounded-full overflow-hidden bg-retro-card border-2 border-retro-border block shrink-0 cursor-pointer hover:border-retro-accent/50 hover:ring-2 hover:ring-retro-accent/30 transition group relative`}
         aria-label="Visa disc i fullskärm"
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -63,14 +63,14 @@ export default function DiscImageModal({
             <XMarkIcon className="w-6 h-6" />
           </button>
           <div
-            className="relative w-full max-w-[min(90vw,90vh)] aspect-square rounded-2xl overflow-hidden border-4 border-retro-border shadow-2xl"
+            className="relative w-full max-w-[min(90vw,90vh)] aspect-square rounded-full overflow-hidden border-4 border-retro-border shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={imageUrl}
               alt={discName}
-              className="w-full h-full object-contain bg-retro-card"
+              className="w-full h-full object-cover object-center bg-retro-card"
             />
           </div>
         </div>

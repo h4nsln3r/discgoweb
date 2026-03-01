@@ -1,28 +1,31 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import BackLink from "@/components/Buttons/BackLink";
 import { Database } from "@/types/supabase";
 import { useToast } from "@/components/Toasts/ToastProvider";
+import CompetitionImageField from "@/components/Forms/CompetitionImageField";
 
 export default function EditCompetitionPage() {
-  const supabase = createClientComponentClient<Database>();
+  const supabase = useMemo(() => createClientComponentClient<Database>(), []);
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
   const { showToast } = useToast();
+  const showToastRef = useRef(showToast);
+  showToastRef.current = showToast;
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [isCreator, setIsCreator] = useState<boolean | null>(null);
 
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
+  const [title, setTitle] = useState<string>("");
+  const [description, setDescription] = useState<string>("");
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
+  const [imageUrl, setImageUrl] = useState<string>("");
 
   const [selectedCourseIds, setSelectedCourseIds] = useState<string[]>([]);
   const [allCourses, setAllCourses] = useState<{ id: string; name: string }[]>(
@@ -31,11 +34,13 @@ export default function EditCompetitionPage() {
   const [invalidFields, setInvalidFields] = useState<Set<string>>(new Set());
   const titleRef = useRef<HTMLDivElement>(null);
 
-  // Hämta tävling + befintliga banor + alla banor
+  // Hämta tävling + befintliga banor + alla banor (endast när id ändras)
   useEffect(() => {
     if (!id) return;
 
-    const fetch = async () => {
+    let cancelled = false;
+
+    const doFetch = async () => {
       const [
         { data: { user } },
         currentUserRes,
@@ -46,9 +51,11 @@ export default function EditCompetitionPage() {
         supabase.from("competitions").select("id, title, description, start_date, end_date, image_url, created_by").eq("id", id).single(),
       ]);
 
+      if (cancelled) return;
+
       if (compError || !competition) {
         console.error("Fetch competition error:", compError);
-        showToast("Kunde inte hämta tävlingen.", "error");
+        showToastRef.current("Kunde inte hämta tävlingen.", "error");
         setLoading(false);
         return;
       }
@@ -69,12 +76,14 @@ export default function EditCompetitionPage() {
           ? new Date(competition.end_date).toISOString().slice(0, 10)
           : ""
       );
-      setImageUrl(competition.image_url ?? "");
+      setImageUrl(typeof competition.image_url === "string" ? competition.image_url : "");
 
       const { data: compCourses } = await supabase
         .from("competition_courses")
         .select("course_id")
         .eq("competition_id", id);
+
+      if (cancelled) return;
 
       const ids = (compCourses ?? [])
         .map((r) => r.course_id)
@@ -85,13 +94,17 @@ export default function EditCompetitionPage() {
         .from("courses")
         .select("id, name")
         .order("name");
-      setAllCourses(courses ?? []);
 
+      if (cancelled) return;
+      setAllCourses(courses ?? []);
       setLoading(false);
     };
 
-    fetch();
-  }, [id, supabase, showToast]);
+    doFetch();
+    return () => {
+      cancelled = true;
+    };
+  }, [id, supabase]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -196,7 +209,7 @@ export default function EditCompetitionPage() {
           <input
             id="title"
             type="text"
-            value={title}
+            value={title ?? ""}
             onChange={(e) => {
               setTitle(e.target.value);
               setInvalidFields((p) => { const n = new Set(p); n.delete("title"); return n; });
@@ -213,7 +226,7 @@ export default function EditCompetitionPage() {
           </label>
           <textarea
             id="description"
-            value={description}
+            value={description ?? ""}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Beskrivning"
             rows={4}
@@ -229,7 +242,7 @@ export default function EditCompetitionPage() {
             <input
               id="start_date"
               type="date"
-              value={startDate}
+              value={startDate ?? ""}
               onChange={(e) => setStartDate(e.target.value)}
               className={inputClass}
             />
@@ -241,34 +254,22 @@ export default function EditCompetitionPage() {
             <input
               id="end_date"
               type="date"
-              value={endDate}
+              value={endDate ?? ""}
               onChange={(e) => setEndDate(e.target.value)}
               className={inputClass}
             />
           </div>
         </div>
 
-        <div>
-          <label htmlFor="image_url" className="block font-semibold mb-1 text-stone-200">
-            Bild-URL
-          </label>
-          <input
-            id="image_url"
-            type="url"
-            value={imageUrl}
-            onChange={(e) => setImageUrl(e.target.value)}
-            placeholder="https://..."
-            className={inputClass}
-          />
-          {imageUrl && (
-            // eslint-disable-next-line @next/next/no-img-element -- preview av användar-URL
-            <img
-              src={imageUrl}
-              alt="Förhandsgranskning"
-              className="mt-2 w-full max-h-40 object-cover rounded-lg border border-retro-border"
-            />
-          )}
-        </div>
+        <CompetitionImageField
+          imageUrl={imageUrl}
+          onImageUrlChange={setImageUrl}
+          supabase={supabase}
+          showToast={showToast}
+          disabled={saving}
+          idPrefix="edit"
+          inputClass={inputClass}
+        />
 
         <div>
           <h2 className="font-semibold mb-2 text-stone-200">Banor i tävlingen</h2>

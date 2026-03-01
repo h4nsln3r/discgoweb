@@ -215,7 +215,6 @@ export default function AddScoreForm({
       setManualGuests(friends.filter((a) => a.startsWith("Gäst:")).map((a) => a.replace(/^Gäst:/, "")));
       setSelectedCourse(editingScore.courses.id);
     } else {
-      setScore("");
       setThrows("");
       setDatePlayed("");
       setWithFriends([]);

@@ -7,12 +7,12 @@ import {
   MapPinIcon,
   PhoneIcon,
   HomeIcon,
-  TrophyIcon,
   UserGroupIcon,
 } from "@heroicons/react/24/outline";
 import ProfileWelcomeToast from "@/components/Toasts/ProfileWelcomeToast";
 import TeamCard from "@/components/Teams/TeamCard";
 import ProfileAvatarModal from "@/components/profile/ProfileAvatarModal";
+import ProfileResultsTable from "./ProfileResultsTable";
 
 type ProfileRow = {
   id: string;
@@ -388,55 +388,8 @@ export default async function ProfileHomePage() {
         )}
       </div>
 
-      {/* Alla resultat */}
-      {scoreList.length > 0 && (
-        <div className="rounded-2xl border border-retro-border bg-retro-surface p-6 shadow-sm mb-6">
-          <h2 className="flex items-center gap-2 text-lg font-semibold text-stone-100 mb-3">
-            <TrophyIcon className="w-5 h-5 text-retro-muted shrink-0" aria-hidden />
-            Mina resultat
-          </h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
-              <thead>
-                <tr className="text-stone-400 border-b border-retro-border">
-                  <th className="pb-2 pr-3 font-medium">Bana</th>
-                  <th className="pb-2 pr-3 font-medium">Kast</th>
-                  <th className="pb-2 pr-3 font-medium">Poäng</th>
-                  <th className="pb-2 pr-3 font-medium">Datum</th>
-                  <th className="pb-2 font-medium w-14"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {scoreList.map((s) => (
-                  <tr key={s.id} className="border-b border-retro-border/50 last:border-0">
-                    <td className="py-2 pr-3">
-                      <Link
-                        href={`/courses/${s.courses?.id ?? s.course_id}`}
-                        className="text-retro-accent hover:underline"
-                      >
-                        {s.courses?.name ?? "—"}
-                      </Link>
-                    </td>
-                    <td className="py-2 pr-3 text-stone-200">{s.throws ?? s.score}</td>
-                    <td className="py-2 pr-3 font-medium text-stone-100">{s.score}</td>
-                    <td className="py-2 text-stone-400">
-                      {formatDate(s.date_played ?? s.created_at)}
-                    </td>
-                    <td className="py-2 pl-2">
-                      <Link
-                        href={`/results/${s.id}`}
-                        className="text-retro-accent hover:underline text-xs"
-                      >
-                        Visa
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+      {/* Alla resultat – klick på hela raden går till resultatet */}
+      <ProfileResultsTable scoreList={scoreList} />
 
       {/* Redigera profil längst ner */}
       <div className="pt-2">

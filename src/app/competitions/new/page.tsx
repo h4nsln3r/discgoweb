@@ -2,11 +2,10 @@
 
 import { useEffect, useMemo, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-//TODO use Image from next
-// import Image from "next/image";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Database } from "@/types/supabase";
 import { useToast } from "@/components/Toasts/ToastProvider";
+import CompetitionImageField from "@/components/Forms/CompetitionImageField";
 
 export default function NewCompetitionPage() {
   const supabase = useMemo(() => createClientComponentClient<Database>(), []);
@@ -122,7 +121,7 @@ export default function NewCompetitionPage() {
           <input
             type="text"
             placeholder="Tävlingstitel"
-            value={title}
+            value={title ?? ""}
             onChange={(e) => {
               setTitle(e.target.value);
               setInvalidFields((p) => { const n = new Set(p); n.delete("title"); return n; });
@@ -134,7 +133,7 @@ export default function NewCompetitionPage() {
 
         <textarea
           placeholder="Beskrivning"
-          value={description}
+          value={description ?? ""}
           onChange={(e) => setDescription(e.target.value)}
           className={inputClass}
         />
@@ -142,26 +141,28 @@ export default function NewCompetitionPage() {
         <div className="flex gap-4">
           <input
             type="date"
-            value={startDate}
+            value={startDate ?? ""}
             onChange={(e) => setStartDate(e.target.value)}
             required
             className={inputClass}
           />
           <input
             type="date"
-            value={endDate}
+            value={endDate ?? ""}
             onChange={(e) => setEndDate(e.target.value)}
             required
             className={inputClass}
           />
         </div>
 
-        <input
-          type="text"
-          placeholder="Bild-URL"
-          value={imageUrl}
-          onChange={(e) => setImageUrl(e.target.value)}
-          className={inputClass}
+        <CompetitionImageField
+          imageUrl={imageUrl}
+          onImageUrlChange={setImageUrl}
+          supabase={supabase}
+          showToast={showToast}
+          disabled={loading}
+          idPrefix="new"
+          inputClass={inputClass}
         />
 
         <div>
