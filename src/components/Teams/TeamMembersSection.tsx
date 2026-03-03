@@ -5,7 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Database } from "@/types/supabase";
-import { UserGroupIcon, UserMinusIcon } from "@heroicons/react/24/outline";
+import type { TeamRole } from "@/lib/team-roles";
+import { UserGroupIcon, UserMinusIcon, ArrowRightOnRectangleIcon } from "@heroicons/react/24/outline";
 import { useToast } from "@/components/Toasts/ToastProvider";
 
 export type MemberWithRole = {
@@ -25,23 +26,40 @@ type Props = {
   teamId: string;
   members: MemberWithRole[];
   currentUserId: string | null;
+  myRole: TeamRole | null;
+  isMember: boolean;
   canManageRoles: boolean;
   canRemoveMembers?: boolean;
 };
 
-export default function TeamMembersSection({ teamId, members, currentUserId, canManageRoles, canRemoveMembers = false }: Props) {
+export default function TeamMembersSection({
+  teamId,
+  members,
+  currentUserId,
+  myRole,
+  isMember,
+  canManageRoles,
+  canRemoveMembers = false,
+}: Props) {
   const router = useRouter();
   const supabase = createClientComponentClient<Database>();
   const { showToast } = useToast();
   const [updating, setUpdating] = useState<string | null>(null);
 
+  const adminCount = members.filter((m) => m.role === "admin").length;
+  const isOnlyAdmin = myRole === "admin" && adminCount <= 1;
+  const canLeave = isMember && !isOnlyAdmin;
+
   const handleRoleChange = async (userId: string, newRole: "admin" | "editor" | "viewer") => {
     setUpdating(userId);
-    const { error } = await supabase
-      .from("team_member_roles")
-      .upsert({ team_id: teamId, user_id: userId, role: newRole }, { onConflict: "team_id,user_id" });
-    if (error) {
-      showToast("Kunde inte uppdatera roll.", "error");
+    const res = await fetch(`/api/teams/${teamId}/members/role`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, role: newRole }),
+    });
+    const data = res.ok ? null : await res.json().catch(() => ({}));
+    if (!res.ok) {
+      showToast(data?.error ?? "Kunde inte uppdatera roll.", "error");
     } else {
       showToast("Roll uppdaterad.", "success");
       router.refresh();
@@ -68,29 +86,34 @@ export default function TeamMembersSection({ teamId, members, currentUserId, can
   const handleMakeAdmin = async (newAdminUserId: string) => {
     if (!currentUserId || newAdminUserId === currentUserId) return;
     setUpdating(newAdminUserId);
-    const { error: e1 } = await supabase
-      .from("team_member_roles")
-      .upsert({ team_id: teamId, user_id: newAdminUserId, role: "admin" }, { onConflict: "team_id,user_id" });
-    if (e1) {
-      showToast("Kunde inte byta admin.", "error");
-      setUpdating(null);
-      return;
-    }
-    const { error: e2 } = await supabase
-      .from("team_member_roles")
-      .upsert({ team_id: teamId, user_id: currentUserId, role: "editor" }, { onConflict: "team_id,user_id" });
-    if (e2) {
-      showToast("Kunde inte uppdatera din roll.", "error");
-      setUpdating(null);
-      return;
-    }
-    const { error: e3 } = await supabase.from("teams").update({ created_by: newAdminUserId }).eq("id", teamId);
-    if (e3) {
-      showToast("Admin bytt, men created_by kunde inte uppdateras.", "error");
+    const res = await fetch(`/api/teams/${teamId}/members/make-admin`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ newAdminUserId }),
+    });
+    const data = res.ok ? null : await res.json().catch(() => ({}));
+    if (!res.ok) {
+      showToast(data?.error ?? "Kunde inte byta admin.", "error");
     } else {
       showToast("Ny admin tillagd.", "success");
+      router.refresh();
     }
-    router.refresh();
+    setUpdating(null);
+  };
+
+  const handleLeaveTeam = async () => {
+    if (!confirm("Vill du verkligen lämna laget?")) return;
+    if (!canLeave) return;
+    setUpdating("leave");
+    const res = await fetch(`/api/teams/${teamId}/leave`, { method: "POST" });
+    const data = res.ok ? null : await res.json().catch(() => ({}));
+    if (!res.ok) {
+      showToast(data?.error ?? "Kunde inte lämna laget.", "error");
+    } else {
+      showToast("Du har lämnat laget.", "success");
+      router.refresh();
+      router.push("/teams");
+    }
     setUpdating(null);
   };
 
@@ -176,6 +199,26 @@ export default function TeamMembersSection({ teamId, members, currentUserId, can
             </li>
           ))}
         </ul>
+      )}
+
+      {isMember && currentUserId && (
+        <div className="mt-6 pt-4 border-t border-retro-border">
+          {isOnlyAdmin ? (
+            <p className="text-amber-200 text-sm">
+              Du är ensam admin. Ge admin till någon annan i laget (t.ex. via roll-menyn ovan) innan du kan lämna laget.
+            </p>
+          ) : (
+            <button
+              type="button"
+              onClick={handleLeaveTeam}
+              disabled={updating === "leave"}
+              className="inline-flex items-center gap-2 rounded-lg border border-red-900/50 bg-red-950/30 text-red-300 px-3 py-2 text-sm font-medium hover:bg-red-950/50 hover:text-red-200 disabled:opacity-50 transition"
+            >
+              <ArrowRightOnRectangleIcon className="w-4 h-4" />
+              Lämna laget
+            </button>
+          )}
+        </div>
       )}
     </div>
   );

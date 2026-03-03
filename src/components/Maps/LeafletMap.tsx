@@ -153,12 +153,17 @@ export default function LeafletMap({
   fitToCourses,
 }: Props) {
   const [mounted, setMounted] = useState(false);
+  const [defaultZoom, setDefaultZoom] = useState(6);
   useEffect(() => {
     setMounted(true);
+    const tablet = window.matchMedia("(min-width: 768px) and (max-width: 1024px)");
+    setDefaultZoom(tablet.matches ? 5 : 6);
+    const listener = () => setDefaultZoom(tablet.matches ? 5 : 6);
+    tablet.addEventListener("change", listener);
+    return () => tablet.removeEventListener("change", listener);
   }, []);
 
   const defaultCenter: [number, number] = [58.2, 15.0]; // Södra Sverige
-  const defaultZoom = 6;
 
   if (!mounted) {
     return (

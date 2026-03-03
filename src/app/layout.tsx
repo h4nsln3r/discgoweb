@@ -26,7 +26,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="sv" className={bebasNeue.variable}>
-      <body className="min-h-screen bg-retro-bg">
+      <body className="min-h-screen bg-retro-bg overflow-x-hidden">
         <Suspense fallback={<div className="h-14 shrink-0" aria-hidden />}>
           <TopbarWrapper />
         </Suspense>

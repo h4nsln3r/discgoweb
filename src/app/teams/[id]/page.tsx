@@ -174,6 +174,8 @@ export default async function TeamDetailPage({ params }: Props) {
         teamId={id}
         members={members}
         currentUserId={user?.id ?? null}
+        myRole={myRole}
+        isMember={isMember}
         canManageRoles={showRoleManagement}
         canRemoveMembers={showEditLink}
       />
