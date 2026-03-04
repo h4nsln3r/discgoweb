@@ -281,24 +281,32 @@ function ScoresTable({
                         ) : rowHoles.length === 0 ? (
                           <p className="text-sm text-stone-400">Ingen hålfördelning sparad.</p>
                         ) : (
-                          <div className="flex flex-wrap gap-2">
-                            {[...rowHoles]
-                              .sort((a, b) => a.hole_number - b.hole_number)
-                              .map((h) => {
-                                const par = (h as HoleRow).par ?? parByHole?.[h.hole_number];
-                                const bg = getHoleThrowBg(h.throws, par);
-                                const style = getHoleThrowStyle(h.throws, par);
-                                return (
-                                  <span
-                                    key={h.hole_number}
-                                    className={`inline-flex items-center gap-1 rounded-lg border border-retro-border px-2.5 py-1 text-sm text-stone-200 ${bg || "bg-retro-surface"}`}
-                                    style={Object.keys(style).length > 0 ? style : undefined}
-                                  >
-                                    <span className="text-retro-muted">H{h.hole_number}</span>
-                                    <span className="font-medium">{h.throws}</span>
-                                  </span>
-                                );
-                              })}
+                          <div className="flex flex-wrap items-center justify-between gap-3">
+                            <div className="flex flex-wrap gap-2">
+                              {[...rowHoles]
+                                .sort((a, b) => a.hole_number - b.hole_number)
+                                .map((h) => {
+                                  const par = (h as HoleRow).par ?? parByHole?.[h.hole_number];
+                                  const bg = getHoleThrowBg(h.throws, par);
+                                  const style = getHoleThrowStyle(h.throws, par);
+                                  return (
+                                    <span
+                                      key={h.hole_number}
+                                      className={`inline-flex items-center gap-1 rounded-lg border border-retro-border px-2.5 py-1 text-sm text-stone-200 ${bg || "bg-retro-surface"}`}
+                                      style={Object.keys(style).length > 0 ? style : undefined}
+                                    >
+                                      <span className="text-retro-muted">H{h.hole_number}</span>
+                                      <span className="font-medium">{h.throws}</span>
+                                    </span>
+                                  );
+                                })}
+                            </div>
+                            <Link
+                              href={`/results/${scoreId}`}
+                              className="shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium bg-retro-accent text-stone-100 hover:bg-retro-accent-hover transition"
+                            >
+                              Gå till resultat
+                            </Link>
                           </div>
                         )}
                       </td>

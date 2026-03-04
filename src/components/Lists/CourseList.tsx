@@ -126,16 +126,16 @@ export default function CourseList({ refresh }: { refresh?: boolean }) {
               href={`/courses/${course.id}`}
               className="block flex flex-col flex-1 group"
             >
-              <div className="relative aspect-[16/10] bg-retro-card shrink-0">
+              <div className="relative w-full h-56 sm:h-72 bg-retro-card shrink-0 overflow-hidden">
                 {course.main_image_url ? (
                   // eslint-disable-next-line @next/next/no-img-element -- external image URL
                   <img
                     src={course.main_image_url}
                     alt={course.name}
-                    className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-200"
+                    className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-[1.02] transition-transform duration-200"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-retro-muted text-sm">
+                  <div className="absolute inset-0 flex items-center justify-center text-retro-muted text-sm">
                     Ingen bild
                   </div>
                 )}
