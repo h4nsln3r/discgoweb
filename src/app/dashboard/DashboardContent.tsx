@@ -17,7 +17,7 @@ type DashboardSummary = {
     latestScore: { id: string; score: number; date_played: string | null; profiles?: { alias: string } | null } | null;
   }[];
   competitions: { id: string; title: string; start_date?: string | null; created_at?: string | null }[];
-  mapCourses: { id: string; name: string; location?: string | null; city?: string | null; latitude?: number | null; longitude?: number | null; main_image_url?: string | null }[];
+  mapCourses: { id: string; name: string; location?: string | null; city?: string | null; latitude?: number | null; longitude?: number | null; main_image_url?: string | null; hole_count?: number }[];
   newMembers?: NewMember[];
 };
 

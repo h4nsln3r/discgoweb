@@ -83,13 +83,27 @@ export async function GET() {
     }
 
     // Alla banor för kartan
-    const { data: mapCourses, error: mapCoursesError } = await supabase
+    const { data: mapCoursesRaw, error: mapCoursesError } = await supabase
       .from("courses")
       .select("id, name, location, city, latitude, longitude, main_image_url");
 
     if (mapCoursesError) {
       console.error("[dashboard-summary] mapCourses error", mapCoursesError);
     }
+
+    // Hål per bana (för visning i panel)
+    const { data: holesData } = await supabase
+      .from("course_holes")
+      .select("course_id");
+    const holeCountByCourse: Record<string, number> = {};
+    for (const row of holesData ?? []) {
+      const cid = (row as { course_id: string }).course_id;
+      holeCountByCourse[cid] = (holeCountByCourse[cid] ?? 0) + 1;
+    }
+    const mapCourses = (mapCoursesRaw ?? []).map((c) => ({
+      ...c,
+      hole_count: holeCountByCourse[c.id as string] ?? 0,
+    }));
 
     // Nya medlemmar: max 6 st, endast registrerade senaste veckan
     const oneWeekAgo = new Date();
@@ -118,7 +132,7 @@ export async function GET() {
       courses: courses ?? [],
       latestScores,
       competitions: competitions ?? [],
-      mapCourses: mapCourses ?? [],
+      mapCourses,
       newMembers,
     });
   } catch (err: unknown) {

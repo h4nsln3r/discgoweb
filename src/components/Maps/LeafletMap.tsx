@@ -124,7 +124,7 @@ function FitBoundsToCourses({
     }
     const points = valid.map((c) => [c.latitude!, c.longitude!] as [number, number]);
     const bounds = L.latLngBounds(points);
-    map.fitBounds(bounds, { padding: [24, 24], maxZoom: 14, animate: false });
+    map.fitBounds(bounds, { padding: [48, 48], maxZoom: 8, animate: false });
   }, [courses, map, selectedCourseId]);
   return null;
 }

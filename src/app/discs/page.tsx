@@ -126,7 +126,7 @@ export default async function DiscsPage() {
       )}
 
       <p className="mt-6">
-        <BackLink href="/profile/edit" />
+        <BackLink />
       </p>
     </main>
   );

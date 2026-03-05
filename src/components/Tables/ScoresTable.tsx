@@ -139,8 +139,8 @@ function ScoresTable({
             ) : recordHoles.length === 0 ? (
               <p className="text-sm text-stone-400">Ingen hålfördelning sparad.</p>
             ) : (
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex flex-wrap gap-2">
+              <div className="flex items-center justify-between gap-3 flex-nowrap">
+                <div className="flex flex-wrap gap-2 min-w-0 flex-1">
                   {recordHoles
                     .sort((a, b) => a.hole_number - b.hole_number)
                     .map((h) => {
@@ -281,8 +281,8 @@ function ScoresTable({
                         ) : rowHoles.length === 0 ? (
                           <p className="text-sm text-stone-400">Ingen hålfördelning sparad.</p>
                         ) : (
-                          <div className="flex flex-wrap items-center justify-between gap-3">
-                            <div className="flex flex-wrap gap-2">
+                          <div className="flex items-center justify-between gap-3 flex-nowrap">
+                            <div className="flex flex-wrap gap-2 min-w-0 flex-1">
                               {[...rowHoles]
                                 .sort((a, b) => a.hole_number - b.hole_number)
                                 .map((h) => {

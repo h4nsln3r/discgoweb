@@ -97,9 +97,7 @@ export default function AddCompetitionScorePage() {
   return (
     <div className="max-w-xl mx-auto p-6 space-y-6">
       <div>
-        <BackLink href={`/competitions/${competitionId}`}>
-          Tillbaka till tävlingen
-        </BackLink>
+        <BackLink />
       </div>
       <h1 className="text-2xl font-bold mb-4">Lägg till score</h1>
 

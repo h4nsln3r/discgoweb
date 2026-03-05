@@ -91,9 +91,7 @@ export default async function CourseDetailPage({
   return (
     <div className="max-w-5xl mx-auto p-6 space-y-8">
       <div className="flex items-center justify-between gap-4">
-        <BackLink href={fromDashboard ? "/dashboard" : fromCompetition ? `/competitions/${competitionId}` : "/courses"}>
-          {fromDashboard ? "Tillbaka till dashboard" : fromCompetition ? "Tillbaka till tävlingen" : "Tillbaka till banor"}
-        </BackLink>
+        <BackLink />
         <Link
           href={`/courses/${course.id}/edit`}
           className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-retro-border text-stone-200 text-sm font-medium hover:bg-retro-card transition"

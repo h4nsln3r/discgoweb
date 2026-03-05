@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Course } from "../CourseList";
-import { XMarkIcon, MapPinIcon, TrophyIcon, PlusCircleIcon } from "@heroicons/react/24/outline";
+import { XMarkIcon, MapPinIcon, TrophyIcon, PlusCircleIcon, HomeIcon } from "@heroicons/react/24/outline";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import type { Database } from "@/types/supabase";
 import { formatScorePar } from "@/lib/scoreDisplay";
@@ -43,6 +43,7 @@ export default function CoursePreviewPanel({ course, onClose, embedded, fromDash
   const [bestScore, setBestScore] = useState<BestScore | null>(null);
   const [loadingScore, setLoadingScore] = useState(false);
   const [scoreError, setScoreError] = useState<string | null>(null);
+  const [homeCourseProfiles, setHomeCourseProfiles] = useState<{ id: string; alias: string }[]>([]);
 
   // Always declare hooks in the same order; guard *inside* the effect.
   useEffect(() => {
@@ -94,6 +95,34 @@ export default function CoursePreviewPanel({ course, onClose, embedded, fromDash
     };
   }, [course?.id, supabase]);
 
+  // Hemmabana – vilka som har denna bana som hemmabana
+  useEffect(() => {
+    if (!course?.id) {
+      setHomeCourseProfiles([]);
+      return;
+    }
+    let cancelled = false;
+    supabase
+      .from("profiles")
+      .select("id, alias")
+      .eq("home_course", course.id)
+      .then(({ data }) => {
+        if (!cancelled && Array.isArray(data)) {
+          const list = data
+            .map((p) => {
+              const alias = (p as { alias: string | null }).alias?.trim();
+              return alias ? { id: (p as { id: string }).id, alias } : null;
+            })
+            .filter((x): x is { id: string; alias: string } => x != null);
+          setHomeCourseProfiles(list);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setHomeCourseProfiles([]);
+      });
+    return () => { cancelled = true; };
+  }, [course?.id, supabase]);
+
   // Early return placed AFTER all hooks are declared
   if (!course) return null;
 
@@ -128,6 +157,12 @@ export default function CoursePreviewPanel({ course, onClose, embedded, fromDash
               >
                 <XMarkIcon className="h-5 w-5 text-stone-200" />
               </button>
+              {/* Antal hål – samma badge som på alla-banor-sidan */}
+              {course.hole_count != null && course.hole_count > 0 && (
+                <div className="absolute bottom-2 left-2 rounded-lg bg-black/60 px-2 py-1 text-xs font-medium text-stone-200">
+                  {course.hole_count} hål
+                </div>
+              )}
             </Link>
           ) : (
             <div className="flex justify-end p-3 border-b border-retro-border">
@@ -166,70 +201,76 @@ export default function CoursePreviewPanel({ course, onClose, embedded, fromDash
               )}
             </div>
 
-            {/* Course record – klickbar rad till resultatet – döljs i compact-läge */}
-            {!compact && (
+            {/* Banrekord – visas bara om det finns ett registrerat rekord */}
+            {!compact && !loadingScore && bestScore && (
             <div className="mt-2">
               <h4 className="text-xs font-medium text-stone-400 mb-1 flex items-center gap-1.5">
                 <TrophyIcon className="h-4 w-4 text-retro-accent shrink-0" aria-hidden />
                 Banrekord
               </h4>
               <div className="rounded-lg border border-retro-border bg-retro-card">
-                {loadingScore ? (
-                  <div className="p-2 animate-pulse">
-                    <div className="h-3 w-20 bg-retro-border rounded" />
-                    <div className="mt-1.5 h-3 w-14 bg-retro-border rounded" />
-                  </div>
-                ) : scoreError ? (
-                  <div className="p-2 text-xs text-amber-400">{scoreError}</div>
-                ) : bestScore ? (
-                  <div
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => {
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => {
+                    onClose();
+                    router.push(`/results/${bestScore.id}`);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
                       onClose();
                       router.push(`/results/${bestScore.id}`);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        onClose();
-                        router.push(`/results/${bestScore.id}`);
-                      }
-                    }}
-                    className="block p-2 flex items-center justify-between gap-2 hover:bg-retro-border/30 rounded-lg transition cursor-pointer"
-                  >
-                    <div className="text-xs min-w-0">
-                      <div className="font-medium text-stone-200 truncate">
-                        {(bestScore as { user_id?: string }).user_id ? (
-                          <Link
-                            href={`/profile/${(bestScore as { user_id: string }).user_id}`}
-                            className="text-retro-accent hover:underline"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            {bestScore.profiles?.alias ?? "Okänd spelare"}
-                          </Link>
-                        ) : (
-                          (bestScore.profiles?.alias ?? "Okänd spelare")
-                        )}
-                      </div>
-                      <div className="text-stone-400">
-                        {bestScore.date_played
-                          ? new Date(bestScore.date_played).toLocaleDateString("sv-SE")
-                          : "Okänt datum"}
-                      </div>
+                    }
+                  }}
+                  className="block p-2 flex items-center justify-between gap-2 hover:bg-retro-border/30 rounded-lg transition cursor-pointer"
+                >
+                  <div className="text-xs min-w-0">
+                    <div className="font-medium text-stone-200 truncate">
+                      {(bestScore as { user_id?: string }).user_id ? (
+                        <Link
+                          href={`/profile/${(bestScore as { user_id: string }).user_id}`}
+                          className="text-retro-accent hover:underline"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {bestScore.profiles?.alias ?? "Okänd spelare"}
+                        </Link>
+                      ) : (
+                        (bestScore.profiles?.alias ?? "Okänd spelare")
+                      )}
                     </div>
-                    <div className="text-right shrink-0">
-                      <div className="text-sm font-semibold text-stone-100">{formatScorePar(bestScore?.score ?? null)}</div>
-                      <div className="text-xs text-retro-muted">mot par</div>
+                    <div className="text-stone-400">
+                      {bestScore.date_played
+                        ? new Date(bestScore.date_played).toLocaleDateString("sv-SE")
+                        : "Okänt datum"}
                     </div>
                   </div>
-                ) : (
-                  <div className="p-2 text-xs text-stone-400">
-                    Inga registrerade rundor ännu.
+                  <div className="text-right shrink-0">
+                    <div className="text-sm font-semibold text-stone-100">{formatScorePar(bestScore?.score ?? null)}</div>
+                    <div className="text-xs text-retro-muted">mot par</div>
                   </div>
-                )}
+                </div>
               </div>
             </div>
+            )}
+
+            {/* Hemmabana för – visas bara om någon har banan som hemmabana */}
+            {!compact && homeCourseProfiles.length > 0 && (
+              <div className="mt-2">
+                <h4 className="text-xs font-medium text-stone-400 mb-1 flex items-center gap-1.5">
+                  <HomeIcon className="h-4 w-4 text-retro-accent shrink-0" aria-hidden />
+                  Hemmabana för
+                </h4>
+                <ul className="list-disc list-inside text-sm text-stone-200 space-y-0.5">
+                  {homeCourseProfiles.map((prof) => (
+                    <li key={prof.id}>
+                      <Link href={`/profile/${prof.id}`} className="text-retro-accent hover:underline" onClick={(e) => e.stopPropagation()}>
+                        {prof.alias}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
 
             {/* Actions – döljs i compact-läge; endast Lägg till resultat */}

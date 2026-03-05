@@ -181,9 +181,7 @@ export default function EditCompetitionPage() {
   if (isCreator === false) {
     return (
       <div className="max-w-2xl mx-auto p-6 space-y-4">
-        <BackLink href={id ? `/competitions/${id}` : "/competitions"}>
-          Tillbaka till tävlingen
-        </BackLink>
+        <BackLink />
         <p className="text-stone-400">
           Du kan bara redigera tävlingar som du själv skapat.
         </p>
@@ -197,7 +195,7 @@ export default function EditCompetitionPage() {
   return (
     <div className="max-w-2xl mx-auto p-6 space-y-6">
       <div className="mb-2">
-        <BackLink href={id ? `/competitions/${id}` : "/competitions"}>Tillbaka till tävlingen</BackLink>
+        <BackLink />
       </div>
       <h1 className="text-2xl font-bold text-stone-100">Redigera tävling</h1>
 

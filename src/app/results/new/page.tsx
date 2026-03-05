@@ -71,15 +71,7 @@ export default function AddResultPage() {
   return (
     <main className="p-6 max-w-2xl mx-auto space-y-6">
       <div>
-        <BackLink
-          href={
-            competitionIdFromUrl
-              ? `/competitions/${competitionIdFromUrl}`
-              : "/results"
-          }
-        >
-          {competitionIdFromUrl ? "Tillbaka till tävlingen" : "Tillbaka till resultat"}
-        </BackLink>
+        <BackLink />
       </div>
       <h1 className="text-2xl font-bold mb-4">Lägg till resultat</h1>
       {(courseIdFromUrl && coursesLoading) || (competitionIdFromUrl && competitionLoading) ? (

@@ -44,9 +44,7 @@ export default async function CompetitionResultsPage({
   return (
     <div className="max-w-3xl mx-auto p-6 space-y-6">
       <div>
-        <BackLink href={`/competitions/${competitionId}`}>
-          Tillbaka till tävlingen
-        </BackLink>
+        <BackLink />
       </div>
       <h1 className="text-2xl font-bold mb-6">Resultat</h1>
 

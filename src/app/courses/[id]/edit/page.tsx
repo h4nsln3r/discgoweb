@@ -167,7 +167,7 @@ export default function EditCoursePage() {
   return (
     <div className="max-w-2xl mx-auto p-6 space-y-6">
       <div className="mb-2">
-        <BackLink href={id ? `/courses/${id}` : "/courses"}>Tillbaka till banan</BackLink>
+        <BackLink />
       </div>
       <h1 className="text-2xl font-bold text-stone-100">Redigera bana</h1>
       <CourseForm

@@ -155,7 +155,7 @@ export default async function CompetitionDetailPage({ params }: PageProps) {
   return (
     <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
       <div className="flex items-center justify-between gap-4">
-        <BackLink href="/competitions" />
+        <BackLink />
         {isCreator && (
           <Link
             href={`/competitions/${id}/edit`}

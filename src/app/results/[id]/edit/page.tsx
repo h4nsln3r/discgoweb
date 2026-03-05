@@ -148,7 +148,7 @@ export default function EditScorePage() {
     return (
       <main className="p-4 md:p-6 max-w-3xl mx-auto">
         <p className="text-stone-400">Hittade inte resultat.</p>
-        <BackLink href="/results" className="mt-3 inline-flex items-center gap-2 text-retro-accent hover:text-stone-200" />
+        <BackLink className="mt-3 inline-flex items-center gap-2 text-retro-accent hover:text-stone-200" />
       </main>
     );
   }
@@ -158,7 +158,7 @@ export default function EditScorePage() {
     return (
       <main className="p-4 md:p-6 max-w-3xl mx-auto space-y-4">
         <p className="text-stone-400">Du kan bara redigera och ta bort resultat som du själv lagt in.</p>
-        <BackLink href={`/results/${id}`} className="inline-flex items-center gap-2 text-retro-accent hover:text-stone-200" />
+        <BackLink className="inline-flex items-center gap-2 text-retro-accent hover:text-stone-200" />
       </main>
     );
   }
@@ -166,7 +166,7 @@ export default function EditScorePage() {
   return (
     <main className="p-4 md:p-6 max-w-3xl mx-auto space-y-6">
       <div>
-        <BackLink href={id ? `/results/${id}` : "/results"} />
+        <BackLink />
       </div>
 
       <h1 className="text-2xl font-bold text-stone-100">Redigera resultat</h1>

@@ -1,23 +1,27 @@
-import Link from "next/link";
+"use client";
+
+import { useRouter } from "next/navigation";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 
 type BackLinkProps = {
-  href: string;
   children?: React.ReactNode;
   className?: string;
 };
 
-export default function BackLink({ href, className }: BackLinkProps) {
+/** Tillbaka-knapp som går till föregående sida i webbläsarhistoriken. */
+export default function BackLink({ children, className }: BackLinkProps) {
+  const router = useRouter();
   return (
-    <Link
-      href={href}
+    <button
+      type="button"
+      onClick={() => router.back()}
       className={
         className ??
         "inline-flex items-center gap-2 text-sm text-stone-400 hover:text-stone-200 transition"
       }
     >
       <ArrowLeftIcon className="h-5 w-5 shrink-0" />
-      <span>Tillbaka</span>
-    </Link>
+      <span>{children ?? "Tillbaka"}</span>
+    </button>
   );
 }
