@@ -112,6 +112,7 @@ export type Database = {
           description: string | null
           id: string
           image_urls: string | null
+          landskap: string | null
           latitude: number | null
           location: string | null
           longitude: number | null
@@ -125,6 +126,7 @@ export type Database = {
           description?: string | null
           id?: string
           image_urls?: string | null
+          landskap?: string | null
           latitude?: number | null
           location?: string | null
           longitude?: number | null
@@ -138,6 +140,7 @@ export type Database = {
           description?: string | null
           id?: string
           image_urls?: string | null
+          landskap?: string | null
           latitude?: number | null
           location?: string | null
           longitude?: number | null

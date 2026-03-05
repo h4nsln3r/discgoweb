@@ -187,9 +187,13 @@ export default async function CourseDetailPage({
         <div className="space-y-4">
           <h1 className="text-3xl font-bold text-stone-100">{course.name}</h1>
 
-          {(course.city || course.country || course.location) && (
-            <p className="text-stone-400 flex items-center gap-2">
+          {((course as { landskap?: string | null }).landskap || course.city || course.country || course.location) && (
+            <p className="text-stone-400 flex flex-wrap items-center gap-x-2 gap-y-1">
               <MapPinIcon className="w-4 h-4 text-retro-muted shrink-0" aria-hidden />
+              {(course as { landskap?: string | null }).landskap && (
+                <span className="text-amber-500/90">{(course as { landskap: string }).landskap}</span>
+              )}
+              {(course as { landskap?: string | null }).landskap && (course.city || course.country) && <span> · </span>}
               {course.city && <span>{course.city}</span>}
               {course.city && course.country && <span>, </span>}
               {course.country && <span>{course.country}</span>}

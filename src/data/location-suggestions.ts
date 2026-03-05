@@ -1,7 +1,64 @@
 /**
- * Förslag för autocomplete i profil (Stad & Land).
+ * Förslag för autocomplete i profil (Stad & Land) och banor (Landskap).
  * Användaren kan fortfarande skriva fritt – listan är bara förslag.
  */
+
+/** Svenska landskap (traditionella) – för sortering av banor */
+export const LANDKAP_SUGGESTIONS = [
+  "Skåne", "Blekinge", "Halland", "Småland", "Öland", "Gotland",
+  "Östergötland", "Södermanland", "Uppland", "Västmanland",
+  "Dalsland", "Bohuslän", "Västergötland", "Närke", "Värmland",
+  "Dalarna", "Gästrikland", "Hälsingland", "Medelpad", "Härjedalen",
+  "Jämtland", "Ångermanland", "Västerbotten", "Norrbotten", "Lappland",
+] as const;
+
+/** Stad → landskap (svenska städer). Används för att fylla i landskap automatiskt i banformuläret. */
+const CITY_LANDSKAP: Record<string, string> = {
+  malmö: "Skåne",
+  lund: "Skåne",
+  helsingborg: "Skåne",
+  kristianstad: "Skåne",
+  trelleborg: "Skåne",
+  landskrona: "Skåne",
+  ystad: "Skåne",
+  ängelholm: "Skåne",
+  kalmar: "Småland",
+  växjö: "Småland",
+  jönköping: "Småland",
+  västervik: "Småland",
+  nyköping: "Södermanland",
+  stockholm: "Uppland",
+  uppsala: "Uppland",
+  södertälje: "Södermanland",
+  västerås: "Västmanland",
+  örebro: "Närke",
+  linköping: "Östergötland",
+  norrköping: "Östergötland",
+  motala: "Östergötland",
+  göteborg: "Västergötland",
+  borås: "Västergötland",
+  halmstad: "Halland",
+  varberg: "Halland",
+  falkenberg: "Halland",
+  karlstad: "Värmland",
+  karlskrona: "Blekinge",
+  karlshamn: "Blekinge",
+  visby: "Gotland",
+  umeå: "Västerbotten",
+  luleå: "Norrbotten",
+  kiruna: "Norrbotten",
+  sundsvall: "Medelpad",
+  östersund: "Jämtland",
+  gävle: "Gästrikland",
+  falun: "Dalarna",
+  borlänge: "Dalarna",
+};
+
+/** Returnerar landskap för en svensk stad om vi har mapping, annars null. */
+export function getLandskapForCity(city: string): string | null {
+  const key = city.trim().toLowerCase();
+  return key ? CITY_LANDSKAP[key] ?? null : null;
+}
 
 /** Länder på svenska (vanliga + nordiska först) */
 export const COUNTRY_SUGGESTIONS = [

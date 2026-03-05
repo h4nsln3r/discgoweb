@@ -18,6 +18,7 @@ type CourseDataFromDb = {
   description: string;
   city: string;
   country: string;
+  landskap: string;
   holes: CourseHole[];
 };
 
@@ -31,6 +32,7 @@ type CourseFormData = {
   description: string;
   city: string;
   country: string;
+  landskap: string;
   holes: CourseHole[];
 };
 
@@ -46,21 +48,33 @@ export default function EditCourseClient({ courseId }: { courseId: string }) {
 
   useEffect(() => {
     const fetchCourse = async () => {
-      const { data: course, error } = await supabase
+      const columnsWithLandskap =
+        "name, location, latitude, longitude, image_urls, main_image_url, description, city, country, landskap";
+      let result = await supabase
         .from("courses")
-        .select(
-          "name, location, latitude, longitude, image_urls, main_image_url, description, city, country"
-        )
+        .select(columnsWithLandskap)
         .eq("id", courseId)
         .single();
 
-      if (error) {
-        console.error(error);
-        showToast("Kunde inte hämta kursdata.", "error");
-        setLoading(false);
-        return;
+      if (result.error) {
+        const msg = result.error.message ?? String(result.error.code ?? result.error);
+        const missingColumn = /column.*does not exist|landskap/i.test(msg);
+        if (missingColumn) {
+          result = await supabase
+            .from("courses")
+            .select("name, location, latitude, longitude, image_urls, main_image_url, description, city, country")
+            .eq("id", courseId)
+            .single();
+        }
+        if (result.error) {
+          console.error("Course fetch error:", result.error.message ?? result.error.code ?? result.error);
+          showToast("Kunde inte hämta kursdata.", "error");
+          setLoading(false);
+          return;
+        }
       }
 
+      const course = result.data as Record<string, unknown>;
       const { data: holesData } = await supabase
         .from("course_holes")
         .select("hole_number, par, length")
@@ -75,19 +89,20 @@ export default function EditCourseClient({ courseId }: { courseId: string }) {
 
       if (course) {
         setCourseData({
-          name: course.name,
-          location: course.location ?? "",
-          latitude: course.latitude?.toString() || "",
-          longitude: course.longitude?.toString() || "",
+          name: (course.name as string) ?? "",
+          location: (course.location as string) ?? "",
+          latitude: course.latitude != null ? String(course.latitude) : "",
+          longitude: course.longitude != null ? String(course.longitude) : "",
           imageUrls: Array.isArray(course.image_urls)
-            ? course.image_urls
-            : course.image_urls
-            ? JSON.parse(course.image_urls as string)
+            ? (course.image_urls as string[])
+            : typeof course.image_urls === "string" && course.image_urls
+            ? JSON.parse(course.image_urls)
             : [],
-          mainImageUrl: course.main_image_url || "",
-          description: course.description ?? "",
-          city: course.city ?? "",
-          country: course.country ?? "",
+          mainImageUrl: (course.main_image_url as string) || "",
+          description: (course.description as string) ?? "",
+          city: (course.city as string) ?? "",
+          country: (course.country as string) ?? "",
+          landskap: (course.landskap as string) ?? "",
           holes,
         });
       }
@@ -98,23 +113,26 @@ export default function EditCourseClient({ courseId }: { courseId: string }) {
   }, [courseId, supabase, showToast]);
 
   const handleUpdate = async (formData: CourseFormData) => {
-    const { error } = await supabase
-      .from("courses")
-      .update({
-        name: formData.name,
-        location: formData.location,
-        latitude: formData.latitude,
-        longitude: formData.longitude,
-        image_urls: JSON.stringify(formData.imageUrls),
-        main_image_url: formData.mainImageUrl,
-        description: formData.description,
-        city: formData.city,
-        country: formData.country,
-      })
-      .eq("id", courseId);
+    const payload: Record<string, unknown> = {
+      name: formData.name,
+      location: formData.location,
+      latitude: formData.latitude,
+      longitude: formData.longitude,
+      image_urls: JSON.stringify(formData.imageUrls),
+      main_image_url: formData.mainImageUrl,
+      description: formData.description,
+      city: formData.city,
+      country: formData.country,
+      landskap: formData.landskap || null,
+    };
+    let result = await supabase.from("courses").update(payload).eq("id", courseId);
 
-    if (error) {
-      console.error(error);
+    if (result.error && /column.*does not exist|landskap/i.test(result.error.message ?? "")) {
+      delete payload.landskap;
+      result = await supabase.from("courses").update(payload).eq("id", courseId);
+    }
+    if (result.error) {
+      console.error("Course update error:", result.error.message ?? result.error.code ?? result.error);
       showToast("Fel vid uppdatering av bana.", "error");
       return;
     }
@@ -172,6 +190,7 @@ export default function EditCourseClient({ courseId }: { courseId: string }) {
         initialDescription={courseData.description}
         initialCity={courseData.city}
         initialCountry={courseData.country}
+        initialLandskap={courseData.landskap}
         initialHoles={courseData.holes}
         onSubmit={handleUpdate}
         submitText="Spara ändringar"

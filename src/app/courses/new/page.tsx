@@ -22,6 +22,7 @@ export default function AddCoursePage() {
     description: string;
     city: string;
     country: string;
+    landskap: string;
     holes: CourseHole[];
   }) => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -37,6 +38,7 @@ export default function AddCoursePage() {
         description: data.description,
         city: data.city,
         country: data.country,
+        landskap: data.landskap?.trim() || null,
         created_by: user?.id ?? null,
       })
       .select("id")

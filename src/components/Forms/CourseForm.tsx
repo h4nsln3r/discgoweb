@@ -4,7 +4,7 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Database } from "@/types/supabase";
 import { uploadCourseImage } from "@/lib/course-uploads";
-import { CITY_COUNTRY_PAIRS, CITY_SUGGESTIONS, COUNTRY_SUGGESTIONS } from "@/data/location-suggestions";
+import { CITY_COUNTRY_PAIRS, CITY_SUGGESTIONS, COUNTRY_SUGGESTIONS, LANDKAP_SUGGESTIONS, getLandskapForCity } from "@/data/location-suggestions";
 import dynamic from "next/dynamic";
 
 const CourseLocationPicker = dynamic(
@@ -28,6 +28,7 @@ type CourseFormProps = {
   initialDescription?: string;
   initialCity?: string;
   initialCountry?: string;
+  initialLandskap?: string;
   initialHoles?: CourseHole[];
   onSubmit: (data: {
     name: string;
@@ -39,6 +40,7 @@ type CourseFormProps = {
     description: string;
     city: string;
     country: string;
+    landskap: string;
     holes: CourseHole[];
   }) => Promise<void>;
   submitText: string;
@@ -64,6 +66,7 @@ export default function CourseForm({
   initialDescription = "",
   initialCity = "",
   initialCountry = "",
+  initialLandskap = "",
   initialHoles = [],
   onSubmit,
   submitText,
@@ -75,6 +78,7 @@ export default function CourseForm({
   const [description, setDescription] = useState(initialDescription);
   const [city, setCity] = useState(initialCity);
   const [country, setCountry] = useState(initialCountry);
+  const [landskap, setLandskap] = useState(initialLandskap);
   const [imageUrls, setImageUrls] = useState<string[]>(initialImageUrls);
   const [mainImageUrl, setMainImageUrl] = useState(initialMainImageUrl);
   const [newUrlInput, setNewUrlInput] = useState("");
@@ -200,6 +204,7 @@ export default function CourseForm({
       description,
       city,
       country,
+      landskap: landskap.trim() || "",
       holes: numHoles === 0 ? [] : holes,
     });
     setLoading(false);
@@ -287,6 +292,8 @@ export default function CourseForm({
                   onClick={() => {
                     setCity(p.city);
                     setCountry(p.country);
+                    const autoLandskap = getLandskapForCity(p.city);
+                    if (autoLandskap) setLandskap(autoLandskap);
                     setLocationSearch("");
                     setLocationDropdownOpen(false);
                   }}
@@ -317,6 +324,8 @@ export default function CourseForm({
               if (q) {
                 const pair = CITY_COUNTRY_PAIRS.find((p) => p.city.trim().toLowerCase() === q);
                 if (pair) setCountry(pair.country);
+                const autoLandskap = getLandskapForCity(v);
+                if (autoLandskap) setLandskap(autoLandskap);
               }
             }}
             placeholder="t.ex. Malmö"
@@ -350,6 +359,29 @@ export default function CourseForm({
             ))}
           </datalist>
         </div>
+      </div>
+
+      {/* Landskap */}
+      <div>
+        <label htmlFor="landskap" className="block font-semibold mb-1 text-stone-200">
+          Landskap
+        </label>
+        <input
+          id="landskap"
+          type="text"
+          value={landskap}
+          onChange={(e) => setLandskap(e.target.value)}
+          placeholder="t.ex. Skåne, Uppland"
+          list="course-landskap-list"
+          autoComplete="off"
+          className="w-full border border-retro-border bg-retro-surface text-stone-100 p-2 rounded focus:outline-none focus:ring-2 focus:ring-retro-accent placeholder:text-stone-500"
+        />
+        <datalist id="course-landskap-list">
+          {LANDKAP_SUGGESTIONS.map((s) => (
+            <option key={s} value={s} />
+          ))}
+        </datalist>
+        <p className="text-xs text-stone-500 mt-1">Används för sortering på Alla banor. Valfritt.</p>
       </div>
 
       {/* Karta och adresssökning för position (lat/long) */}
