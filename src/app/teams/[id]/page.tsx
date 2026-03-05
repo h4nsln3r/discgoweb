@@ -105,7 +105,7 @@ export default async function TeamDetailPage({ params }: Props) {
         )}
       </div>
 
-      {/* Lagbild – stort längst upp, laglogga över bilden nere till höger */}
+      {/* Lagbild – stort längst upp (utan logga på bilden) */}
       <div className="rounded-2xl border border-retro-border bg-retro-surface overflow-hidden shadow-sm mb-6">
         <div className="aspect-video w-full max-h-80 bg-retro-card relative flex items-center justify-center overflow-hidden">
           {(team.bild || team.logga) ? (
@@ -118,24 +118,25 @@ export default async function TeamDetailPage({ params }: Props) {
           ) : (
             <UserGroupIcon className="w-24 h-24 text-retro-muted" />
           )}
-          {team.logga && (
-            <div className="absolute bottom-0 right-0 z-10 h-24 w-24 sm:h-28 sm:w-28 flex items-center justify-center origin-bottom-right translate-x-1 translate-y-1">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={team.logga}
-                alt=""
-                className="h-full w-full object-contain drop-shadow-lg"
-              />
-            </div>
-          )}
         </div>
       </div>
 
-      {/* Namn + location – ingen card */}
-      <div className="mb-6">
-        <h1 className="text-5xl sm:text-6xl font-bebas tracking-wide text-stone-100 uppercase text-center sm:text-left">
-          {team.name}
-        </h1>
+      {/* Logga + namn på samma rad – loggan utanför bilden, lite större */}
+      <div className="mb-6 flex items-center gap-4 sm:gap-5 flex-wrap">
+        {team.logga && (
+          <div className="shrink-0 w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 flex items-center justify-center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={team.logga}
+              alt=""
+              className="w-full h-full object-contain"
+            />
+          </div>
+        )}
+        <div className="min-w-0 flex-1">
+          <h1 className="text-5xl sm:text-6xl font-bebas tracking-wide text-stone-100 uppercase text-center sm:text-left">
+            {team.name}
+          </h1>
         {team.ort && (
           <p className="flex items-center justify-center sm:justify-start gap-1.5 text-stone-400 text-lg mt-2">
             <MapPinIcon className="w-5 h-5 text-retro-muted shrink-0" />
@@ -157,6 +158,7 @@ export default async function TeamDetailPage({ params }: Props) {
             Du har ansökt till detta lag. Väntar på godkännande från admin eller kapten.
           </p>
         )}
+        </div>
       </div>
 
       {/* Om laget – eget card med ikon */}
