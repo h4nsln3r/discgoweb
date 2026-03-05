@@ -42,7 +42,6 @@ export default function CoursePreviewPanel({ course, onClose, embedded, fromDash
 
   const [bestScore, setBestScore] = useState<BestScore | null>(null);
   const [loadingScore, setLoadingScore] = useState(false);
-  const [scoreError, setScoreError] = useState<string | null>(null);
   const [homeCourseProfiles, setHomeCourseProfiles] = useState<{ id: string; alias: string }[]>([]);
 
   // Always declare hooks in the same order; guard *inside* the effect.
@@ -57,7 +56,6 @@ export default function CoursePreviewPanel({ course, onClose, embedded, fromDash
       }
 
       setLoadingScore(true);
-      setScoreError(null);
 
       try {
         const { data, error } = await supabase
@@ -73,7 +71,6 @@ export default function CoursePreviewPanel({ course, onClose, embedded, fromDash
         if (!cancelled) {
           if (error) {
             console.error("[COURSE RECORD ERROR]", error);
-            setScoreError("Kunde inte hämta banrekord.");
             setBestScore(null);
           } else {
             setBestScore((data && data[0]) ?? null);
@@ -82,7 +79,6 @@ export default function CoursePreviewPanel({ course, onClose, embedded, fromDash
       } catch (e) {
         if (!cancelled) {
           console.error("[COURSE RECORD ERROR]", e);
-          setScoreError("Kunde inte hämta banrekord.");
           setBestScore(null);
         }
       } finally {

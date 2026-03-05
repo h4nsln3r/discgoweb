@@ -13,19 +13,15 @@ import MapEmbed from "@/components/Maps/MapEmbed";
 
 export default async function CourseDetailPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ from?: string; competitionId?: string }>;
+  searchParams?: Promise<{ from?: string; competitionId?: string }>;
 }) {
   const cookieStore = await cookies();
   const supabase = createServerComponentClient<Database>({
     cookies: () => cookieStore,
   });
   const { id } = await params;
-  const { from, competitionId } = await searchParams;
-  const fromDashboard = from === "dashboard";
-  const fromCompetition = from === "competition" && competitionId;
 
   // Hämta kursen
   const { data: course, error } = await supabase
