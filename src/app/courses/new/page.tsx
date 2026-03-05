@@ -24,6 +24,7 @@ export default function AddCoursePage() {
     country: string;
     holes: CourseHole[];
   }) => {
+    const { data: { user } } = await supabase.auth.getUser();
     const { data: inserted, error } = await supabase
       .from("courses")
       .insert({
@@ -36,6 +37,7 @@ export default function AddCoursePage() {
         description: data.description,
         city: data.city,
         country: data.country,
+        created_by: user?.id ?? null,
       })
       .select("id")
       .single();
