@@ -8,6 +8,7 @@ import {
   HomeIcon,
   TrophyIcon,
   UserGroupIcon,
+  BriefcaseIcon,
 } from "@heroicons/react/24/outline";
 import BackButton from "@/components/Buttons/BackButton";
 import TeamCard from "@/components/Teams/TeamCard";
@@ -97,6 +98,14 @@ export default async function PublicProfilePage({ params }: Props) {
       .maybeSingle();
     if (!res.error && res.data) favoriteDisc = res.data as DiscRow;
   }
+
+  type BagDiscRow = { id: string; disc_id: string; created_at: string; discs: { id: string; name: string; bild: string | null } | null };
+  const { data: bagData } = await supabase
+    .from("player_bag")
+    .select("id, disc_id, created_at, discs(id, name, bild)")
+    .eq("user_id", id)
+    .order("created_at", { ascending: true });
+  const bagDiscs = (bagData ?? []) as BagDiscRow[];
 
   type ScoreRow = {
     id: string;
@@ -337,6 +346,42 @@ export default async function PublicProfilePage({ params }: Props) {
           </div>
         )}
       </div>
+
+      {/* Bag (läs endast på andras profiler) */}
+      {bagDiscs.length > 0 && (
+        <>
+          <h2 className="flex items-center gap-2 text-lg font-semibold text-amber-500 mb-2">
+            <BriefcaseIcon className="w-5 h-5 text-amber-500 shrink-0" aria-hidden />
+            Bag
+          </h2>
+          <div className="mb-6">
+            <div className="rounded-2xl border border-retro-border bg-retro-surface p-4 shadow-sm">
+              <div className="flex flex-wrap gap-3 items-center">
+                {bagDiscs.slice(0, 12).map((b) => (
+                  <Link
+                    key={b.id}
+                    href={`/discs/${b.disc_id}`}
+                    className="flex items-center gap-2 rounded-xl bg-retro-card/50 border border-retro-border px-3 py-2 hover:bg-retro-card transition"
+                  >
+                    <div className="w-10 h-10 rounded-full overflow-hidden bg-retro-surface flex items-center justify-center shrink-0">
+                      {b.discs?.bild ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img src={b.discs.bild} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-retro-muted text-lg">🥏</span>
+                      )}
+                    </div>
+                    <span className="text-stone-200 text-sm font-medium truncate max-w-[120px]">{b.discs?.name ?? "—"}</span>
+                  </Link>
+                ))}
+                {bagDiscs.length > 12 && (
+                  <span className="text-stone-500 text-sm">+{bagDiscs.length - 12} till</span>
+                )}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Lag */}
       <h2 className="flex items-center gap-2 text-lg font-semibold text-amber-500 mb-2">

@@ -240,6 +240,42 @@ export type Database = {
         }
         Relationships: []
       }
+      player_bag: {
+        Row: {
+          id: string
+          user_id: string
+          disc_id: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          disc_id: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          disc_id?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_bag_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_bag_disc_id_fkey"
+            columns: ["disc_id"]
+            isOneToOne: false
+            referencedRelation: "discs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       disc_comments: {
         Row: {
           id: string

@@ -8,6 +8,7 @@ import {
   PhoneIcon,
   HomeIcon,
   UserGroupIcon,
+  BriefcaseIcon,
 } from "@heroicons/react/24/outline";
 import ProfileWelcomeToast from "@/components/Toasts/ProfileWelcomeToast";
 import TeamCard from "@/components/Teams/TeamCard";
@@ -117,6 +118,15 @@ export default async function ProfileHomePage() {
       .maybeSingle();
     if (!res.error && res.data) favoriteDisc = res.data as DiscRow;
   }
+
+  type BagDiscRow = { id: string; disc_id: string; created_at: string; discs: { id: string; name: string; bild: string | null } | null };
+  const { data: bagData } = await supabase
+    .from("player_bag")
+    .select("id, disc_id, created_at, discs(id, name, bild)")
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .eq("user_id", user.id as any)
+    .order("created_at", { ascending: true });
+  const bagDiscs = (bagData ?? []) as BagDiscRow[];
 
   type ScoreRow = {
     id: string;
@@ -371,6 +381,48 @@ export default async function ProfileHomePage() {
             <p className="text-stone-400">Ingen hemmabana vald</p>
           </div>
         )}
+      </div>
+
+      {/* Min bag */}
+      <h2 className="flex items-center gap-2 text-lg font-semibold text-amber-500 mb-2">
+        <BriefcaseIcon className="w-5 h-5 text-amber-500 shrink-0" aria-hidden />
+        Min bag
+      </h2>
+      <div className="mb-6">
+        <div className="rounded-2xl border border-retro-border bg-retro-surface p-4 shadow-sm">
+          {bagDiscs.length > 0 ? (
+            <div className="flex flex-wrap gap-3 items-center">
+              {bagDiscs.slice(0, 12).map((b) => (
+                <Link
+                  key={b.id}
+                  href={`/discs/${b.disc_id}`}
+                  className="flex items-center gap-2 rounded-xl bg-retro-card/50 border border-retro-border px-3 py-2 hover:bg-retro-card transition"
+                >
+                  <div className="w-10 h-10 rounded-full overflow-hidden bg-retro-surface flex items-center justify-center shrink-0">
+                    {b.discs?.bild ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img src={b.discs.bild} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-retro-muted text-lg">🥏</span>
+                    )}
+                  </div>
+                  <span className="text-stone-200 text-sm font-medium truncate max-w-[120px]">{b.discs?.name ?? "—"}</span>
+                </Link>
+              ))}
+              {bagDiscs.length > 12 && (
+                <span className="text-stone-500 text-sm">+{bagDiscs.length - 12} till</span>
+              )}
+            </div>
+          ) : (
+            <p className="text-stone-400 text-sm">Inga discar i bagen än.</p>
+          )}
+          <Link
+            href="/profile/bag"
+            className="inline-block mt-3 text-sm text-retro-accent hover:underline font-medium"
+          >
+            {bagDiscs.length > 0 ? "Hantera bag" : "Lägg till discar i bagen"}
+          </Link>
+        </div>
       </div>
 
       {/* Lag */}
