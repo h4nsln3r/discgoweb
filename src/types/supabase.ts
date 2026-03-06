@@ -327,7 +327,9 @@ export type Database = {
         Row: {
           id: string
           name: string
-          ort: string | null
+          city: string | null
+          country: string | null
+          landskap: string | null
           logga: string | null
           bild: string | null
           about: string | null
@@ -337,7 +339,9 @@ export type Database = {
         Insert: {
           id?: string
           name: string
-          ort?: string | null
+          city?: string | null
+          country?: string | null
+          landskap?: string | null
           logga?: string | null
           bild?: string | null
           about?: string | null
@@ -346,7 +350,9 @@ export type Database = {
         }
         Update: {
           name?: string
-          ort?: string | null
+          city?: string | null
+          country?: string | null
+          landskap?: string | null
           logga?: string | null
           bild?: string | null
           about?: string | null

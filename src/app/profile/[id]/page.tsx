@@ -83,7 +83,7 @@ export default async function PublicProfilePage({ params }: Props) {
   if (profile.team_id) {
     const { data: teamData } = await supabase
       .from("teams")
-      .select("id, name, ort, logga, bild, about")
+      .select("id, name, city, country, landskap, logga, bild, about")
       .eq("id", profile.team_id)
       .single();
     team = teamData as TeamRow | null;
@@ -212,20 +212,40 @@ export default async function PublicProfilePage({ params }: Props) {
               </div>
             </div>
             {(favoriteDisc || profile.favorite_disc) ? (
-              <div className="md:hidden flex flex-row items-center gap-3 w-full pt-1 border-t border-retro-border/60">
-                <div className="w-12 h-12 rounded-full overflow-hidden bg-retro-card border border-retro-border flex items-center justify-center shrink-0">
-                  {favoriteDisc?.bild ? (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img src={favoriteDisc.bild} alt={favoriteDisc.name} className="h-full w-full object-cover" />
-                  ) : (
-                    <span className="text-retro-muted text-lg">🥏</span>
-                  )}
+              profile.favorite_disc_id ? (
+                <Link
+                  href={`/discs/${profile.favorite_disc_id}`}
+                  className="md:hidden flex flex-row items-center gap-3 w-full pt-1 border-t border-retro-border/60 hover:opacity-90 transition-opacity"
+                >
+                  <div className="w-12 h-12 rounded-full overflow-hidden bg-retro-card border border-retro-border flex items-center justify-center shrink-0">
+                    {favoriteDisc?.bild ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img src={favoriteDisc.bild} alt={favoriteDisc.name} className="h-full w-full object-cover" />
+                    ) : (
+                      <span className="text-retro-muted text-lg">🥏</span>
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs text-retro-muted uppercase tracking-wide">Favorit disc</p>
+                    <p className="text-stone-200 font-medium text-sm truncate">{favoriteDisc?.name ?? profile.favorite_disc ?? "—"}</p>
+                  </div>
+                </Link>
+              ) : (
+                <div className="md:hidden flex flex-row items-center gap-3 w-full pt-1 border-t border-retro-border/60">
+                  <div className="w-12 h-12 rounded-full overflow-hidden bg-retro-card border border-retro-border flex items-center justify-center shrink-0">
+                    {favoriteDisc?.bild ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img src={favoriteDisc.bild} alt={favoriteDisc.name} className="h-full w-full object-cover" />
+                    ) : (
+                      <span className="text-retro-muted text-lg">🥏</span>
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs text-retro-muted uppercase tracking-wide">Favorit disc</p>
+                    <p className="text-stone-200 font-medium text-sm truncate">{favoriteDisc?.name ?? profile.favorite_disc ?? "—"}</p>
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <p className="text-xs text-retro-muted uppercase tracking-wide">Favorit disc</p>
-                  <p className="text-stone-200 font-medium text-sm truncate">{favoriteDisc?.name ?? profile.favorite_disc ?? "—"}</p>
-                </div>
-              </div>
+              )
             ) : null}
           </div>
           <div className="min-w-0 flex-1 flex flex-col gap-3 text-left">
@@ -234,20 +254,40 @@ export default async function PublicProfilePage({ params }: Props) {
                 {profile.alias || "Spelare"}
               </h1>
               {(favoriteDisc || profile.favorite_disc) ? (
-                <div className="flex items-center justify-center md:justify-end gap-3 shrink-0 md:ml-auto">
-                  <div className="text-right">
-                    <p className="text-xs text-retro-muted uppercase tracking-wide">Favorit disc</p>
-                    <p className="text-stone-200 font-medium">{favoriteDisc?.name ?? profile.favorite_disc ?? "—"}</p>
+                profile.favorite_disc_id ? (
+                  <Link
+                    href={`/discs/${profile.favorite_disc_id}`}
+                    className="flex items-center justify-center md:justify-end gap-3 shrink-0 md:ml-auto hover:opacity-90 transition-opacity"
+                  >
+                    <div className="text-right">
+                      <p className="text-xs text-retro-muted uppercase tracking-wide">Favorit disc</p>
+                      <p className="text-stone-200 font-medium">{favoriteDisc?.name ?? profile.favorite_disc ?? "—"}</p>
+                    </div>
+                    <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden bg-retro-card border border-retro-border shrink-0 flex items-center justify-center">
+                      {favoriteDisc?.bild ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img src={favoriteDisc.bild} alt={favoriteDisc.name} className="h-full w-full object-cover" />
+                      ) : (
+                        <span className="text-retro-muted text-xl">🥏</span>
+                      )}
+                    </div>
+                  </Link>
+                ) : (
+                  <div className="flex items-center justify-center md:justify-end gap-3 shrink-0 md:ml-auto">
+                    <div className="text-right">
+                      <p className="text-xs text-retro-muted uppercase tracking-wide">Favorit disc</p>
+                      <p className="text-stone-200 font-medium">{favoriteDisc?.name ?? profile.favorite_disc ?? "—"}</p>
+                    </div>
+                    <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden bg-retro-card border border-retro-border shrink-0 flex items-center justify-center">
+                      {favoriteDisc?.bild ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img src={favoriteDisc.bild} alt={favoriteDisc.name} className="h-full w-full object-cover" />
+                      ) : (
+                        <span className="text-retro-muted text-xl">🥏</span>
+                      )}
+                    </div>
                   </div>
-                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden bg-retro-card border border-retro-border shrink-0 flex items-center justify-center">
-                    {favoriteDisc?.bild ? (
-                      /* eslint-disable-next-line @next/next/no-img-element */
-                      <img src={favoriteDisc.bild} alt={favoriteDisc.name} className="h-full w-full object-cover" />
-                    ) : (
-                      <span className="text-retro-muted text-xl">🥏</span>
-                    )}
-                  </div>
-                </div>
+                )
               ) : null}
             </div>
             <div className="hidden md:flex flex-col gap-1 text-sm text-stone-400 items-start">

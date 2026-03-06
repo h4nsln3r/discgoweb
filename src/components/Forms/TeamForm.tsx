@@ -1,6 +1,12 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import {
+  COUNTRY_SUGGESTIONS,
+  CITY_SUGGESTIONS,
+  LANDKAP_SUGGESTIONS,
+  getLandskapForCity,
+} from "@/data/location-suggestions";
 
 /** 16:9 – visningsstorlek i crop-modalen. */
 const CROP_DISPLAY_WIDTH = 400;
@@ -11,7 +17,9 @@ const CROP_OUTPUT_HEIGHT = 675;
 
 export type TeamFormData = {
   name: string;
-  ort: string;
+  city: string;
+  country: string;
+  landskap: string;
   logga: string;
   about: string;
   bild: string;
@@ -21,7 +29,9 @@ export type TeamFormData = {
 
 type TeamFormProps = {
   initialName?: string;
-  initialOrt?: string;
+  initialCity?: string;
+  initialCountry?: string;
+  initialLandskap?: string;
   initialLogga?: string;
   initialAbout?: string;
   initialBild?: string;
@@ -31,7 +41,9 @@ type TeamFormProps = {
 
 export default function TeamForm({
   initialName = "",
-  initialOrt = "",
+  initialCity = "",
+  initialCountry = "",
+  initialLandskap = "",
   initialLogga = "",
   initialAbout = "",
   initialBild = "",
@@ -39,7 +51,9 @@ export default function TeamForm({
   submitText,
 }: TeamFormProps) {
   const [name, setName] = useState(initialName);
-  const [ort, setOrt] = useState(initialOrt);
+  const [city, setCity] = useState(initialCity);
+  const [country, setCountry] = useState(initialCountry);
+  const [landskap, setLandskap] = useState(initialLandskap);
   const [logga, setLogga] = useState(initialLogga);
   const [loggaFile, setLoggaFile] = useState<File | null>(null);
   const [about, setAbout] = useState(initialAbout);
@@ -148,7 +162,9 @@ export default function TeamForm({
     setLoading(true);
     await onSubmit({
       name: name.trim(),
-      ort: ort.trim() || "",
+      city: city.trim() || "",
+      country: country.trim() || "",
+      landskap: landskap.trim() || "",
       logga: logga.trim() || "",
       about: about.trim() || "",
       bild: bild.trim() || "",
@@ -270,14 +286,60 @@ export default function TeamForm({
           required
         />
       </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-stone-300 mb-1">Stad</label>
+          <input
+            className={inputClass}
+            value={city}
+            onChange={(e) => {
+              const v = e.target.value;
+              setCity(v);
+              const suggested = getLandskapForCity(v);
+              if (suggested) setLandskap(suggested);
+            }}
+            placeholder="t.ex. Malmö"
+            list="team-city-list"
+            autoComplete="off"
+          />
+          <datalist id="team-city-list">
+            {CITY_SUGGESTIONS.map((s) => (
+              <option key={s} value={s} />
+            ))}
+          </datalist>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-stone-300 mb-1">Land</label>
+          <input
+            className={inputClass}
+            value={country}
+            onChange={(e) => setCountry(e.target.value)}
+            placeholder="t.ex. Sverige"
+            list="team-country-list"
+            autoComplete="off"
+          />
+          <datalist id="team-country-list">
+            {COUNTRY_SUGGESTIONS.map((s) => (
+              <option key={s} value={s} />
+            ))}
+          </datalist>
+        </div>
+      </div>
       <div>
-        <label className="block text-sm font-medium text-stone-300 mb-1">Ort</label>
+        <label className="block text-sm font-medium text-stone-300 mb-1">Landskap</label>
         <input
           className={inputClass}
-          value={ort}
-          onChange={(e) => setOrt(e.target.value)}
-          placeholder="t.ex. Stockholm"
+          value={landskap}
+          onChange={(e) => setLandskap(e.target.value)}
+          placeholder="t.ex. Skåne, Uppland"
+          list="team-landskap-list"
+          autoComplete="off"
         />
+        <datalist id="team-landskap-list">
+          {LANDKAP_SUGGESTIONS.map((s) => (
+            <option key={s} value={s} />
+          ))}
+        </datalist>
       </div>
 
       {/* Logga: uppladdning eller URL – används som ikon och full logga */}

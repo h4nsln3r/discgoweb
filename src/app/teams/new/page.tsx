@@ -44,7 +44,9 @@ export default function NewTeamPage() {
       .from("teams")
       .insert({
         name: data.name,
-        ort: data.ort || null,
+        city: data.city || null,
+        country: data.country || null,
+        landskap: data.landskap || null,
         logga: data.logga || null,
         bild: data.bild || null,
         about: data.about || null,

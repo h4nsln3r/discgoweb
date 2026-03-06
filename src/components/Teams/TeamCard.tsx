@@ -6,7 +6,9 @@ import { MapPinIcon, UserGroupIcon } from "@heroicons/react/24/outline";
 export type TeamCardData = {
   id: string;
   name: string;
-  ort: string | null;
+  city?: string | null;
+  country?: string | null;
+  landskap?: string | null;
   logga: string | null;
   bild: string | null;
   about: string | null;
@@ -64,10 +66,10 @@ export default function TeamCard({ team, asLink = false }: Props) {
               {team.name}
             </Link>
           )}
-          {team.ort && (
+          {(team.city || team.landskap || team.country) && (
             <span className="text-stone-400 text-lg flex items-center gap-1.5 shrink-0">
               <MapPinIcon className="w-4 h-4 text-retro-muted shrink-0" />
-              {team.ort}
+              {[team.city, team.landskap, team.country].filter(Boolean).join(", ")}
             </span>
           )}
         </div>

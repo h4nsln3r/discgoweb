@@ -7,7 +7,7 @@ export default async function TeamsPage() {
   const supabase = await createServerSupabaseClient();
   const { data: teams } = await supabase
     .from("teams")
-    .select("id, name, ort, logga, bild, about")
+    .select("id, name, city, country, landskap, logga, bild, about")
     .order("name");
 
   const { data: { user } } = await supabase.auth.getUser();

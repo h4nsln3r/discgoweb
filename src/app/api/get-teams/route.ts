@@ -9,7 +9,7 @@ export async function GET() {
     cookies: () => cookieStore,
   });
 
-  const { data, error } = await supabase.from("teams").select("id, name, ort, logga, about");
+  const { data, error } = await supabase.from("teams").select("id, name, city, country, landskap, logga, bild, about");
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

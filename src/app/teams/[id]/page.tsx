@@ -15,7 +15,9 @@ type Props = { params: Promise<{ id: string }> };
 type TeamRow = {
   id: string;
   name: string;
-  ort: string | null;
+  city: string | null;
+  country: string | null;
+  landskap: string | null;
   logga: string | null;
   bild: string | null;
   about: string | null;
@@ -36,7 +38,7 @@ export default async function TeamDetailPage({ params }: Props) {
 
   const { data: teamData, error: teamError } = await supabase
     .from("teams")
-    .select("id, name, ort, logga, bild, about, created_by, created_at")
+    .select("id, name, city, country, landskap, logga, bild, about, created_by, created_at")
     .eq("id", id)
     .single();
 
@@ -137,10 +139,10 @@ export default async function TeamDetailPage({ params }: Props) {
           <h1 className="text-5xl sm:text-6xl font-bebas tracking-wide text-stone-100 uppercase text-center sm:text-left">
             {team.name}
           </h1>
-        {team.ort && (
+        {(team.city || team.landskap || team.country) && (
           <p className="flex items-center justify-center sm:justify-start gap-1.5 text-stone-400 text-lg mt-2">
             <MapPinIcon className="w-5 h-5 text-retro-muted shrink-0" />
-            {team.ort}
+            {[team.city, team.landskap, team.country].filter(Boolean).join(", ")}
           </p>
         )}
         {team.created_at && (

@@ -13,7 +13,9 @@ import { getMyRoleInTeam, canEditTeam } from "@/lib/team-roles";
 type TeamRow = {
   id: string;
   name: string;
-  ort: string | null;
+  city: string | null;
+  country: string | null;
+  landskap: string | null;
   logga: string | null;
   bild: string | null;
   about: string | null;
@@ -40,7 +42,7 @@ export default function EditTeamPage() {
       }
       const [currentUserRes, { data, error }] = await Promise.all([
         fetch("/api/get-current-user").then((r) => (r.ok ? r.json() : null)),
-        supabase.from("teams").select("id, name, ort, logga, bild, about").eq("id", id).single(),
+        supabase.from("teams").select("id, name, city, country, landskap, logga, bild, about").eq("id", id).single(),
       ]);
 
       if (error || !data) {
@@ -83,7 +85,9 @@ export default function EditTeamPage() {
       .from("teams")
       .update({
         name: data.name,
-        ort: data.ort || null,
+        city: data.city || null,
+        country: data.country || null,
+        landskap: data.landskap || null,
         logga: loggaUrl,
         bild: bildUrl,
         about: data.about || null,
@@ -122,7 +126,9 @@ export default function EditTeamPage() {
       <h1 className="text-2xl font-bold text-stone-100 mb-6">Redigera lag</h1>
       <TeamForm
         initialName={team.name}
-        initialOrt={team.ort ?? ""}
+        initialCity={team.city ?? ""}
+        initialCountry={team.country ?? ""}
+        initialLandskap={team.landskap ?? ""}
         initialLogga={team.logga ?? ""}
         initialAbout={team.about ?? ""}
         initialBild={team.bild ?? ""}
