@@ -291,11 +291,11 @@ export default function CoursePreviewPanel({ course, onClose, embedded, fromDash
   return (
     <>
       <div
-        className="fixed inset-0 z-40 bg-black/50"
+        className="fixed inset-0 z-40 bg-black/50 "
         onClick={onClose}
       />
       <div
-        className="fixed z-40 bottom-0 inset-x-0 max-h-[85vh] overflow-y-auto"
+        className="fixed z-40 bottom-0 inset-x-0 max-h-[85vh] overflow-y-auto md:rounded"
         onClick={(e) => e.stopPropagation()}
       >
         {panelContent}

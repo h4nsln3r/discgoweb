@@ -1,8 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+/**
+ * Roller inom ETT lag. "Team admin" gäller bara det laget – inte andra lag eller hela systemet.
+ * För behörighet över hela appen (t.ex. redigera vilken bana som helst) använd profiles.is_admin.
+ */
 export type TeamRole = "admin" | "editor" | "viewer";
 
-/** Returnerar användarens roll i laget: från team_member_roles, eller admin om created_by. */
+/** Returnerar användarens roll i det angivna laget: från team_member_roles, eller admin om created_by. */
 export async function getMyRoleInTeam(
   supabase: SupabaseClient,
   teamId: string,
@@ -32,7 +36,7 @@ export function canEditTeam(role: TeamRole | null): boolean {
   return role === "admin" || role === "editor";
 }
 
-/** Kan användaren hantera roller (bara admin)? */
+/** Kan användaren hantera roller i laget? Endast team-admin (gäller bara det här laget). */
 export function canManageRoles(role: TeamRole | null): boolean {
   return role === "admin";
 }

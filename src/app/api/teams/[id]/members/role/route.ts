@@ -3,6 +3,7 @@ import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import type { Database } from "@/types/supabase";
 import { NextResponse } from "next/server";
 import { getMyRoleInTeam, canManageRoles } from "@/lib/team-roles";
+import { createSupabaseAdminClient } from "@/lib/supabase-server";
 
 type Role = "admin" | "editor" | "viewer";
 
@@ -38,7 +39,10 @@ export async function POST(
     return NextResponse.json({ error: "userId och role (admin/editor/viewer) krävs." }, { status: 400 });
   }
 
-  const { error } = await supabase
+  // Upsert med admin-klient för att undvika RLS-rekursion på team_member_roles.
+  // Behörighet är redan kontrollerad ovan (canManageRoles).
+  const admin = createSupabaseAdminClient();
+  const { error } = await admin
     .from("team_member_roles")
     .upsert(
       { team_id: teamId, user_id: userId, role: role as Role },

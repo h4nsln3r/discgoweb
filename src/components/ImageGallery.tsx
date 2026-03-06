@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-function ImageGallery({ images }: { images: string[] }) {
+function ImageGallery({ images, holeCount }: { images: string[]; holeCount?: number }) {
   const validImages = (images ?? []).filter(
     (url) => typeof url === "string" && url.trim() !== ""
   );
@@ -16,15 +16,22 @@ function ImageGallery({ images }: { images: string[] }) {
 
   return (
     <div className="space-y-4">
-      {/* Main image */}
+      {/* Main image med ev. antal hål som på Alla banor */}
       {selected && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={selected}
-          alt="Vald bild"
-          className="rounded w-full h-72 object-cover border cursor-pointer"
-          onClick={openModal}
-        />
+        <div className="relative w-full">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={selected}
+            alt="Vald bild"
+            className="rounded w-full h-72 object-cover border cursor-pointer"
+            onClick={openModal}
+          />
+          {holeCount != null && holeCount > 0 && (
+            <div className="absolute bottom-2 left-2 rounded-lg bg-black/60 px-2 py-1 text-xs font-medium text-stone-200">
+              {holeCount} hål
+            </div>
+          )}
+        </div>
       )}
 
       {/* Thumbnails */}

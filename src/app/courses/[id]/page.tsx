@@ -110,7 +110,12 @@ export default async function CourseDetailPage({
           </Link>
         )}
       </div>
-      {allImages.length > 0 && <ImageGallery images={allImages} />}
+      {allImages.length > 0 && (
+        <ImageGallery
+          images={allImages}
+          holeCount={holes && holes.length > 0 ? holes.length : undefined}
+        />
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
