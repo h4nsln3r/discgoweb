@@ -40,7 +40,7 @@ function CourseCard({ course }: { course: Course }) {
     >
       <Link
         href={`/courses/${course.id}`}
-        className="block flex flex-col flex-1 group"
+        className="block group"
       >
         <div className="relative w-full h-56 sm:h-72 bg-retro-card shrink-0 overflow-hidden">
           {course.main_image_url ? (
@@ -58,14 +58,38 @@ function CourseCard({ course }: { course: Course }) {
           <div className="absolute bottom-2 left-2 rounded-lg bg-black/60 px-2 py-1 text-xs font-medium text-stone-200">
             {course.hole_count ? `${course.hole_count} hål` : "—"}
           </div>
-        </div>
-        <div className="p-5 flex flex-col flex-1">
-          <h3 className="text-3xl sm:text-4xl font-bebas tracking-wide text-stone-100 text-retro-accent uppercase group-hover:text-amber-300 transition-colors">
-            {course.name}
-          </h3>
-          <p className="text-sm text-stone-400 mt-0.5">{course.location || "—"}</p>
+          <Link
+            href={`/results/new?course_id=${course.id}`}
+            onClick={(e) => e.stopPropagation()}
+            className="absolute bottom-2 right-2 md:hidden inline-flex items-center gap-1.5 rounded-lg bg-black/60 px-2.5 py-1.5 text-xs font-medium text-stone-200 hover:bg-black/80 hover:text-stone-100 transition"
+            aria-label="Lägg till resultat"
+          >
+            <PlusCircleIcon className="w-4 h-4 shrink-0" aria-hidden />
+            Lägg till resultat
+          </Link>
         </div>
       </Link>
+      <div className="p-5 flex flex-col flex-1">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <Link
+            href={`/courses/${course.id}`}
+            className="min-w-0 group/title"
+          >
+            <h3 className="text-3xl sm:text-4xl font-bebas tracking-wide text-stone-100 text-retro-accent uppercase group-hover/title:text-amber-300 transition-colors">
+              {course.name}
+            </h3>
+          </Link>
+          <Link
+            href={`/results/new?course_id=${course.id}`}
+            className="hidden md:inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-retro-border text-stone-300 text-sm font-medium hover:bg-retro-card hover:text-stone-100 transition shrink-0"
+            aria-label="Lägg till resultat"
+          >
+            <PlusCircleIcon className="w-5 h-5 shrink-0" aria-hidden />
+            Lägg till resultat
+          </Link>
+        </div>
+        <p className="text-sm text-stone-400 mt-0.5">{course.location || "—"}</p>
+      </div>
 
       {course.top3 && course.top3.length > 0 && (
         <div className="px-5 pb-2">
@@ -102,17 +126,6 @@ function CourseCard({ course }: { course: Course }) {
           </div>
         </div>
       )}
-
-      <div className="p-5 pt-0 flex justify-end">
-        <Link
-          href={`/results/new?course_id=${course.id}`}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-retro-border text-stone-300 text-sm font-medium hover:bg-retro-card hover:text-stone-100 transition"
-          aria-label="Lägg till resultat"
-        >
-          <PlusCircleIcon className="w-5 h-5 shrink-0" aria-hidden />
-          Lägg till resultat
-        </Link>
-      </div>
     </article>
   );
 }
@@ -314,7 +327,7 @@ export default function CourseList({
       </aside>
 
       {/* Huvudinnehåll: landskap endast på mobil + kort */}
-      <div className="min-w-0 p-4 md:p-6 space-y-4">
+      <div className="min-w-0 px-1 py-4 space-y-4 md:p-6 md:py-6">
       <div className="w-full md:hidden">
         <select
           value={landskapFilter}
@@ -349,7 +362,7 @@ export default function CourseList({
                 {landskap !== "—" && <span>{landskap}</span>}
                 {country === "—" && landskap === "—" && <span>Övrigt</span>}
               </h2>
-              <div className="grid gap-6 md:grid-cols-2">
+              <div className="grid gap-3 md:gap-6 md:grid-cols-2">
                 {groupCourses.map((course) => (
                   <CourseCard key={course.id} course={course} />
                 ))}
@@ -358,7 +371,7 @@ export default function CourseList({
           ))}
         </div>
       ) : (
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-3 md:gap-6 md:grid-cols-2">
         {sortedCourses.map((course) => (
           <CourseCard key={course.id} course={course} />
         ))}
