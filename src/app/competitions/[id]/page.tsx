@@ -187,7 +187,7 @@ export default async function CompetitionDetailPage({ params, searchParams }: Pa
             )}
           </div>
           {user && !hasJoined && (
-            <div className="absolute bottom-4 right-4 md:bottom-6 md:right-6 z-10">
+            <div className="absolute bottom-16 right-4 md:bottom-6 md:right-6 z-10">
               <JoinToCompetitionButton
                 competitionId={id}
                 competitionTitle={competition.title}

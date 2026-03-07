@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { useToast } from "@/components/Toasts/ToastProvider";
+import { parseUDiscCsv, type UDiscRound } from "@/lib/udiscCsv";
 
 type Course = { id: string; name: string };
 type Player = { id: string; alias: string };
@@ -59,6 +60,8 @@ export default function AddScoreForm({
   const [friendSearch, setFriendSearch] = useState("");
   const [manualGuests, setManualGuests] = useState<string[]>([]);
   const [invalidFields, setInvalidFields] = useState<Set<string>>(new Set());
+  const [udiscRounds, setUdiscRounds] = useState<UDiscRound[] | null>(null);
+  const [udiscInputKey, setUdiscInputKey] = useState(0);
 
   const courseRef = useRef<HTMLDivElement>(null);
   const dateRef = useRef<HTMLDivElement>(null);
@@ -73,6 +76,46 @@ export default function AddScoreForm({
       return next;
     });
   }, []);
+
+  const appliedUdiscRoundRef = useRef<UDiscRound | null>(null);
+
+  const applyUDiscRound = useCallback(
+    (round: UDiscRound) => {
+      setDatePlayed(round.date);
+      setThrows(String(round.total));
+      const courseList = courses.length ? courses : [];
+      const matched = courseList.find(
+        (c) => c.name.toLowerCase().trim() === round.courseName.toLowerCase().trim()
+      );
+      if (matched) {
+        setSelectedCourse(matched.id);
+      } else {
+        setSelectedCourse("");
+        showToast(
+          `Kunde inte matcha banan "${round.courseName}". Välj bana manuellt i listan.`,
+          "info"
+        );
+      }
+      if (round.holeScores.length > 0) {
+        appliedUdiscRoundRef.current = round;
+      }
+      setUdiscRounds(null);
+      clearInvalid("course");
+      clearInvalid("date");
+      clearInvalid("throws");
+      clearInvalid("holes");
+    },
+    [courses, showToast, clearInvalid]
+  );
+
+  useEffect(() => {
+    const round = appliedUdiscRoundRef.current;
+    if (!round || courseHoles.length === 0) return;
+    const byHole = new Map(round.holeScores.map((h) => [h.hole_number, h.throws]));
+    const filled = courseHoles.map((h) => (byHole.get(h.hole_number) != null ? String(byHole.get(h.hole_number)) : ""));
+    setHoleThrows(filled);
+    appliedUdiscRoundRef.current = null;
+  }, [courseHoles]);
 
   const usePerHole = courseHoles.length > 0;
   const totalFromHoles = useMemo(() => {
@@ -336,11 +379,74 @@ export default function AddScoreForm({
     }
   };
 
+  const handleUDiscFile = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const text = String(reader.result ?? "");
+        const rounds = parseUDiscCsv(text);
+        if (rounds.length === 0) {
+          showToast("Inga rundor hittades i filen. Kontrollera att det är en UDisc CSV-export.", "error");
+          return;
+        }
+        setUdiscRounds(rounds);
+        setUdiscInputKey((k) => k + 1);
+      };
+      reader.readAsText(file, "UTF-8");
+      e.target.value = "";
+    },
+    [showToast]
+  );
+
   return (
     <form
       onSubmit={handleSubmit}
       className="space-y-5 mt-4 rounded-xl border border-retro-border bg-retro-surface p-4 md:p-5"
     >
+      {!editingScore && !isCompetitionMode && (
+        <div className="rounded-xl border border-retro-border bg-retro-card/50 p-4 space-y-3">
+          <p className="text-sm font-medium text-stone-200">Importera från UDisc</p>
+          <p className="text-xs text-stone-400">
+            Exportera dina rundor i UDisc (Du → Runder → ☰ → Exportera till CSV) och ladda upp filen här. Välj sedan vilken runda du vill lägga in.
+          </p>
+          <input
+            key={udiscInputKey}
+            type="file"
+            accept=".csv"
+            onChange={handleUDiscFile}
+            className="block w-full text-sm text-stone-400 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border file:border-retro-border file:bg-retro-surface file:text-stone-200 file:text-sm"
+          />
+          {udiscRounds && udiscRounds.length > 0 && (
+            <div className="mt-3 space-y-2">
+              <p className="text-xs text-stone-500">
+                {udiscRounds.length} runda(or) hittade – välj en att använda:
+              </p>
+              <ul className="max-h-48 overflow-y-auto rounded-lg border border-retro-border divide-y divide-retro-border">
+                {udiscRounds.map((r, i) => (
+                  <li key={`${r.date}-${r.courseName}-${r.playerName}-${i}`}>
+                    <button
+                      type="button"
+                      onClick={() => applyUDiscRound(r)}
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-retro-surface transition flex justify-between items-center gap-2"
+                    >
+                      <span className="text-stone-200 truncate">
+                        {r.courseName}
+                        {r.layoutName ? ` (${r.layoutName})` : ""} – {r.date}
+                      </span>
+                      <span className="shrink-0 text-stone-400">
+                        {r.total} slag{r.relativeToPar !== 0 ? ` (${r.relativeToPar > 0 ? "+" : ""}${r.relativeToPar})` : ""}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+
       {isCompetitionMode && competitionTitle && (
         <div className="rounded-lg border border-retro-accent/40 bg-retro-accent/10 px-3 py-2">
           <p className="text-xs text-retro-muted font-medium">Tävling</p>
