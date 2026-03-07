@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import PageLoading from "@/components/PageLoading";
 import { formatScorePar } from "@/lib/scoreDisplay";
 import { MagnifyingGlassIcon, PlusCircleIcon } from "@heroicons/react/24/outline";
@@ -25,17 +26,12 @@ export type Course = {
   latitude?: number;
   longitude?: number;
   hole_count?: number;
+  created_at?: string | null;
   top3?: Top3Score[];
   scores?: { id: string; score: number; date_played: string | null; profiles: { alias: string | null } | null }[];
 };
 
-const SORT_OPTIONS = [
-  { value: "name_asc", label: "Namn (A–Ö)" },
-  { value: "name_desc", label: "Namn (Ö–A)" },
-  { value: "land_landskap", label: "Land & landskap" },
-] as const;
-
-type SortValue = (typeof SORT_OPTIONS)[number]["value"];
+import type { SortValue } from "@/components/Courses/CourseSortDropdown";
 
 function CourseCard({ course }: { course: Course }) {
   return (
@@ -121,12 +117,33 @@ function CourseCard({ course }: { course: Course }) {
   );
 }
 
-export default function CourseList({ refresh }: { refresh?: boolean }) {
+const DEFAULT_SORT: SortValue = "name_asc";
+
+export default function CourseList({
+  refresh,
+  sortFromUrl,
+  searchFromUrl,
+}: {
+  refresh?: boolean;
+  sortFromUrl?: SortValue | null;
+  searchFromUrl?: string;
+}) {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sort, setSort] = useState<SortValue>("name_asc");
   const [search, setSearch] = useState("");
   const [landskapFilter, setLandskapFilter] = useState("");
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const effectiveSort = sortFromUrl ?? DEFAULT_SORT;
+  const effectiveSearch = (searchFromUrl ?? search).trim();
+
+  const updateSearchUrl = (newSearch: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (newSearch.trim()) params.set("q", newSearch.trim());
+    else params.delete("q");
+    router.replace(`${pathname}?${params.toString()}`);
+  };
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -139,6 +156,10 @@ export default function CourseList({ refresh }: { refresh?: boolean }) {
 
     fetchCourses();
   }, [refresh]);
+
+  useEffect(() => {
+    if (searchFromUrl !== undefined) setSearch(searchFromUrl);
+  }, [searchFromUrl]);
 
   const availableLandskaps = useMemo(() => {
     const set = new Set<string>();
@@ -155,28 +176,41 @@ export default function CourseList({ refresh }: { refresh?: boolean }) {
   }, [courses, landskapFilter]);
 
   const filteredBySearch = useMemo(() => {
-    const q = search.trim().toLowerCase();
+    const q = effectiveSearch.toLowerCase();
     if (!q) return filteredByLandskap;
     return filteredByLandskap.filter((c) => (c.name ?? "").toLowerCase().includes(q));
-  }, [filteredByLandskap, search]);
+  }, [filteredByLandskap, effectiveSearch]);
 
   const sortedCourses = useMemo(() => {
     const list = [...filteredBySearch];
-    if (sort === "name_asc") {
+    const date = (c: Course) => (c.created_at ? new Date(c.created_at).getTime() : 0);
+    if (effectiveSort === "date_added_desc") {
+      list.sort((a, b) => date(b) - date(a));
+    } else if (effectiveSort === "date_added_asc") {
+      list.sort((a, b) => date(a) - date(b));
+    } else if (effectiveSort === "name_asc") {
       list.sort((a, b) =>
         (a.name ?? "").localeCompare(b.name ?? "", "sv")
       );
-    } else if (sort === "name_desc") {
+    } else if (effectiveSort === "name_desc") {
       list.sort((a, b) =>
         (b.name ?? "").localeCompare(a.name ?? "", "sv")
       );
     }
     return list;
-  }, [filteredBySearch, sort]);
+  }, [filteredBySearch, effectiveSort]);
+
+  /** Sidolista för desktop-sidebar (samma ordning som huvudlistan) */
+  const sidebarCourseList = useMemo(() => {
+    if (effectiveSort === "land_landskap") {
+      return [...filteredBySearch].sort((a, b) => (a.name ?? "").localeCompare(b.name ?? "", "sv"));
+    }
+    return sortedCourses;
+  }, [effectiveSort, filteredBySearch, sortedCourses]);
 
   type GroupKey = { country: string; landskap: string };
   const coursesByLandLandskap = useMemo(() => {
-    if (sort !== "land_landskap") return null;
+    if (effectiveSort !== "land_landskap") return null;
     const groups = new Map<string, Course[]>();
     const keyOrder: GroupKey[] = [];
     for (const c of filteredBySearch) {
@@ -211,7 +245,7 @@ export default function CourseList({ refresh }: { refresh?: boolean }) {
       }
     }
     return result;
-  }, [filteredBySearch, sort]);
+  }, [filteredBySearch, effectiveSort]);
 
   if (loading) return <PageLoading variant="courses" />;
   if (!courses.length)
@@ -231,13 +265,61 @@ export default function CourseList({ refresh }: { refresh?: boolean }) {
     );
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2 sm:gap-4">
-        <label className="text-sm font-medium text-stone-300">Landskap:</label>
+    <div className="w-full md:grid md:grid-cols-[15vw_1fr] md:min-h-[60vh]">
+      {/* Desktop: vänsterkolumn 15% – sök (endast desktop) + lista på alla banor (namn) */}
+      <aside className="hidden md:flex md:flex-col md:w-[15vw] md:min-w-0 md:border-r md:border-retro-border md:bg-retro-card/30">
+        <div className="md:sticky md:top-24 md:flex md:flex-col md:max-h-[calc(100vh-6rem)] md:overflow-hidden md:p-3">
+          <div className="flex items-center gap-2 rounded-lg border border-retro-border bg-retro-surface text-stone-300 focus-within:ring-2 focus-within:ring-retro-accent focus-within:border-transparent mb-3 shrink-0">
+            <MagnifyingGlassIcon className="w-4 h-4 shrink-0 ml-2.5 text-retro-muted" aria-hidden />
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                updateSearchUrl(e.target.value);
+              }}
+              placeholder="Sök banor…"
+              className="flex-1 min-w-0 py-2 pr-3 bg-transparent text-stone-100 text-sm placeholder:text-stone-500 focus:outline-none"
+              aria-label="Sök banor"
+            />
+          </div>
+          <div className="mb-3 shrink-0">
+            <label className="block text-xs font-medium text-stone-400 uppercase tracking-wide mb-1">Landskap</label>
+            <select
+              value={landskapFilter}
+              onChange={(e) => setLandskapFilter(e.target.value)}
+              className="w-full rounded-lg border border-retro-border bg-retro-surface text-stone-100 px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-retro-accent"
+              aria-label="Filtrera på landskap"
+            >
+              <option value="">Alla landskap</option>
+              {availableLandskaps.map((l) => (
+                <option key={l} value={l}>
+                  {l}
+                </option>
+              ))}
+            </select>
+          </div>
+          <nav className="flex-1 min-h-0 overflow-y-auto space-y-0.5" aria-label="Lista banor">
+            {sidebarCourseList.map((course) => (
+              <Link
+                key={course.id}
+                href={`/courses/${course.id}`}
+                className="block py-1.5 px-2 rounded-lg text-sm text-stone-200 hover:bg-retro-surface hover:text-retro-accent truncate"
+              >
+                {course.name ?? "Okänd bana"}
+              </Link>
+            ))}
+          </nav>
+        </div>
+      </aside>
+
+      {/* Huvudinnehåll: landskap endast på mobil + kort */}
+      <div className="min-w-0 p-4 md:p-6 space-y-4">
+      <div className="w-full md:hidden">
         <select
           value={landskapFilter}
           onChange={(e) => setLandskapFilter(e.target.value)}
-          className="rounded-lg border border-retro-border bg-retro-surface text-stone-100 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-retro-accent min-w-[140px]"
+          className="w-full rounded-lg border border-retro-border bg-retro-surface text-stone-100 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-retro-accent"
           aria-label="Filtrera på landskap"
         >
           <option value="">Alla landskap</option>
@@ -247,29 +329,6 @@ export default function CourseList({ refresh }: { refresh?: boolean }) {
             </option>
           ))}
         </select>
-        <label className="text-sm font-medium text-stone-300">Sortering:</label>
-        <select
-          value={sort}
-          onChange={(e) => setSort(e.target.value as SortValue)}
-          className="rounded-lg border border-retro-border bg-retro-surface text-stone-100 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-retro-accent"
-        >
-          {SORT_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
-        <div className="flex items-center gap-2 rounded-lg border border-retro-border bg-retro-surface text-stone-300 focus-within:ring-2 focus-within:ring-retro-accent focus-within:border-transparent min-w-[180px]">
-          <MagnifyingGlassIcon className="w-4 h-4 shrink-0 ml-2.5 text-retro-muted" aria-hidden />
-          <input
-            type="search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Sök på banans namn..."
-            className="flex-1 min-w-0 py-1.5 pr-3 bg-transparent text-stone-100 text-sm placeholder:text-stone-500 focus:outline-none"
-            aria-label="Sök banor efter namn"
-          />
-        </div>
       </div>
 
       {filteredBySearch.length === 0 ? (
@@ -280,7 +339,7 @@ export default function CourseList({ refresh }: { refresh?: boolean }) {
               ? "Inga banor matchar sökningen."
               : "Inga banor."}
         </p>
-      ) : sort === "land_landskap" && coursesByLandLandskap ? (
+      ) : effectiveSort === "land_landskap" && coursesByLandLandskap ? (
         <div className="space-y-8">
           {coursesByLandLandskap.map(({ country, landskap, courses: groupCourses }) => (
             <section key={`${country}-${landskap}`}>
@@ -305,6 +364,7 @@ export default function CourseList({ refresh }: { refresh?: boolean }) {
         ))}
       </div>
       )}
+      </div>
     </div>
   );
 }

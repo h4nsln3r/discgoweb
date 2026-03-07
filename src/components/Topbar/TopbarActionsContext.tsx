@@ -9,6 +9,10 @@ export type TopbarActionsState = {
   pageTitle: string | null;
   primaryActionHref: string | null;
   primaryActionLabel: string | null;
+  /** Extra innehåll till vänster (t.ex. sortering på banor-sidan), efter meny-ikonen */
+  topbarExtraLeft: React.ReactNode;
+  /** Extra innehåll till höger (t.ex. sorteringsdropdown på tävlingssidan) */
+  topbarExtraRight: React.ReactNode;
 };
 
 const defaultState: TopbarActionsState = {
@@ -18,6 +22,8 @@ const defaultState: TopbarActionsState = {
   pageTitle: null,
   primaryActionHref: null,
   primaryActionLabel: null,
+  topbarExtraLeft: null,
+  topbarExtraRight: null,
 };
 
 const TopbarActionsContext = createContext<{
@@ -51,6 +57,8 @@ type SetTopbarActionsProps = {
   pageTitle?: string | null;
   primaryActionHref?: string | null;
   primaryActionLabel?: string | null;
+  topbarExtraLeft?: React.ReactNode;
+  topbarExtraRight?: React.ReactNode;
 };
 
 /** Sätts av en sida för att visa Tillbaka/Redigera/titel/primär knapp i topbaren. Rensas vid unmount. */
@@ -61,6 +69,8 @@ export function SetTopbarActions({
   pageTitle,
   primaryActionHref,
   primaryActionLabel,
+  topbarExtraLeft,
+  topbarExtraRight,
 }: SetTopbarActionsProps) {
   const { setTopbarActions } = useTopbarActions();
   React.useEffect(() => {
@@ -71,6 +81,8 @@ export function SetTopbarActions({
       pageTitle: pageTitle ?? null,
       primaryActionHref: primaryActionHref ?? null,
       primaryActionLabel: primaryActionLabel ?? null,
+      topbarExtraLeft: topbarExtraLeft ?? null,
+      topbarExtraRight: topbarExtraRight ?? null,
     });
     return () => {
       setTopbarActions({
@@ -80,8 +92,10 @@ export function SetTopbarActions({
         pageTitle: null,
         primaryActionHref: null,
         primaryActionLabel: null,
+        topbarExtraLeft: null,
+        topbarExtraRight: null,
       });
     };
-  }, [backHref, editHref, editLabel, pageTitle, primaryActionHref, primaryActionLabel, setTopbarActions]);
+  }, [backHref, editHref, editLabel, pageTitle, primaryActionHref, primaryActionLabel, topbarExtraLeft, topbarExtraRight, setTopbarActions]);
   return null;
 }

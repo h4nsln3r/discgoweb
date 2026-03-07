@@ -12,7 +12,7 @@ import {
   ColumnFiltersState,
 } from "@tanstack/react-table";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   ChevronDownIcon,
   ChevronUpIcon,
@@ -26,8 +26,19 @@ import {
   HashtagIcon,
 } from "@heroicons/react/24/outline";
 import PageLoading from "@/components/PageLoading";
-import { SetTopbarActions } from "@/components/Topbar/TopbarActionsContext";
+import { useTopbarActions } from "@/components/Topbar/TopbarActionsContext";
+import ResultsSortDropdown, {
+  type SortValue,
+  sortValueToState,
+  SORT_OPTIONS as RESULTS_SORT_OPTIONS,
+} from "@/components/Results/ResultsSortDropdown";
 import { getHoleThrowBg, getHoleThrowStyle } from "@/lib/holeColors";
+
+const VALID_SORT: SortValue[] = RESULTS_SORT_OPTIONS.map((o) => o.value);
+function parseSort(s: string | null): SortValue {
+  if (s && VALID_SORT.includes(s as SortValue)) return s as SortValue;
+  return "date_desc";
+}
 import { formatScorePar } from "@/lib/scoreDisplay";
 
 interface Score {
@@ -45,10 +56,13 @@ interface Score {
 
 export default function ResultsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const sortFromUrl = parseSort(searchParams.get("sort"));
+  const { setTopbarActions } = useTopbarActions();
 
   const [data, setData] = useState<Score[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sorting, setSorting] = useState<SortingState>([]);
+  const [sorting, setSorting] = useState<SortingState>(() => sortValueToState(sortFromUrl));
   const [globalFilter, setGlobalFilter] = useState("");
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -131,6 +145,32 @@ export default function ResultsPage() {
     };
     fetchScores();
   }, []);
+
+  // Synka tabell-sortering med URL
+  useEffect(() => {
+    setSorting(sortValueToState(sortFromUrl));
+  }, [sortFromUrl]);
+
+  // Topbar: sortering + Lägg till resultat
+  useEffect(() => {
+    setTopbarActions({
+      backHref: null,
+      editHref: null,
+      editLabel: null,
+      pageTitle: "Alla resultat",
+      primaryActionHref: "/results/new",
+      primaryActionLabel: "Lägg till resultat",
+      topbarExtraLeft: <ResultsSortDropdown currentSort={sortFromUrl} />,
+    });
+    return () => {
+      setTopbarActions({
+        pageTitle: null,
+        primaryActionHref: null,
+        primaryActionLabel: null,
+        topbarExtraLeft: null,
+      });
+    };
+  }, [sortFromUrl, setTopbarActions]);
 
   // Unika banor och spelare för dropdowns
   const uniqueCourses = useMemo(
@@ -313,15 +353,6 @@ export default function ResultsPage() {
   if (data.length === 0) {
     return (
       <div className="p-4">
-        <SetTopbarActions pageTitle="Alla resultat" />
-        <div className="flex justify-end mb-4">
-          <Link
-            href="/results/new"
-            className="px-4 py-2 bg-retro-accent text-stone-100 rounded-lg hover:bg-retro-accent-hover transition"
-          >
-            Lägg till resultat
-          </Link>
-        </div>
         <div className="rounded-xl border border-retro-border bg-retro-surface p-8 text-center">
           <p className="text-stone-300 text-lg">Inga resultat än.</p>
           <p className="text-stone-500 text-sm mt-2">
@@ -340,16 +371,6 @@ export default function ResultsPage() {
 
   return (
     <div className="p-4">
-      <SetTopbarActions pageTitle="Alla resultat" />
-      <div className="flex justify-end mb-4">
-        <Link
-          href="/results/new"
-          className="px-4 py-2 bg-retro-accent text-stone-100 rounded-lg hover:bg-retro-accent-hover transition"
-        >
-          Lägg till resultat
-        </Link>
-      </div>
-
       {/* Globalt sökfält */}
       <input
         value={globalFilter ?? ""}

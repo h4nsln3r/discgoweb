@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
-import { Bars3Icon, XMarkIcon, UserCircleIcon, ArrowLeftIcon, PencilSquareIcon, PlusIcon } from "@heroicons/react/24/outline";
+import { useState, useEffect, useRef } from "react";
+import { usePathname, useSearchParams, useRouter } from "next/navigation";
+import { Bars3Icon, XMarkIcon, UserCircleIcon, ArrowLeftIcon, PencilSquareIcon, PlusIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
 import LogoutButton from "../Buttons/LogoutButton";
 import { useTopbarActions } from "./TopbarActionsContext";
 
@@ -32,10 +33,51 @@ export default function Topbar({
 }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const { actions: topbarActions } = useTopbarActions();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
   const [displayName, setDisplayName] = useState<string | null>(initialDisplayName ?? null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(initialAvatarUrl ?? null);
+
+  useEffect(() => {
+    if (searchOpen) {
+      searchInputRef.current?.focus();
+    }
+  }, [searchOpen]);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
+        setSearchOpen(false);
+      }
+    }
+    if (searchOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [searchOpen]);
+
+  const showSearch = pathname === "/competitions" || pathname === "/courses";
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = searchQuery.trim();
+    if (!q) return;
+    if (pathname === "/competitions") {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("q", q);
+      router.push(`/competitions?${params.toString()}`);
+    } else if (pathname === "/courses") {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("q", q);
+      router.push(`/courses?${params.toString()}`);
+    }
+    setSearchOpen(false);
+    setSearchQuery("");
+  };
 
   // Synka med server-props vid mount/navigering
   useEffect(() => {
@@ -77,12 +119,12 @@ export default function Topbar({
     <>
       {/* Sticky topbar: vänster = meny + tillbaka, mitten = logga, höger = redigera + profil */}
       <div
-        className={`fixed top-0 left-0 right-0 z-30 flex items-center justify-between bg-retro-surface/95 backdrop-blur-sm border-b border-retro-border px-3 py-2.5 md:px-3 md:py-1 shadow-lg transition-opacity duration-200 overflow-visible ${
+        className={`fixed top-0 left-0 right-0 z-30 flex items-center justify-between bg-retro-surface/95 backdrop-blur-sm border-b border-retro-border px-3 py-2.5 md:px-3 md:py-4 shadow-lg transition-opacity duration-200 overflow-visible ${
           menuOpen ? "opacity-0 pointer-events-none" : "opacity-100"
         }`}
       >
-        {/* Vänster: meny + tillbaka, vertikalt centrerade */}
-        <div className="flex items-center gap-1.5 md:gap-3 min-w-0 flex-1 justify-start">
+        {/* Vänster: meny + extra (t.ex. sortering) + tillbaka, vertikalt centrerade */}
+        <div className="flex items-center gap-1 md:gap-2 min-w-0 flex-1 justify-start">
           <button
             onClick={() => setMenuOpen(true)}
             aria-label="Öppna meny"
@@ -90,6 +132,9 @@ export default function Topbar({
           >
             <Bars3Icon className="w-5 h-5 md:w-6 md:h-6 text-stone-200" />
           </button>
+          {topbarActions.topbarExtraLeft != null && (
+            <div className="shrink-0 -ml-0.5">{topbarActions.topbarExtraLeft}</div>
+          )}
           {topbarActions.backHref && (
             <Link
               href={topbarActions.backHref}
@@ -145,8 +190,11 @@ export default function Topbar({
           )}
         </div>
 
-        {/* Höger: primär knapp (t.ex. Lägg till bana) + redigera + profil */}
+        {/* Höger: extra (t.ex. sortering) + primär knapp + redigera + profil */}
         <div className="flex items-center gap-1.5 md:gap-2 min-w-0 flex-1 justify-end">
+          {topbarActions.topbarExtraRight != null && (
+            <div className="shrink-0">{topbarActions.topbarExtraRight}</div>
+          )}
           {topbarActions.primaryActionHref && topbarActions.primaryActionLabel && (
             <Link
               href={topbarActions.primaryActionHref}
@@ -167,23 +215,65 @@ export default function Topbar({
               <span className="hidden md:inline text-sm font-medium">{topbarActions.editLabel ?? "Redigera"}</span>
             </Link>
           )}
+
+          {/* Sök: endast på tävlingar och banor */}
+          {showSearch && (
+            <div className="relative shrink-0" ref={searchContainerRef}>
+              <button
+                type="button"
+                onClick={() => setSearchOpen((o) => !o)}
+                aria-expanded={searchOpen}
+                aria-label="Sök"
+                className="p-1.5 md:p-2 rounded-lg hover:bg-retro-card text-stone-300 hover:text-stone-200 transition"
+              >
+                <MagnifyingGlassIcon className="w-5 h-5 md:w-5 md:h-5" />
+              </button>
+              <AnimatePresence>
+                {searchOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -8, scale: 0.96 }}
+                    transition={{ duration: 0.15, ease: "easeOut" }}
+                    className="absolute right-0 top-full mt-1.5 w-72 rounded-xl border border-retro-border bg-retro-surface shadow-xl z-50 overflow-hidden p-2"
+                  >
+                    <form onSubmit={handleSearchSubmit}>
+                      <div className="flex items-center gap-2 rounded-lg border border-retro-border bg-retro-card focus-within:ring-2 focus-within:ring-retro-accent focus-within:border-transparent">
+                        <MagnifyingGlassIcon className="w-4 h-4 shrink-0 ml-2.5 text-stone-500" aria-hidden />
+                        <input
+                          ref={searchInputRef}
+                          type="search"
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          placeholder={pathname === "/competitions" ? "Sök tävlingar…" : "Sök banor…"}
+                          className="flex-1 min-w-0 py-2 pr-3 bg-transparent text-stone-100 text-sm placeholder:text-stone-500 focus:outline-none"
+                          aria-label="Sök"
+                        />
+                      </div>
+                    </form>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
+
           <Link
             href="/profile"
-            className="flex flex-col items-center min-w-0 rounded-lg hover:bg-retro-card transition px-0.5 pt-0 group -mt-5 -mb-6 md:mt-0 md:pt-0.5 md:-mb-11"
+            className="flex flex-col items-center min-w-0 rounded-lg hover:bg-retro-card transition pl-0.5 pr-0 pt-0 group -mt-5 -mb-6 md:-mt-4 md:pt-0 md:-mb-10 md:pr-0"
           >
             {avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={avatarUrl}
                 alt=""
-                className="w-10 h-10 md:w-[88px] md:h-[88px] rounded-full object-cover border-2 border-retro-border shrink-0 group-hover:border-stone-500 transition-colors shadow-lg"
+                className="w-10 h-10 md:w-14 md:h-14 rounded-full object-cover border-2 border-retro-border shrink-0 group-hover:border-stone-500 transition-colors shadow-lg"
               />
             ) : (
-              <div className="w-10 h-10 md:w-[88px] md:h-[88px] rounded-full border-2 border-retro-border flex items-center justify-center shrink-0 group-hover:border-stone-500 transition-colors shadow-lg bg-retro-card">
-                <UserCircleIcon className="w-5 h-5 md:w-12 md:h-12 text-stone-400" />
+              <div className="w-10 h-10 md:w-14 md:h-14 rounded-full border-2 border-retro-border flex items-center justify-center shrink-0 group-hover:border-stone-500 transition-colors shadow-lg bg-retro-card">
+                <UserCircleIcon className="w-5 h-5 md:w-8 md:h-8 text-stone-400" />
               </div>
             )}
-            <span className="text-sm md:text-base font-bebas tracking-wide uppercase text-retro-accent group-hover:text-amber-300 truncate max-w-[140px] md:max-w-[180px] -mt-2 md:-mt-3 text-center leading-tight">
+            <span className="text-xs md:text-sm font-bebas tracking-wide uppercase text-retro-accent group-hover:text-amber-300 truncate max-w-[100px] md:max-w-[110px] -mt-1.5 md:-mt-1 text-center leading-tight">
               {nameLabel}
             </span>
           </Link>

@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
+import type { SortValue } from "@/components/Competitions/CompetitionSortDropdown";
 
 export type CompetitionItem = {
   id: string;
@@ -10,15 +11,6 @@ export type CompetitionItem = {
   end_date: string | null;
   image_url: string | null;
 };
-
-const SORT_OPTIONS = [
-  { value: "date_desc", label: "Speldatum (senaste först)" },
-  { value: "date_asc", label: "Speldatum (tidigaste först)" },
-  { value: "name_asc", label: "Namn (A–Ö)" },
-  { value: "name_desc", label: "Namn (Ö–A)" },
-] as const;
-
-type SortValue = (typeof SORT_OPTIONS)[number]["value"];
 
 function formatDate(date: string | null) {
   if (!date) return "";
@@ -29,15 +21,27 @@ function formatDate(date: string | null) {
   }).format(new Date(date));
 }
 
+const DEFAULT_SORT: SortValue = "date_asc";
+
 export default function CompetitionList({
   competitions,
+  sort: sortFromUrl,
+  q: qFromUrl,
 }: {
   competitions: CompetitionItem[];
+  sort?: SortValue | null;
+  q?: string;
 }) {
-  const [sort, setSort] = useState<SortValue>("date_asc");
+  const sort = sortFromUrl ?? DEFAULT_SORT;
+  const q = (qFromUrl ?? "").trim().toLowerCase();
+
+  const filtered = useMemo(() => {
+    if (!q) return competitions;
+    return competitions.filter((c) => (c.title ?? "").toLowerCase().includes(q));
+  }, [competitions, q]);
 
   const sorted = useMemo(() => {
-    const list = [...competitions];
+    const list = [...filtered];
     switch (sort) {
       case "date_desc":
         return list.sort((a, b) => {
@@ -59,10 +63,10 @@ export default function CompetitionList({
         return list.sort((a, b) =>
           (b.title ?? "").localeCompare(a.title ?? "", "sv")
         );
-      default:
-        return list;
+    default:
+      return list;
     }
-  }, [competitions, sort]);
+  }, [filtered, sort]);
 
   if (!competitions.length) {
     return (
@@ -81,23 +85,16 @@ export default function CompetitionList({
     );
   }
 
+  if (q && sorted.length === 0 && competitions.length > 0) {
+    return (
+      <p className="text-stone-400 py-6">
+        Inga tävlingar matchar sökningen.
+      </p>
+    );
+  }
+
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2 sm:gap-4">
-        <label className="text-sm font-medium text-stone-300">Sortering:</label>
-        <select
-          value={sort}
-          onChange={(e) => setSort(e.target.value as SortValue)}
-          className="rounded-lg border border-retro-border bg-retro-surface text-stone-100 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-retro-accent"
-        >
-          {SORT_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
-      </div>
-
       <div className="flex flex-col gap-4 w-full">
         {sorted.map((comp) => (
           <Link
