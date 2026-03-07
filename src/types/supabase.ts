@@ -220,6 +220,7 @@ export type Database = {
           turn: number | null
           fade: number | null
           disc_type: "driver" | "fairway" | "midrange" | "putter" | "other" | null
+          brand: string | null
         }
         Insert: {
           id?: string
@@ -232,6 +233,7 @@ export type Database = {
           turn?: number | null
           fade?: number | null
           disc_type?: "driver" | "fairway" | "midrange" | "putter" | "other" | null
+          brand?: string | null
         }
         Update: {
           name?: string
@@ -243,6 +245,7 @@ export type Database = {
           turn?: number | null
           fade?: number | null
           disc_type?: "driver" | "fairway" | "midrange" | "putter" | "other" | null
+          brand?: string | null
         }
         Relationships: []
       }

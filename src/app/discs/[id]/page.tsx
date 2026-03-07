@@ -12,11 +12,21 @@ type DiscRow = {
   id: string;
   name: string;
   bild: string | null;
+  disc_type: string | null;
+  brand: string | null;
   speed: number | null;
   glide: number | null;
   turn: number | null;
   fade: number | null;
   created_by: string | null;
+};
+
+const DISC_TYPE_LABELS: Record<string, string> = {
+  driver: "Driver",
+  fairway: "Fairway",
+  midrange: "Midrange",
+  putter: "Putter",
+  other: "Annan",
 };
 
 export default async function DiscPage({
@@ -30,7 +40,7 @@ export default async function DiscPage({
 
   const { data: disc, error } = await supabase
     .from("discs")
-    .select("id, name, bild, speed, glide, turn, fade, created_by")
+    .select("id, name, bild, disc_type, brand, speed, glide, turn, fade, created_by")
     .eq("id", id)
     .single();
 
@@ -114,6 +124,24 @@ export default async function DiscPage({
                   Redigera
                 </Link>
               )}
+            </div>
+            <div className="flex flex-col gap-1 text-sm">
+              <div>
+                <p className="text-xs text-stone-500 uppercase tracking-wide">Märke</p>
+                <p className="font-semibold text-stone-300">{discRow.brand?.trim() || "—"}</p>
+              </div>
+              <div>
+                <p className="text-xs text-stone-500 uppercase tracking-wide">Typ av disc</p>
+                <p className="text-amber-400 font-medium">{discRow.disc_type ? (DISC_TYPE_LABELS[discRow.disc_type] ?? discRow.disc_type) : "—"}</p>
+              </div>
+              <div>
+                <p className="text-xs text-stone-500 uppercase tracking-wide">Flygsiffror</p>
+                <p className="text-stone-500 tabular-nums">
+                  {[discRow.speed, discRow.glide, discRow.turn, discRow.fade].filter((n) => n != null).length > 0
+                    ? [discRow.speed, discRow.glide, discRow.turn, discRow.fade].filter((n) => n != null).join(" · ")
+                    : "—"}
+                </p>
+              </div>
             </div>
             {discRow.created_by && (
               <p className="text-sm text-stone-500">

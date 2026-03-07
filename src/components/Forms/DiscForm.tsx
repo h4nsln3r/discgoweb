@@ -7,6 +7,7 @@ export type DiscType = "driver" | "fairway" | "midrange" | "putter" | "other";
 export type DiscFormData = {
   name: string;
   disc_type?: DiscType | null;
+  brand?: string | null;
   bild?: string;
   bildFile?: File;
   speed?: number | null;
@@ -18,6 +19,7 @@ export type DiscFormData = {
 type DiscFormProps = {
   initialName?: string;
   initialDiscType?: DiscType | null;
+  initialBrand?: string | null;
   initialBild?: string;
   initialSpeed?: number | null;
   initialGlide?: number | null;
@@ -40,6 +42,7 @@ const DISC_TYPE_OPTIONS: { value: DiscType; label: string }[] = [
 export default function DiscForm({
   initialName = "",
   initialDiscType = null,
+  initialBrand = "",
   initialBild = "",
   initialSpeed = null,
   initialGlide = null,
@@ -50,6 +53,7 @@ export default function DiscForm({
 }: DiscFormProps) {
   const [name, setName] = useState(initialName ?? "");
   const [discType, setDiscType] = useState<DiscType | "">(initialDiscType ?? "");
+  const [brand, setBrand] = useState(initialBrand ?? "");
   const [bild, setBild] = useState(initialBild ?? "");
   const [bildFile, setBildFile] = useState<File | null>(null);
   const [imageMode, setImageMode] = useState<"url" | "upload">(initialBild ? "url" : "upload");
@@ -196,6 +200,7 @@ export default function DiscForm({
     const data: DiscFormData = {
       name: name.trim(),
       disc_type: discType && discType in { driver: 1, fairway: 1, midrange: 1, putter: 1, other: 1 } ? (discType as DiscType) : null,
+      brand: brand.trim() || null,
       ...(imageMode === "url" && bild.trim() ? { bild: bild.trim() } : {}),
       ...(imageMode === "upload" && bildFile ? { bildFile } : {}),
       speed: parseNum(speed),
@@ -248,6 +253,18 @@ export default function DiscForm({
             </option>
           ))}
         </select>
+      </div>
+
+      {/* Märke */}
+      <div>
+        <label className="block text-sm font-medium text-stone-300 mb-1">Märke</label>
+        <input
+          className={inputClass}
+          type="text"
+          value={brand}
+          onChange={(e) => setBrand(e.target.value)}
+          placeholder="t.ex. Innova, Discmania"
+        />
       </div>
 
       {/* Bild med beskärning */}

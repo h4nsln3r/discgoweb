@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import BackLink from "@/components/Buttons/BackLink";
 
-type ForTradeRow = {
+type StatusRow = {
   id: string;
   disc_id: string;
   user_id: string;
@@ -19,13 +19,13 @@ const DISC_TYPE_LABELS: Record<string, string> = {
   other: "Annan",
 };
 
-export default async function DiscsForTradePage() {
+export default async function DiscsDiscardedPage() {
   const supabase = await createServerSupabaseClient();
 
   const { data: rows, error } = await supabase
     .from("player_bag")
     .select("id, disc_id, user_id, created_at, discs(id, name, bild, disc_type, brand), profiles(id, alias)")
-    .eq("status", "for_trade")
+    .eq("status", "discarded")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -39,15 +39,15 @@ export default async function DiscsForTradePage() {
     );
   }
 
-  const items = (rows ?? []) as ForTradeRow[];
+  const items = (rows ?? []) as StatusRow[];
 
   return (
     <main className="p-4 sm:p-6 max-w-3xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-stone-100">Discar att byta</h1>
+          <h1 className="text-2xl font-bold text-stone-100">Bortkastade discar</h1>
           <p className="text-stone-400 text-sm mt-1">
-            Discar som användare vill byta bort eller sälja. Klicka på en disc eller profil för att se mer.
+            Discar som användare har markerat som bortkastade. Klicka på en disc eller profil för att se mer.
           </p>
         </div>
         <Link
@@ -60,9 +60,9 @@ export default async function DiscsForTradePage() {
 
       {items.length === 0 ? (
         <div className="rounded-2xl border border-retro-border bg-retro-surface p-8 text-center">
-          <p className="text-stone-400">Inga discar utlagda för byte just nu.</p>
+          <p className="text-stone-400">Inga discar markerade som bortkastade just nu.</p>
           <p className="text-stone-500 text-sm mt-2">
-            Markera discar som &quot;Vill byta/sälja&quot; i din bag under Profil → Min bag.
+            Du kan sätta status på discar i din bag under Profil → Min bag.
           </p>
           <Link href="/profile/bag" className="inline-block mt-4 text-retro-accent hover:underline font-medium">
             Gå till Min bag
@@ -99,7 +99,7 @@ export default async function DiscsForTradePage() {
                 href={`/profile/${row.user_id}`}
                 className="flex items-center gap-2 text-stone-400 hover:text-retro-accent transition text-sm shrink-0"
               >
-                <span>Vill byta: {row.profiles?.alias?.trim() || "Anonym"}</span>
+                <span>Bortkastad av: {row.profiles?.alias?.trim() || "Anonym"}</span>
                 <span aria-hidden>→</span>
               </Link>
             </li>

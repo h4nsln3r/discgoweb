@@ -125,11 +125,11 @@ export default async function ProfileHomePage() {
     disc_id: string;
     created_at: string;
     status: string;
-    discs: { id: string; name: string; bild: string | null; disc_type: string | null } | null;
+    discs: { id: string; name: string; bild: string | null; disc_type: string | null; brand: string | null } | null;
   };
   const { data: bagData } = await supabase
     .from("player_bag")
-    .select("id, disc_id, created_at, status, discs(id, name, bild, disc_type)")
+    .select("id, disc_id, created_at, status, discs(id, name, bild, disc_type, brand)")
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .eq("user_id", user.id as any)
     .order("created_at", { ascending: true });

@@ -14,6 +14,7 @@ type DiscRow = {
   name: string;
   bild: string | null;
   disc_type: "driver" | "fairway" | "midrange" | "putter" | "other" | null;
+  brand: string | null;
   speed: number | null;
   glide: number | null;
   turn: number | null;
@@ -42,7 +43,7 @@ export default function EditDiscPage() {
       ] = await Promise.all([
         supabase.auth.getUser(),
         fetch("/api/get-current-user").then((r) => (r.ok ? r.json() : null)),
-        supabase.from("discs").select("id, name, bild, disc_type, speed, glide, turn, fade, created_by").eq("id", id).single(),
+        supabase.from("discs").select("id, name, bild, disc_type, brand, speed, glide, turn, fade, created_by").eq("id", id).single(),
       ]);
 
       if (!user) {
@@ -89,6 +90,7 @@ export default function EditDiscPage() {
         name: data.name,
         bild: bildUrl,
         disc_type: data.disc_type ?? null,
+        brand: data.brand ?? null,
         speed: data.speed ?? null,
         glide: data.glide ?? null,
         turn: data.turn ?? null,
@@ -134,6 +136,7 @@ export default function EditDiscPage() {
       <DiscForm
         initialName={disc.name}
         initialDiscType={disc.disc_type ?? null}
+        initialBrand={disc.brand ?? null}
         initialBild={disc.bild ?? ""}
         initialSpeed={disc.speed}
         initialGlide={disc.glide}

@@ -24,13 +24,13 @@ const DISC_TYPE_LABELS: Record<string, string> = {
   other: "Annan",
 };
 
-type Disc = { id: string; name: string; bild: string | null; disc_type?: string | null };
+type Disc = { id: string; name: string; bild: string | null; disc_type?: string | null; brand?: string | null };
 type BagItem = {
   id: string;
   disc_id: string;
   created_at: string;
   status: BagStatus;
-  disc: { id: string; name: string; bild: string | null; disc_type?: string | null } | null;
+  disc: { id: string; name: string; bild: string | null; disc_type?: string | null; brand?: string | null } | null;
 };
 
 export default function BagManager({ discs, favoriteDiscId }: { discs: Disc[]; favoriteDiscId?: string | null }) {
@@ -199,11 +199,10 @@ export default function BagManager({ discs, favoriteDiscId }: { discs: Disc[]; f
                   </div>
                   <div className="min-w-0">
                     <span className="text-stone-200 font-medium truncate block">{b.disc?.name ?? "—"}</span>
-                    {b.disc?.disc_type && (
-                      <span className="text-xs text-stone-500">
-                        {DISC_TYPE_LABELS[b.disc.disc_type] ?? b.disc.disc_type}
-                      </span>
-                    )}
+                    <div className="flex flex-col gap-0.5 text-xs">
+                      {b.disc?.brand && <span className="font-semibold text-stone-400">{b.disc.brand}</span>}
+                      {b.disc?.disc_type && <span className="text-amber-400/90">{DISC_TYPE_LABELS[b.disc.disc_type] ?? b.disc.disc_type}</span>}
+                    </div>
                   </div>
                   {favoriteDiscIdState === b.disc_id && (
                     <span className="text-amber-400 shrink-0 flex items-center gap-1 text-xs font-medium">

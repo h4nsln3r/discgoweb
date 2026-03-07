@@ -50,6 +50,13 @@ export default function TeamMembersSection({
   const isOnlyAdmin = myRole === "admin" && adminCount <= 1;
   const canLeave = isMember && !isOnlyAdmin;
 
+  const canRemoveMember = (memberRole: "admin" | "editor" | "viewer") => {
+    if (!myRole) return false;
+    if (myRole === "admin") return true;
+    if (myRole === "editor") return memberRole === "viewer";
+    return false;
+  };
+
   const handleRoleChange = async (userId: string, newRole: "admin" | "editor" | "viewer") => {
     setUpdating(userId);
     const res = await fetch(`/api/teams/${teamId}/members/role`, {
@@ -70,12 +77,14 @@ export default function TeamMembersSection({
   const handleRemoveMember = async (userId: string) => {
     if (!confirm("Vill du verkligen ta bort denna person från laget?")) return;
     setUpdating(userId);
-    const { error } = await supabase.rpc("remove_team_member", {
-      p_team_id: teamId,
-      p_user_id: userId,
+    const res = await fetch(`/api/teams/${teamId}/members/remove`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId }),
     });
-    if (error) {
-      showToast(error.message || "Kunde inte ta bort medlem.", "error");
+    const data = res.ok ? null : await res.json().catch(() => ({}));
+    if (!res.ok) {
+      showToast((data as { error?: string })?.error ?? "Kunde inte ta bort medlem.", "error");
     } else {
       showToast("Medlem borttagen från laget.", "success");
       router.refresh();
@@ -182,7 +191,7 @@ export default function TeamMembersSection({
                       )}
                     </>
                   )}
-                  {canRemoveMembers && (
+                  {canRemoveMembers && canRemoveMember(member.role) && (
                     <button
                       type="button"
                       onClick={() => handleRemoveMember(member.id)}

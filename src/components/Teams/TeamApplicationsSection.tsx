@@ -15,11 +15,6 @@ export type ApplicantRow = {
   avatar_url: string | null;
 };
 
-const ROLE_OPTIONS: { value: "viewer" | "editor"; label: string }[] = [
-  { value: "viewer", label: "Spelare" },
-  { value: "editor", label: "Kapten" },
-];
-
 type Props = {
   teamId: string;
   applicants: ApplicantRow[];
@@ -30,18 +25,17 @@ export default function TeamApplicationsSection({ applicants }: Props) {
   const supabase = createClientComponentClient<Database>();
   const { showToast } = useToast();
   const [updating, setUpdating] = useState<string | null>(null);
-  const [roleByApp, setRoleByApp] = useState<Record<string, "viewer" | "editor">>({});
 
-  const handleApprove = async (applicationId: string, role: "viewer" | "editor") => {
+  const handleApprove = async (applicationId: string) => {
     setUpdating(applicationId);
     const { error } = await supabase.rpc("approve_team_application", {
       p_application_id: applicationId,
-      p_role: role,
+      p_role: "viewer",
     });
     if (error) {
       showToast(error.message || "Kunde inte godkänna ansökan.", "error");
     } else {
-      showToast("Ansökan godkänd. Person tillagd som " + (role === "editor" ? "Kapten" : "Spelare") + ".", "success");
+      showToast("Ansökan godkänd. Person tillagd som spelare.", "success");
       router.refresh();
     }
     setUpdating(null);
@@ -101,19 +95,9 @@ export default function TeamApplicationsSection({ applicants }: Props) {
               <span className="text-sm text-retro-accent shrink-0">Visa profil →</span>
             </Link>
             <div className="flex flex-wrap items-center gap-2 sm:ml-auto shrink-0">
-              <select
-                value={roleByApp[app.id] ?? "viewer"}
-                onChange={(e) => setRoleByApp((prev) => ({ ...prev, [app.id]: e.target.value as "viewer" | "editor" }))}
-                disabled={updating === app.id}
-                className="rounded-lg border border-retro-border bg-retro-surface text-stone-100 text-sm px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-retro-accent"
-              >
-                {ROLE_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>{o.label}</option>
-                ))}
-              </select>
               <button
                 type="button"
-                onClick={() => handleApprove(app.id, roleByApp[app.id] ?? "viewer")}
+                onClick={() => handleApprove(app.id)}
                 disabled={updating === app.id}
                 className="rounded-lg bg-emerald-600 text-white text-sm px-3 py-1.5 hover:bg-emerald-500 disabled:opacity-50"
               >

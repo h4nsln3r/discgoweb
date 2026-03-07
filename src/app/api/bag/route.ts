@@ -35,7 +35,7 @@ export async function GET() {
   const discIds = bagRows.map((r) => r.disc_id);
   const { data: discs, error: discsError } = await supabase
     .from("discs")
-    .select("id, name, bild, speed, glide, turn, fade, disc_type")
+    .select("id, name, bild, speed, glide, turn, fade, disc_type, brand")
     .in("id", discIds);
 
   if (discsError) {

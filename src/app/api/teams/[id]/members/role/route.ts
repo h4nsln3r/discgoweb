@@ -39,9 +39,37 @@ export async function POST(
     return NextResponse.json({ error: "userId och role (admin/editor/viewer) krävs." }, { status: 400 });
   }
 
-  // Upsert med admin-klient för att undvika RLS-rekursion på team_member_roles.
-  // Behörighet är redan kontrollerad ovan (canManageRoles).
   const admin = createSupabaseAdminClient();
+
+  // Max en admin per lag: om någon sätts till admin, demotera nuvarande admin till kapten (editor).
+  if (role === "admin") {
+    const { data: team } = await admin.from("teams").select("created_by").eq("id", teamId).single();
+    const previousAdminId = team?.created_by ?? null;
+    if (previousAdminId && previousAdminId !== userId) {
+      const { error: ePrev } = await admin
+        .from("team_member_roles")
+        .upsert(
+          { team_id: teamId, user_id: previousAdminId, role: "editor" },
+          { onConflict: "team_id,user_id" }
+        );
+      if (ePrev) {
+        console.error("[API teams/members/role] Demote previous admin:", ePrev.message);
+        return NextResponse.json(
+          { error: "Kunde inte demotera föregående admin." },
+          { status: 500 }
+        );
+      }
+    }
+    const { error: eTeam } = await admin.from("teams").update({ created_by: userId }).eq("id", teamId);
+    if (eTeam) {
+      console.error("[API teams/members/role] Update teams.created_by:", eTeam.message);
+      return NextResponse.json(
+        { error: "Kunde inte sätta ny admin på laget." },
+        { status: 500 }
+      );
+    }
+  }
+
   const { error } = await admin
     .from("team_member_roles")
     .upsert(

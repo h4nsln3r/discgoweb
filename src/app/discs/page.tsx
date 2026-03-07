@@ -3,11 +3,14 @@ import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { getCurrentUserWithAdmin } from "@/lib/auth-server";
 import BackLink from "@/components/Buttons/BackLink";
 import { PencilSquareIcon } from "@heroicons/react/24/outline";
+import DiscTypeFilter from "@/components/Disc/DiscTypeFilter";
 
 type DiscRow = {
   id: string;
   name: string;
   bild: string | null;
+  disc_type: string | null;
+  brand: string | null;
   speed?: number | null;
   glide?: number | null;
   turn?: number | null;
@@ -15,11 +18,25 @@ type DiscRow = {
   created_by: string | null;
 };
 
-export default async function DiscsPage() {
+const DISC_TYPE_LABELS: Record<string, string> = {
+  driver: "Driver",
+  fairway: "Fairway",
+  midrange: "Midrange",
+  putter: "Putter",
+  other: "Annan",
+};
+
+type PageProps = { searchParams?: Promise<{ type?: string }> };
+
+export default async function DiscsPage({ searchParams }: PageProps) {
   const supabase = await createServerSupabaseClient();
   const { user, isAdmin } = await getCurrentUserWithAdmin(supabase);
-  const { data: discsData } = await supabase.from("discs").select("id, name, bild, speed, glide, turn, fade, created_by").order("name");
-  const discs = (discsData ?? []) as DiscRow[];
+  const { data: discsData } = await supabase.from("discs").select("id, name, bild, disc_type, brand, speed, glide, turn, fade, created_by").order("name");
+  const allDiscs = (discsData ?? []) as DiscRow[];
+  const typeFilter = searchParams ? (await searchParams)?.type ?? null : null;
+  const discs = typeFilter
+    ? allDiscs.filter((d) => d.disc_type === typeFilter)
+    : allDiscs;
   const canEditDisc = (createdBy: string | null) => user && (createdBy === user.id || isAdmin);
 
   const creatorIds = [...new Set(discs.map((d) => d.created_by).filter(Boolean))] as string[];
@@ -42,6 +59,19 @@ export default async function DiscsPage() {
           >
             Vill byta
           </Link>
+          <Link
+            href="/discs/discarded"
+            className="text-sm text-stone-400 hover:text-stone-300 font-medium transition"
+          >
+            Bortkastade
+          </Link>
+          <Link
+            href="/discs/worthless"
+            className="text-sm text-stone-400 hover:text-stone-300 font-medium transition"
+          >
+            Värdelösa
+          </Link>
+          <DiscTypeFilter currentType={typeFilter} />
         </div>
         <Link
           href="/discs/new"
@@ -51,7 +81,7 @@ export default async function DiscsPage() {
         </Link>
       </div>
 
-      {!discs?.length ? (
+      {!allDiscs.length ? (
         <div className="rounded-xl border border-retro-border bg-retro-surface p-8 text-center">
           <p className="text-stone-300 text-lg">Inga discar än.</p>
           <p className="text-stone-500 text-sm mt-2">
@@ -63,6 +93,11 @@ export default async function DiscsPage() {
           >
             Lägg till disc
           </Link>
+        </div>
+      ) : !discs.length ? (
+        <div className="rounded-xl border border-retro-border bg-retro-surface p-8 text-center">
+          <p className="text-stone-400">Inga discar av denna typ.</p>
+          <p className="text-stone-500 text-sm mt-2">Välj &quot;Alla typer&quot; i menyn ovan för att se alla discar.</p>
         </div>
       ) : (
         <ul className="space-y-4">
@@ -97,12 +132,13 @@ export default async function DiscsPage() {
                     <span className="text-2xl sm:text-4xl font-bebas tracking-wide text-stone-100 group-hover:text-retro-accent uppercase block truncate transition-colors">
                       {disc.name}
                     </span>
-                    {(() => {
-                      const parts = [disc.speed, disc.glide, disc.turn, disc.fade].filter((n) => n != null);
-                      return parts.length > 0 ? (
-                        <p className="text-sm text-stone-400 font-medium tabular-nums mt-0.5">{parts.join(" · ")}</p>
-                      ) : null;
-                    })()}
+                    <div className="flex flex-col gap-0.5 text-sm mt-0.5">
+                      {disc.brand && <span className="font-semibold text-stone-300">{disc.brand}</span>}
+                      {disc.disc_type && <span className="text-amber-400/90 font-medium">{DISC_TYPE_LABELS[disc.disc_type] ?? disc.disc_type}</span>}
+                      {[disc.speed, disc.glide, disc.turn, disc.fade].filter((n) => n != null).length > 0 && (
+                        <span className="text-stone-500 tabular-nums">{[disc.speed, disc.glide, disc.turn, disc.fade].filter((n) => n != null).join(" · ")}</span>
+                      )}
+                    </div>
                   </Link>
                   {canEditDisc(disc.created_by) && (
                     <Link

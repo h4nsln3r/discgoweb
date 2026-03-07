@@ -19,7 +19,7 @@ export default async function ProfileBagPage() {
 
   const { data: discsData } = await supabase
     .from("discs")
-    .select("id, name, bild, disc_type")
+    .select("id, name, bild, disc_type, brand")
     .order("name");
   const discs = discsData ?? [];
 

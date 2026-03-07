@@ -105,11 +105,11 @@ export default async function PublicProfilePage({ params }: Props) {
     disc_id: string;
     created_at: string;
     status: string;
-    discs: { id: string; name: string; bild: string | null; disc_type: string | null } | null;
+    discs: { id: string; name: string; bild: string | null; disc_type: string | null; brand: string | null } | null;
   };
   const { data: bagData } = await supabase
     .from("player_bag")
-    .select("id, disc_id, created_at, status, discs(id, name, bild, disc_type)")
+    .select("id, disc_id, created_at, status, discs(id, name, bild, disc_type, brand)")
     .eq("user_id", id)
     .order("created_at", { ascending: true });
   const bagDiscs = (bagData ?? []) as BagDiscRow[];

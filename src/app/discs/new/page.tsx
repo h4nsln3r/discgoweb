@@ -33,6 +33,7 @@ export default function NewDiscPage() {
       name: data.name,
       bild: bildUrl,
       disc_type: data.disc_type ?? null,
+      brand: data.brand ?? null,
       speed: data.speed ?? null,
       glide: data.glide ?? null,
       turn: data.turn ?? null,
