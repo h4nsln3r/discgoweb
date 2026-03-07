@@ -3,14 +3,12 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import BackLink from "@/components/Buttons/BackLink";
 import {
   MapPinIcon,
   UserCircleIcon,
   TrophyIcon,
   CalendarDaysIcon,
   FlagIcon,
-  PencilSquareIcon,
   UserGroupIcon,
   HashtagIcon,
   CheckCircleIcon,
@@ -19,6 +17,7 @@ import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import type { Database } from "@/types/supabase";
 import { getHoleThrowBg, getHoleThrowStyle } from "@/lib/holeColors";
 import { formatScorePar } from "@/lib/scoreDisplay";
+import { SetTopbarActions } from "@/components/Topbar/TopbarActionsContext";
 
 /** Normalize anything -> string[] (handles null, string, JSON string, object) */
 function normalizeFriends(input: unknown): string[] {
@@ -187,6 +186,7 @@ export default function ScoreDetailPage() {
   if (loading) {
     return (
       <main className="p-4 md:p-6 max-w-3xl mx-auto">
+        <SetTopbarActions backHref="/results" />
         <div className="text-stone-400 animate-pulse">Laddar...</div>
       </main>
     );
@@ -194,8 +194,8 @@ export default function ScoreDetailPage() {
   if (!item) {
     return (
       <main className="p-4 md:p-6 max-w-3xl mx-auto">
+        <SetTopbarActions backHref="/results" />
         <p className="text-stone-400">Hittade inte resultatet.</p>
-        <BackLink className="mt-3 inline-flex items-center gap-2 text-retro-accent hover:text-stone-200" />
       </main>
     );
   }
@@ -203,13 +203,16 @@ export default function ScoreDetailPage() {
   const friends = normalizeFriends(item.with_friends);
   const throwsValue = item.throws ?? item.score ?? null;
 
+  const canEdit = currentUserId != null && (item.user_id === currentUserId || isAdmin);
+
   return (
     <main className="p-4 md:p-6 max-w-3xl mx-auto space-y-6">
-      <div>
-        <BackLink />
-      </div>
-
-      <h1 className="text-2xl font-bold text-stone-100">Resultat</h1>
+      <SetTopbarActions
+        backHref="/results"
+        editHref={canEdit ? `/results/${item.id}/edit` : null}
+        editLabel="Redigera resultat"
+        pageTitle="Resultat"
+      />
 
       {/* Tävling – synlig högst upp om det finns */}
       {item.competitions && (
@@ -393,17 +396,6 @@ export default function ScoreDetailPage() {
         )}
       </div>
 
-      {currentUserId != null && (item.user_id === currentUserId || isAdmin) && (
-        <div className="pt-2">
-          <Link
-            href={`/results/${item.id}/edit`}
-            className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-2.5 rounded-lg bg-retro-accent text-stone-100 font-medium hover:bg-retro-accent-hover transition focus:outline-none focus:ring-2 focus:ring-retro-accent focus:ring-offset-2 focus:ring-offset-retro-bg"
-          >
-            <PencilSquareIcon className="h-4 w-4" />
-            Redigera resultat
-          </Link>
-        </div>
-      )}
     </main>
   );
 }

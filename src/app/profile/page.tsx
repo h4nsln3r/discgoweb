@@ -1,6 +1,7 @@
 // app/profile/page.tsx
 import Link from "next/link";
 import { Suspense } from "react";
+import { SetTopbarActions } from "@/components/Topbar/TopbarActionsContext";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { redirect } from "next/navigation";
 import {
@@ -162,6 +163,7 @@ export default async function ProfileHomePage() {
 
   return (
     <main className="p-4 sm:p-6 max-w-3xl mx-auto">
+      <SetTopbarActions editHref="/profile/edit" editLabel="Redigera profil" pageTitle="Min profil" />
       <Suspense fallback={null}>
         <ProfileWelcomeToast displayName={profile?.alias ?? null} />
       </Suspense>
@@ -490,16 +492,6 @@ export default async function ProfileHomePage() {
 
       {/* Alla resultat – klick på hela raden går till resultatet */}
       <ProfileResultsTable scoreList={scoreList} />
-
-      {/* Redigera profil längst ner */}
-      <div className="pt-2">
-        <Link
-          href="/profile/edit"
-          className="block w-full text-center py-3 rounded-xl bg-retro-accent text-stone-100 font-medium hover:bg-retro-accent-hover transition"
-        >
-          Redigera profil
-        </Link>
-      </div>
     </main>
   );
 }

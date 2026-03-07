@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { getCurrentUserWithAdmin } from "@/lib/auth-server";
 import BackLink from "@/components/Buttons/BackLink";
+import { SetTopbarActions } from "@/components/Topbar/TopbarActionsContext";
 import { PencilSquareIcon } from "@heroicons/react/24/outline";
 import DiscTypeFilter from "@/components/Disc/DiscTypeFilter";
 
@@ -50,9 +51,9 @@ export default async function DiscsPage({ searchParams }: PageProps) {
 
   return (
     <main className="p-4 sm:p-6 max-w-3xl mx-auto">
+      <SetTopbarActions pageTitle="Discar" />
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-2xl font-bold text-stone-100">Discar</h1>
           <Link
             href="/discs/for-trade"
             className="text-sm text-amber-400 hover:text-amber-300 font-medium transition"

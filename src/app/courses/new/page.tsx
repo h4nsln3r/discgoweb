@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Database } from "@/types/supabase";
 import CourseForm, { type CourseHole } from "@/components/Forms/CourseForm";
-import BackLink from "@/components/Buttons/BackLink";
+import { SetTopbarActions } from "@/components/Topbar/TopbarActionsContext";
 import { useToast } from "@/components/Toasts/ToastProvider";
 
 export default function AddCoursePage() {
@@ -66,9 +66,7 @@ export default function AddCoursePage() {
 
   return (
     <div className="max-w-2xl mx-auto p-6 space-y-6">
-      <div>
-        <BackLink />
-      </div>
+      <SetTopbarActions backHref="/courses" />
       <h1 className="text-2xl font-bold text-stone-100">Lägg till ny bana</h1>
       <CourseForm onSubmit={handleCreate} submitText="Skapa bana" />
     </div>

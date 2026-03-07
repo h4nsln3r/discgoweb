@@ -9,6 +9,7 @@ import { Suspense } from "react";
 const bebasNeue = Bebas_Neue({ weight: "400", subsets: ["latin"], variable: "--font-bebas" });
 import TopbarWrapper from "../components/Topbar/TopbarWrapper.server";
 import Providers from "../components/Providers";
+import { TopbarActionsProvider } from "../components/Topbar/TopbarActionsContext";
 
 export const metadata: Metadata = {
   title: "Discgo",
@@ -27,12 +28,14 @@ export default function RootLayout({
   return (
     <html lang="sv" className={bebasNeue.variable}>
       <body className="min-h-screen bg-retro-bg overflow-x-hidden">
-        <Suspense fallback={<div className="h-14 shrink-0" aria-hidden />}>
-          <TopbarWrapper />
-        </Suspense>
-        <Providers>
-          <div className="pt-6">{children}</div>
-        </Providers>
+        <TopbarActionsProvider>
+          <Suspense fallback={<div className="h-10 md:h-24 shrink-0" aria-hidden />}>
+            <TopbarWrapper />
+          </Suspense>
+          <Providers>
+            <div className="">{children}</div>
+          </Providers>
+        </TopbarActionsProvider>
       </body>
     </html>
   );

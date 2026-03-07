@@ -4,9 +4,9 @@ import { notFound } from "next/navigation";
 import { Database } from "@/types/supabase";
 import { getCurrentUserWithAdmin, canEditAsOwnerOrAdmin } from "@/lib/auth-server";
 import Link from "next/link";
-import { MapPinIcon, PencilSquareIcon, PlusCircleIcon, HashtagIcon, UserCircleIcon } from "@heroicons/react/24/outline";
-import BackLink from "@/components/Buttons/BackLink";
+import { MapPinIcon, PlusCircleIcon, HashtagIcon, UserCircleIcon } from "@heroicons/react/24/outline";
 import ImageGallery from "@/components/ImageGallery";
+import { SetTopbarActions } from "@/components/Topbar/TopbarActionsContext";
 import ScoresTable from "@/components/Tables/ScoresTable";
 import { formatScorePar } from "@/lib/scoreDisplay";
 import CompetitionsTable from "@/components/Tables/CompetitionsTable";
@@ -98,18 +98,12 @@ export default async function CourseDetailPage({
 
   return (
     <div className="max-w-5xl mx-auto p-6 space-y-8">
-      <div className="flex items-center justify-between gap-4">
-        <BackLink />
-        {canEdit && (
-          <Link
-            href={`/courses/${course.id}/edit`}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-retro-border text-stone-200 text-sm font-medium hover:bg-retro-card transition"
-          >
-            <PencilSquareIcon className="w-5 h-5 shrink-0" />
-            Redigera bana
-          </Link>
-        )}
-      </div>
+      <SetTopbarActions
+        backHref="/courses"
+        editHref={canEdit ? `/courses/${course.id}/edit` : null}
+        editLabel="Redigera bana"
+        pageTitle={course.name}
+      />
       {allImages.length > 0 && (
         <ImageGallery
           images={allImages}
@@ -190,8 +184,6 @@ export default async function CourseDetailPage({
         </div>
 
         <div className="space-y-4">
-          <h1 className="text-3xl font-bold text-stone-100">{course.name}</h1>
-
           {((course as { landskap?: string | null }).landskap || course.city || course.country || course.location) && (
             <p className="text-stone-400 flex flex-wrap items-center gap-x-2 gap-y-1">
               <MapPinIcon className="w-4 h-4 text-retro-muted shrink-0" aria-hidden />

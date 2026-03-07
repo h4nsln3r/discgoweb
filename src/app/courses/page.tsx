@@ -1,19 +1,15 @@
 // src/app/courses/page.tsx
 import CourseList from "@/components/Lists/CourseList";
-import Link from "next/link";
+import { SetTopbarActions } from "@/components/Topbar/TopbarActionsContext";
 
 export default async function AllCoursesPage() {
   return (
     <main className="p-6 max-w-6xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-stone-100">🏞️ Alla banor</h1>
-        <Link
-          href="/courses/new"
-          className="px-4 py-2 rounded-xl bg-retro-accent text-stone-100 text-sm font-medium hover:bg-retro-accent-hover transition"
-        >
-          Lägg till bana
-        </Link>
-      </div>
+      <SetTopbarActions
+        pageTitle="Alla banor"
+        primaryActionHref="/courses/new"
+        primaryActionLabel="Lägg till bana"
+      />
       <CourseList />
     </main>
   );

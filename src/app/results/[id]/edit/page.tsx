@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { TrashIcon } from "@heroicons/react/24/outline";
-import BackLink from "@/components/Buttons/BackLink";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { SetTopbarActions } from "@/components/Topbar/TopbarActionsContext";
 import type { Database } from "@/types/supabase";
 import AddScoreForm from "@/components/Forms/AddScoreForm";
 import { useToast } from "@/components/Toasts/ToastProvider";
@@ -108,6 +108,7 @@ export default function EditScorePage() {
   if (loading || !userChecked) {
     return (
       <main className="p-4 md:p-6 max-w-3xl mx-auto space-y-6">
+        <SetTopbarActions backHref={id ? `/results/${id}` : null} />
         <div className="h-5 w-48 rounded bg-stone-600/50 animate-pulse" aria-hidden />
         <div className="h-8 w-56 rounded bg-stone-600/50 animate-pulse" aria-hidden />
         <div className="space-y-4 rounded-xl border border-retro-border bg-retro-surface p-4 md:p-6">
@@ -147,8 +148,8 @@ export default function EditScorePage() {
   if (!score) {
     return (
       <main className="p-4 md:p-6 max-w-3xl mx-auto">
+        <SetTopbarActions backHref={id ? `/results/${id}` : null} />
         <p className="text-stone-400">Hittade inte resultat.</p>
-        <BackLink className="mt-3 inline-flex items-center gap-2 text-retro-accent hover:text-stone-200" />
       </main>
     );
   }
@@ -157,17 +158,15 @@ export default function EditScorePage() {
   if (notOwner) {
     return (
       <main className="p-4 md:p-6 max-w-3xl mx-auto space-y-4">
+        <SetTopbarActions backHref={id ? `/results/${id}` : null} />
         <p className="text-stone-400">Du kan bara redigera och ta bort resultat som du själv lagt in.</p>
-        <BackLink className="inline-flex items-center gap-2 text-retro-accent hover:text-stone-200" />
       </main>
     );
   }
 
   return (
     <main className="p-4 md:p-6 max-w-3xl mx-auto space-y-6">
-      <div>
-        <BackLink />
-      </div>
+      <SetTopbarActions backHref={id ? `/results/${id}` : null} />
 
       <h1 className="text-2xl font-bold text-stone-100">Redigera resultat</h1>
 

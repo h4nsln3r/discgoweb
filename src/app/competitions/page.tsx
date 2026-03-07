@@ -1,7 +1,7 @@
 // src/app/competitions/page.tsx
 import { createServerSupabaseClient } from "@/lib/supabase-server";
-import Link from "next/link";
 import CompetitionList from "@/components/Lists/CompetitionList";
+import { SetTopbarActions } from "@/components/Topbar/TopbarActionsContext";
 
 export default async function CompetitionsPage() {
   const supabase = await createServerSupabaseClient();
@@ -17,16 +17,11 @@ export default async function CompetitionsPage() {
 
   return (
     <main className="p-4 sm:p-6 max-w-3xl mx-auto">
-      <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
-        <h1 className="text-2xl font-bold text-stone-100">🏆 Alla tävlingar</h1>
-        <Link
-          href="/competitions/new"
-          className="px-4 py-2 rounded-xl bg-retro-accent text-stone-100 text-sm font-medium hover:bg-retro-accent-hover transition"
-        >
-          Lägg till tävling
-        </Link>
-      </div>
-
+      <SetTopbarActions
+        pageTitle="Alla tävlingar"
+        primaryActionHref="/competitions/new"
+        primaryActionLabel="Lägg till tävling"
+      />
       <CompetitionList competitions={competitions ?? []} />
     </main>
   );

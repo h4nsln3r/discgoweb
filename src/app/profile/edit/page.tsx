@@ -1,7 +1,7 @@
 // app/profile/edit/page.tsx
 import ProfileForm from "@/components/Forms/ProfileForm";
-import BackButton from "@/components/Buttons/BackButton";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
+import { SetTopbarActions } from "@/components/Topbar/TopbarActionsContext";
 import { redirect } from "next/navigation";
 
 export default async function EditProfilePage() {
@@ -44,9 +44,7 @@ export default async function EditProfilePage() {
 
   return (
     <main className="p-4 sm:p-6 max-w-3xl mx-auto">
-      <div className="mb-6">
-        <BackButton />
-      </div>
+      <SetTopbarActions backHref="/profile" />
       <h1 className="text-2xl font-bold mb-4 text-stone-100">Redigera profil</h1>
       {!profile && !profileError && (
         <p className="text-stone-400 text-sm mb-4">

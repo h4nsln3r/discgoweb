@@ -10,8 +10,8 @@ import {
   UserGroupIcon,
   BriefcaseIcon,
 } from "@heroicons/react/24/outline";
-import BackButton from "@/components/Buttons/BackButton";
 import TeamCard from "@/components/Teams/TeamCard";
+import { SetTopbarActions } from "@/components/Topbar/TopbarActionsContext";
 import ProfileAvatarModal from "@/components/profile/ProfileAvatarModal";
 import BagStatusCircle from "@/components/Bag/BagStatusCircle";
 
@@ -141,9 +141,7 @@ export default async function PublicProfilePage({ params }: Props) {
 
   return (
     <main className="p-4 sm:p-6 max-w-3xl mx-auto">
-      <div className="mb-4">
-        <BackButton />
-      </div>
+      <SetTopbarActions backHref="/dashboard" pageTitle={profile.alias?.trim() || "Profil"} />
 
       {/* Profil: mobil = lag flytande vänster, [bild][namn] rad, fav under, info under. Desktop = originalet */}
       <div className="rounded-2xl border border-retro-border bg-retro-surface p-4 md:p-6 shadow-sm mb-6 relative">

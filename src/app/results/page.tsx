@@ -26,6 +26,7 @@ import {
   HashtagIcon,
 } from "@heroicons/react/24/outline";
 import PageLoading from "@/components/PageLoading";
+import { SetTopbarActions } from "@/components/Topbar/TopbarActionsContext";
 import { getHoleThrowBg, getHoleThrowStyle } from "@/lib/holeColors";
 import { formatScorePar } from "@/lib/scoreDisplay";
 
@@ -312,8 +313,8 @@ export default function ResultsPage() {
   if (data.length === 0) {
     return (
       <div className="p-4">
-        <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-bold text-stone-100">Alla resultat</h1>
+        <SetTopbarActions pageTitle="Alla resultat" />
+        <div className="flex justify-end mb-4">
           <Link
             href="/results/new"
             className="px-4 py-2 bg-retro-accent text-stone-100 rounded-lg hover:bg-retro-accent-hover transition"
@@ -339,8 +340,8 @@ export default function ResultsPage() {
 
   return (
     <div className="p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold text-stone-100">Alla resultat</h1>
+      <SetTopbarActions pageTitle="Alla resultat" />
+      <div className="flex justify-end mb-4">
         <Link
           href="/results/new"
           className="px-4 py-2 bg-retro-accent text-stone-100 rounded-lg hover:bg-retro-accent-hover transition"

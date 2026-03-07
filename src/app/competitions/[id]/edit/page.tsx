@@ -4,8 +4,8 @@ import { useEffect, useMemo, useState, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import BackLink from "@/components/Buttons/BackLink";
 import { Database } from "@/types/supabase";
+import { SetTopbarActions } from "@/components/Topbar/TopbarActionsContext";
 import { useToast } from "@/components/Toasts/ToastProvider";
 import CompetitionImageField from "@/components/Forms/CompetitionImageField";
 
@@ -173,6 +173,7 @@ export default function EditCompetitionPage() {
   if (loading) {
     return (
       <div className="max-w-2xl mx-auto p-6">
+        <SetTopbarActions backHref={id ? `/competitions/${id}` : null} />
         <p className="text-stone-400">Laddar...</p>
       </div>
     );
@@ -181,7 +182,7 @@ export default function EditCompetitionPage() {
   if (isCreator === false) {
     return (
       <div className="max-w-2xl mx-auto p-6 space-y-4">
-        <BackLink />
+        <SetTopbarActions backHref={id ? `/competitions/${id}` : null} />
         <p className="text-stone-400">
           Du kan bara redigera tävlingar som du själv skapat.
         </p>
@@ -194,9 +195,7 @@ export default function EditCompetitionPage() {
 
   return (
     <div className="max-w-2xl mx-auto p-6 space-y-6">
-      <div className="mb-2">
-        <BackLink />
-      </div>
+      <SetTopbarActions backHref={id ? `/competitions/${id}` : null} />
       <h1 className="text-2xl font-bold text-stone-100">Redigera tävling</h1>
 
       <form onSubmit={handleSubmit} className="space-y-4">

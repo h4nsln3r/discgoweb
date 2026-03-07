@@ -149,7 +149,7 @@ export default function DashboardContent({ userName }: { userName: string }) {
   const hasRightColumn = newMembersCard || newCoursesCard;
 
   return (
-    <div className="p-4 space-y-6">
+    <div className="p-4 pt-8 sm:pt-2 space-y-6">
       {/* Desktop: kartan till vänster, Nya medlemmar + Nya banor till höger. Mobil: Nya medlemmar överst, sedan karta, sedan Nya banor. */}
       <div className="flex flex-col gap-4 md:flex-row md:items-stretch">
         <div className="order-2 md:order-1 flex-1 min-w-0">

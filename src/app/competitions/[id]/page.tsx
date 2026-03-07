@@ -4,8 +4,8 @@ import { notFound } from "next/navigation";
 import { Database } from "@/types/supabase";
 import { getCurrentUserWithAdmin } from "@/lib/auth-server";
 import Link from "next/link";
-import BackLink from "@/components/Buttons/BackLink";
 import CompetitionCoursesMap from "@/components/Maps/CompetitionCoursesMap";
+import { SetTopbarActions } from "@/components/Topbar/TopbarActionsContext";
 import JoinToCompetitionButton from "@/components/Competitions/JoinToCompetitionButton";
 import CompetitionParticipantsSection from "@/components/Competitions/CompetitionParticipantsSection";
 
@@ -153,32 +153,24 @@ export default async function CompetitionDetailPage({ params }: PageProps) {
   );
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <BackLink />
-        {isCreator && (
-          <Link
-            href={`/competitions/${id}/edit`}
-            className="inline-flex items-center gap-2 text-amber-400 font-medium hover:text-amber-300 transition shrink-0"
-          >
-            ✏️ Redigera tävling
-          </Link>
-        )}
-      </div>
+    <div>
+      <SetTopbarActions
+        backHref="/competitions"
+        editHref={isCreator ? `/competitions/${id}/edit` : null}
+        editLabel="Redigera tävling"
+        pageTitle={competition.title}
+      />
       {competition.image_url && (
-        <div className="-mx-4 sm:mx-0">
+        <div className="w-full overflow-hidden">
           {/* eslint-disable-next-line @next/next/no-img-element -- dynamisk tävlingsbild-URL */}
           <img
             src={competition.image_url}
             alt={competition.title}
-            className="w-full h-60 sm:h-72 object-cover rounded-none sm:rounded-lg border-0 sm:border border-retro-border"
+            className="w-full h-60 object-cover object-center md:min-h-[70vh] md:h-[70vh]"
           />
         </div>
       )}
-      <div>
-        <h1 className="text-4xl sm:text-5xl font-bebas tracking-wide text-stone-100 uppercase">{competition.title}</h1>
-      </div>
-
+      <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
       <p className="text-stone-400">
         🗓️ {formatDateWithWeekday(competition.start_date)} –{" "}
         {formatDateWithWeekday(competition.end_date)}
@@ -326,6 +318,7 @@ export default async function CompetitionDetailPage({ params }: PageProps) {
         >
           🥏 Lägg till resultat
         </Link>
+      </div>
       </div>
     </div>
   );
