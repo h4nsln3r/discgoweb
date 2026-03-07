@@ -9,9 +9,10 @@ import { useToast } from "@/components/Toasts/ToastProvider";
 type Props = {
   competitionId: string;
   competitionTitle: string;
+  className?: string;
 };
 
-export default function JoinToCompetitionButton({ competitionId, competitionTitle }: Props) {
+export default function JoinToCompetitionButton({ competitionId, competitionTitle, className }: Props) {
   const router = useRouter();
   const supabase = createClientComponentClient<Database>();
   const { showToast } = useToast();
@@ -36,6 +37,7 @@ export default function JoinToCompetitionButton({ competitionId, competitionTitl
       }
     } else {
       showToast("Du har gått med i " + competitionTitle + "!", "success");
+      await router.push(`/competitions/${competitionId}?joined=1`);
       router.refresh();
     }
     setLoading(false);
@@ -46,7 +48,10 @@ export default function JoinToCompetitionButton({ competitionId, competitionTitl
       type="button"
       onClick={handleJoin}
       disabled={loading}
-      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-retro-accent text-stone-100 text-sm font-medium hover:bg-retro-accent-hover transition disabled:opacity-50"
+      className={
+        className ??
+        "inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-retro-accent text-stone-100 text-sm font-medium hover:bg-retro-accent-hover transition disabled:opacity-50"
+      }
     >
       {loading ? "Går med..." : "Gå med i tävlingen"}
     </button>

@@ -3,7 +3,26 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
   body {
     @apply bg-retro-bg text-stone-100 antialiased min-h-screen;
   }
+}
+
+@keyframes participant-in {
+  from {
+    opacity: 0;
+    transform: translateY(-16px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-participant-in {
+  opacity: 0;
+  animation: participant-in 0.65s cubic-bezier(0.22, 1, 0.36, 1) 0.5s forwards;
 }

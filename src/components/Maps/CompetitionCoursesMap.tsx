@@ -72,7 +72,7 @@ export default function CompetitionCoursesMap({ courses, competitionId }: Props)
             </button>
           ))}
         </div>
-        <div className="relative h-80 md:h-64">
+        <div className="relative h-80 md:min-h-[320px] md:h-[28rem]">
           {/* Desktop: panel till höger som overlay på kartan */}
           {selectedCourse && (
             <div className="hidden md:flex absolute inset-y-0 right-0 z-20 w-72 shrink-0 flex-col overflow-hidden rounded-r-xl border-l border-retro-border bg-retro-surface shadow-lg" style={{ height: "100%" }}>
