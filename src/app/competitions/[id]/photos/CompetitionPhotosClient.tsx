@@ -38,7 +38,7 @@ export default function CompetitionPhotosClient({
   const [dragOver, setDragOver] = useState(false);
   const [slideshowOpen, setSlideshowOpen] = useState(false);
   const [slideshowIndex, setSlideshowIndex] = useState(0);
-  const [slideDirection, setSlideDirection] = useState<"next" | "prev" | null>(null);
+  const [, setSlideDirection] = useState<"next" | "prev" | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const slideshowTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);

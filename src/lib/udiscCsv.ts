@@ -38,6 +38,7 @@ function parseCsvLine(line: string): string[] {
 }
 
 /** Parse +/- column to number. E.g. "-2", "+5", "8" */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- signature kept for caller; total/holeScores reserved for future use
 function parseRelativeToPar(raw: string, total: number, holeScores: number[]): number {
   const s = (raw ?? "").trim();
   if (s === "") {
@@ -59,11 +60,6 @@ export function parseUDiscCsv(csvText: string): UDiscRound[] {
 
   const header = parseCsvLine(lines[0]);
   const headers = header.map((h) => h.trim().toLowerCase());
-  const idx = (name: string) => {
-    const i = headers.indexOf(name.toLowerCase());
-    if (i === -1) return headers.indexOf(name.replace(/\+\/\-/g, "+/-").toLowerCase());
-    return i;
-  };
   const iPlayer = headers.indexOf("playername");
   const iCourse = headers.indexOf("coursename");
   const iLayout = headers.indexOf("layoutname");
