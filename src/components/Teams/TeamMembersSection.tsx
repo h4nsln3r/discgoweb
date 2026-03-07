@@ -3,8 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { Database } from "@/types/supabase";
 import type { TeamRole } from "@/lib/team-roles";
 import { UserGroupIcon, UserMinusIcon, ArrowRightOnRectangleIcon } from "@heroicons/react/24/outline";
 import { useToast } from "@/components/Toasts/ToastProvider";
@@ -42,7 +40,6 @@ export default function TeamMembersSection({
   canRemoveMembers = false,
 }: Props) {
   const router = useRouter();
-  const supabase = createClientComponentClient<Database>();
   const { showToast } = useToast();
   const [updating, setUpdating] = useState<string | null>(null);
 
