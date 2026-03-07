@@ -58,12 +58,13 @@ export default function ResultsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const sortFromUrl = parseSort(searchParams.get("sort"));
+  const qFromUrl = searchParams.get("q") ?? "";
   const { setTopbarActions } = useTopbarActions();
 
   const [data, setData] = useState<Score[]>([]);
   const [loading, setLoading] = useState(true);
   const [sorting, setSorting] = useState<SortingState>(() => sortValueToState(sortFromUrl));
-  const [globalFilter, setGlobalFilter] = useState("");
+  const [globalFilter, setGlobalFilter] = useState(qFromUrl);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [expandedHolesId, setExpandedHolesId] = useState<string | null>(null);
@@ -150,6 +151,11 @@ export default function ResultsPage() {
   useEffect(() => {
     setSorting(sortValueToState(sortFromUrl));
   }, [sortFromUrl]);
+
+  // Synka globalFilter med sök-URL (t.ex. från topbar-sök)
+  useEffect(() => {
+    setGlobalFilter(qFromUrl);
+  }, [qFromUrl]);
 
   // Topbar: sortering + Lägg till resultat
   useEffect(() => {
@@ -346,6 +352,17 @@ export default function ResultsPage() {
     setColumnFilters([]);
     setOnlyCompetitions(false);
     table.resetColumnFilters();
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("q");
+    const rest = params.toString();
+    router.replace(rest ? `/results?${rest}` : "/results");
+  };
+
+  const updateSearchUrl = (q: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (q.trim()) params.set("q", q.trim());
+    else params.delete("q");
+    router.replace(`/results?${params.toString()}`);
   };
 
   if (loading) return <PageLoading variant="results" />;
@@ -370,68 +387,126 @@ export default function ResultsPage() {
   }
 
   return (
-    <div className="p-4">
-      {/* Globalt sökfält */}
-      <input
-        value={globalFilter ?? ""}
-        onChange={(e) => setGlobalFilter(e.target.value)}
-        placeholder="Sök efter bana, spelare, score eller tävling..."
-        className="mb-4 p-2 border border-retro-border rounded-lg w-full max-w-sm bg-retro-surface text-stone-100 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-retro-accent"
-      />
+    <div className="w-full md:grid md:grid-cols-[20%_1fr] md:min-h-[60vh]">
+      {/* Desktop: vänsterkolumn 20% – sök, filter, sortering, rensa */}
+      <aside className="hidden md:flex md:flex-col md:min-w-0 md:border-r md:border-retro-border md:bg-retro-card/30">
+        <div className="md:sticky md:top-24 md:flex md:flex-col md:gap-4 md:max-h-[calc(100vh-6rem)] md:overflow-y-auto md:p-4">
+          <input
+            value={qFromUrl}
+            onChange={(e) => updateSearchUrl(e.target.value)}
+            placeholder="Sök bana, spelare, tävling..."
+            className="w-full p-2.5 border border-retro-border rounded-lg bg-retro-surface text-stone-100 text-sm placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-retro-accent"
+            aria-label="Sök resultat"
+          />
+          <div>
+            <label className="block text-xs font-medium text-stone-400 uppercase tracking-wide mb-1">Bana</label>
+            <select
+              value={(table.getColumn("course")?.getFilterValue() as string) ?? ""}
+              onChange={(e) =>
+                table.getColumn("course")?.setFilterValue(e.target.value || undefined)
+              }
+              className="w-full p-2 border border-retro-border rounded-lg bg-retro-surface text-stone-100 text-sm focus:outline-none focus:ring-2 focus:ring-retro-accent"
+              aria-label="Filtrera på bana"
+            >
+              <option value="">Alla banor</option>
+              {uniqueCourses.map((course) => (
+                <option key={course} value={course}>
+                  {course}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-stone-400 uppercase tracking-wide mb-1">Spelare</label>
+            <select
+              value={(table.getColumn("player")?.getFilterValue() as string) ?? ""}
+              onChange={(e) =>
+                table.getColumn("player")?.setFilterValue(e.target.value || undefined)
+              }
+              className="w-full p-2 border border-retro-border rounded-lg bg-retro-surface text-stone-100 text-sm focus:outline-none focus:ring-2 focus:ring-retro-accent"
+              aria-label="Filtrera på spelare"
+            >
+              <option value="">Alla spelare</option>
+              {uniquePlayers.map((player) => (
+                <option key={player} value={player}>
+                  {player}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-stone-400 uppercase tracking-wide mb-1">Resultat</label>
+            <select
+              value={onlyCompetitions ? "tavling" : ""}
+              onChange={(e) => setOnlyCompetitions(e.target.value === "tavling")}
+              className="w-full p-2 border border-retro-border rounded-lg bg-retro-surface text-stone-100 text-sm focus:outline-none focus:ring-2 focus:ring-retro-accent"
+              aria-label="Filtrera på tävlingar"
+            >
+              <option value="">Alla resultat</option>
+              <option value="tavling">Endast tävlingar</option>
+            </select>
+          </div>
+          <button
+            onClick={resetFilters}
+            className="w-full p-2.5 bg-retro-card border border-retro-border rounded-lg hover:bg-retro-surface text-stone-200 text-sm font-medium transition"
+          >
+            Rensa filter
+          </button>
+        </div>
+      </aside>
 
-      {/* Filter dropdowns */}
-      <div className="flex flex-wrap gap-4 mb-4">
-        <select
-          value={(table.getColumn("course")?.getFilterValue() as string) ?? ""}
-          onChange={(e) =>
-            table
-              .getColumn("course")
-              ?.setFilterValue(e.target.value || undefined)
-          }
-          className="p-2 border border-retro-border rounded-lg bg-retro-surface text-stone-100"
-        >
-          <option value="">Alla banor</option>
-          {uniqueCourses.map((course) => (
-            <option key={course} value={course}>
-              {course}
-            </option>
-          ))}
-        </select>
-
-        <select
-          value={(table.getColumn("player")?.getFilterValue() as string) ?? ""}
-          onChange={(e) =>
-            table
-              .getColumn("player")
-              ?.setFilterValue(e.target.value || undefined)
-          }
-          className="p-2 border border-retro-border rounded-lg bg-retro-surface text-stone-100"
-        >
-          <option value="">Alla spelare</option>
-          {uniquePlayers.map((player) => (
-            <option key={player} value={player}>
-              {player}
-            </option>
-          ))}
-        </select>
-
-        <select
-          value={onlyCompetitions ? "tavling" : ""}
-          onChange={(e) => setOnlyCompetitions(e.target.value === "tavling")}
-          className="p-2 border border-retro-border rounded-lg bg-retro-surface text-stone-100"
-          aria-label="Filtrera på tävlingar"
-        >
-          <option value="">Alla resultat</option>
-          <option value="tavling">Endast tävlingar</option>
-        </select>
-
-        <button
-          onClick={resetFilters}
-          className="p-2 bg-retro-card border border-retro-border rounded-lg hover:bg-retro-surface text-stone-200 transition"
-        >
-          Rensa filter
-        </button>
-      </div>
+      {/* Huvudinnehåll: mobil filterrad + tabell/kort */}
+      <div className="min-w-0 p-4 pt-6 md:p-6 md:pt-8">
+        {/* Mobil: filter och sortering ovanför innehållet (sök finns i topbaren) */}
+        <div className="md:hidden space-y-3 mb-4">
+          <div className="flex flex-wrap gap-2 items-center">
+            <select
+              value={(table.getColumn("course")?.getFilterValue() as string) ?? ""}
+              onChange={(e) =>
+                table.getColumn("course")?.setFilterValue(e.target.value || undefined)
+              }
+              className="flex-1 min-w-[120px] p-2 border border-retro-border rounded-lg bg-retro-surface text-stone-100 text-sm"
+              aria-label="Bana"
+            >
+              <option value="">Alla banor</option>
+              {uniqueCourses.map((course) => (
+                <option key={course} value={course}>
+                  {course}
+                </option>
+              ))}
+            </select>
+            <select
+              value={(table.getColumn("player")?.getFilterValue() as string) ?? ""}
+              onChange={(e) =>
+                table.getColumn("player")?.setFilterValue(e.target.value || undefined)
+              }
+              className="flex-1 min-w-[120px] p-2 border border-retro-border rounded-lg bg-retro-surface text-stone-100 text-sm"
+              aria-label="Spelare"
+            >
+              <option value="">Alla spelare</option>
+              {uniquePlayers.map((player) => (
+                <option key={player} value={player}>
+                  {player}
+                </option>
+              ))}
+            </select>
+            <select
+              value={onlyCompetitions ? "tavling" : ""}
+              onChange={(e) => setOnlyCompetitions(e.target.value === "tavling")}
+              className="p-2 border border-retro-border rounded-lg bg-retro-surface text-stone-100 text-sm"
+              aria-label="Resultat"
+            >
+              <option value="">Alla resultat</option>
+              <option value="tavling">Endast tävlingar</option>
+            </select>
+            <button
+              onClick={resetFilters}
+              className="p-2 bg-retro-card border border-retro-border rounded-lg hover:bg-retro-surface text-stone-200 text-sm transition"
+            >
+              Rensa filter
+            </button>
+          </div>
+        </div>
 
       {/* Mobil: fällbara rader med rullgardinseffekt */}
       <div className="md:hidden space-y-2">
@@ -786,6 +861,7 @@ export default function ResultsPage() {
             })}
           </tbody>
         </table>
+      </div>
       </div>
     </div>
   );

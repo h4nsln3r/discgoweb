@@ -38,37 +38,36 @@ function CourseCard({ course }: { course: Course }) {
     <article
       className="rounded-2xl border border-retro-border bg-retro-surface shadow-md overflow-hidden hover:border-retro-muted/50 hover:shadow-lg transition-all flex flex-col"
     >
-      <Link
-        href={`/courses/${course.id}`}
-        className="block group"
-      >
-        <div className="relative w-full h-56 sm:h-72 bg-retro-card shrink-0 overflow-hidden">
-          {course.main_image_url ? (
-            // eslint-disable-next-line @next/next/no-img-element -- external image URL
-            <img
-              src={course.main_image_url}
-              alt={course.name}
-              className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-[1.02] transition-transform duration-200"
-            />
-          ) : (
-            <div className="absolute inset-0 flex items-center justify-center text-retro-muted text-sm">
-              Ingen bild
-            </div>
-          )}
-          <div className="absolute bottom-2 left-2 rounded-lg bg-black/60 px-2 py-1 text-xs font-medium text-stone-200">
-            {course.hole_count ? `${course.hole_count} hål` : "—"}
+      <div className="relative w-full h-56 sm:h-72 bg-retro-card shrink-0 overflow-hidden group">
+        {course.main_image_url ? (
+          // eslint-disable-next-line @next/next/no-img-element -- external image URL
+          <img
+            src={course.main_image_url}
+            alt={course.name}
+            className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-[1.02] transition-transform duration-200"
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center text-retro-muted text-sm">
+            Ingen bild
           </div>
-          <Link
-            href={`/results/new?course_id=${course.id}`}
-            onClick={(e) => e.stopPropagation()}
-            className="absolute bottom-2 right-2 md:hidden inline-flex items-center gap-1.5 rounded-lg bg-black/60 px-2.5 py-1.5 text-xs font-medium text-stone-200 hover:bg-black/80 hover:text-stone-100 transition"
-            aria-label="Lägg till resultat"
-          >
-            <PlusCircleIcon className="w-4 h-4 shrink-0" aria-hidden />
-            Lägg till resultat
-          </Link>
+        )}
+        <div className="absolute bottom-2 left-2 rounded-lg bg-black/60 px-2 py-1 text-xs font-medium text-stone-200">
+          {course.hole_count ? `${course.hole_count} hål` : "—"}
         </div>
-      </Link>
+        <Link
+          href={`/courses/${course.id}`}
+          className="absolute inset-0 z-0"
+          aria-label={course.name ?? "Visa bana"}
+        />
+        <Link
+          href={`/results/new?course_id=${course.id}`}
+          className="absolute bottom-2 right-2 z-10 md:hidden inline-flex items-center gap-1.5 rounded-lg bg-black/60 px-2.5 py-1.5 text-xs font-medium text-stone-200 hover:bg-black/80 hover:text-stone-100 transition"
+          aria-label="Lägg till resultat"
+        >
+          <PlusCircleIcon className="w-4 h-4 shrink-0" aria-hidden />
+          Lägg till resultat
+        </Link>
+      </div>
       <div className="p-5 flex flex-col flex-1">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <Link

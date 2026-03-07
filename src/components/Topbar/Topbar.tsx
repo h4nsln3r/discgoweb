@@ -61,7 +61,7 @@ export default function Topbar({
     }
   }, [searchOpen]);
 
-  const showSearch = pathname === "/competitions" || pathname === "/courses";
+  const showSearch = pathname === "/competitions" || pathname === "/courses" || pathname === "/results";
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const q = searchQuery.trim();
@@ -74,6 +74,10 @@ export default function Topbar({
       const params = new URLSearchParams(searchParams.toString());
       params.set("q", q);
       router.push(`/courses?${params.toString()}`);
+    } else if (pathname === "/results") {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("q", q);
+      router.push(`/results?${params.toString()}`);
     }
     setSearchOpen(false);
     setSearchQuery("");
@@ -245,7 +249,7 @@ export default function Topbar({
                           type="search"
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
-                          placeholder={pathname === "/competitions" ? "Sök tävlingar…" : "Sök banor…"}
+                          placeholder={pathname === "/results" ? "Sök resultat…" : pathname === "/competitions" ? "Sök tävlingar…" : "Sök banor…"}
                           className="flex-1 min-w-0 py-2 pr-3 bg-transparent text-stone-100 text-sm placeholder:text-stone-500 focus:outline-none"
                           aria-label="Sök"
                         />
@@ -297,7 +301,7 @@ export default function Topbar({
           menuOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="p-5 flex justify-between items-center border-b border-retro-border">
+        <div className="py-3 px-4 flex justify-between items-center border-b border-retro-border">
           <Link
             href="/dashboard"
             onClick={() => setMenuOpen(false)}
@@ -307,7 +311,7 @@ export default function Topbar({
             <img
               src="/logo/logo.png"
               alt=""
-              className="h-12 w-auto max-w-[200px] object-contain"
+              className="h-10 w-auto max-w-[200px] object-contain"
             />
           </Link>
           <button onClick={() => setMenuOpen(false)} aria-label="Stäng meny" className="p-1 rounded hover:bg-retro-card shrink-0">
@@ -315,23 +319,32 @@ export default function Topbar({
           </button>
         </div>
 
-        <ul className="p-5 space-y-1 text-base">
+        <ul className="p-4 space-y-0.5 text-base">
           <li>
             <Link
               href="/dashboard"
               onClick={() => setMenuOpen(false)}
-              className={linkClass("/dashboard")}
+              className={`${linkClass("/dashboard")} font-bebas text-lg tracking-wide uppercase`}
             >
-              🏠 Dashboard
+              Dashboard
+            </Link>
+          </li>
+          <li>
+            <Link
+              href="/courses"
+              onClick={() => setMenuOpen(false)}
+              className={`${linkClass("/courses")} font-bebas text-lg tracking-wide uppercase`}
+            >
+              Alla banor
             </Link>
           </li>
           <li>
             <Link
               href="/competitions"
               onClick={() => setMenuOpen(false)}
-              className={linkClass("/competitions")}
+              className={`${linkClass("/competitions")} font-bebas text-lg tracking-wide uppercase`}
             >
-              👑 Tävlingar
+              Tävlingar
             </Link>
           </li>
           <li></li>
@@ -339,52 +352,42 @@ export default function Topbar({
             <Link
               href="/results"
               onClick={() => setMenuOpen(false)}
-              className={linkClass("/results")}
+              className={`${linkClass("/results")} font-bebas text-lg tracking-wide uppercase`}
             >
-              🥏 Resultat
-            </Link>
-          </li>
-
-          <li>
-            <Link
-              href="/courses"
-              onClick={() => setMenuOpen(false)}
-              className={linkClass("/courses")}
-            >
-              🏞️ Alla banor
+              Resultat
             </Link>
           </li>
           <li>
             <Link
               href="/teams"
               onClick={() => setMenuOpen(false)}
-              className={linkClass("/teams")}
+              className={`${linkClass("/teams")} font-bebas text-lg tracking-wide uppercase`}
             >
-              👥 Lag
+              Lag
             </Link>
           </li>
           <li>
             <Link
               href="/discs"
               onClick={() => setMenuOpen(false)}
-              className={linkClass("/discs")}
+              className={`${linkClass("/discs")} font-bebas text-lg tracking-wide uppercase`}
             >
-              🥏 Discar
+              Discar
             </Link>
           </li>
           <li>
             <Link
               href="/profile"
               onClick={() => setMenuOpen(false)}
-              className={linkClass("/profile", isProfileWelcome)}
+              className={`${linkClass("/profile", isProfileWelcome)} font-bebas text-lg tracking-wide uppercase`}
             >
-              👤 Min profil
+              Min profil
             </Link>
           </li>
           <li>
             <LogoutButton
               onAfterClick={() => setMenuOpen(false)}
-              className="block w-full text-left py-1 text-amber-400 hover:text-amber-300 font-medium transition"
+              className="block w-full text-left py-2 px-2 -mx-2 rounded hover:bg-retro-surface font-bebas text-lg tracking-wide uppercase text-amber-400 hover:text-amber-300 transition"
             />
           </li>
         </ul>
