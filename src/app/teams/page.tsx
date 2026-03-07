@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
-import { UserGroupIcon } from "@heroicons/react/24/outline";
 import TeamCard from "@/components/Teams/TeamCard";
 import { SetTopbarActions } from "@/components/Topbar/TopbarActionsContext";
 
