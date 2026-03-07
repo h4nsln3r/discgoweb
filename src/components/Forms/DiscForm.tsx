@@ -2,8 +2,11 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 
+export type DiscType = "driver" | "fairway" | "midrange" | "putter" | "other";
+
 export type DiscFormData = {
   name: string;
+  disc_type?: DiscType | null;
   bild?: string;
   bildFile?: File;
   speed?: number | null;
@@ -14,6 +17,7 @@ export type DiscFormData = {
 
 type DiscFormProps = {
   initialName?: string;
+  initialDiscType?: DiscType | null;
   initialBild?: string;
   initialSpeed?: number | null;
   initialGlide?: number | null;
@@ -25,8 +29,17 @@ type DiscFormProps = {
 
 const CROP_SIZE = 320;
 
+const DISC_TYPE_OPTIONS: { value: DiscType; label: string }[] = [
+  { value: "driver", label: "Driver" },
+  { value: "fairway", label: "Fairway" },
+  { value: "midrange", label: "Midrange" },
+  { value: "putter", label: "Putter" },
+  { value: "other", label: "Annan" },
+];
+
 export default function DiscForm({
   initialName = "",
+  initialDiscType = null,
   initialBild = "",
   initialSpeed = null,
   initialGlide = null,
@@ -36,6 +49,7 @@ export default function DiscForm({
   submitText,
 }: DiscFormProps) {
   const [name, setName] = useState(initialName ?? "");
+  const [discType, setDiscType] = useState<DiscType | "">(initialDiscType ?? "");
   const [bild, setBild] = useState(initialBild ?? "");
   const [bildFile, setBildFile] = useState<File | null>(null);
   const [imageMode, setImageMode] = useState<"url" | "upload">(initialBild ? "url" : "upload");
@@ -181,6 +195,7 @@ export default function DiscForm({
     };
     const data: DiscFormData = {
       name: name.trim(),
+      disc_type: discType && discType in { driver: 1, fairway: 1, midrange: 1, putter: 1, other: 1 } ? (discType as DiscType) : null,
       ...(imageMode === "url" && bild.trim() ? { bild: bild.trim() } : {}),
       ...(imageMode === "upload" && bildFile ? { bildFile } : {}),
       speed: parseNum(speed),
@@ -216,6 +231,23 @@ export default function DiscForm({
           placeholder="t.ex. Destroyer"
           required
         />
+      </div>
+
+      {/* Disc-typ */}
+      <div>
+        <label className="block text-sm font-medium text-stone-300 mb-1">Typ av disc</label>
+        <select
+          className={inputClass}
+          value={discType}
+          onChange={(e) => setDiscType((e.target.value || "") as DiscType | "")}
+        >
+          <option value="">Välj typ (valfritt)</option>
+          {DISC_TYPE_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* Bild med beskärning */}

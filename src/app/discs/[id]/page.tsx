@@ -6,6 +6,7 @@ import BackButton from "@/components/Buttons/BackButton";
 import DiscCommentForm from "@/components/Disc/DiscCommentForm";
 import DiscCommentList from "@/components/Disc/DiscCommentList";
 import DiscImageModal from "@/components/Disc/DiscImageModal";
+import BagStatusCircle from "@/components/Bag/BagStatusCircle";
 
 type DiscRow = {
   id: string;
@@ -65,6 +66,26 @@ export default async function DiscPage({
       authorMap[p.id] = (p as { alias?: string }).alias?.trim() ?? "—";
     }
   }
+
+  type BagUserRow = {
+    id: string;
+    user_id: string;
+    status: string;
+    profiles: { id: string; alias: string | null; avatar_url: string | null } | null;
+  };
+  const { data: bagUsersData } = await supabase
+    .from("player_bag")
+    .select("id, user_id, status, profiles(id, alias, avatar_url)")
+    .eq("disc_id", id)
+    .order("user_id");
+  const bagUsers = (bagUsersData ?? []) as BagUserRow[];
+
+  const BAG_STATUS_LABELS: Record<string, string> = {
+    active: "Aktiv",
+    discarded: "Bortkastad",
+    worthless: "Värdelös",
+    for_trade: "Vill byta/sälja",
+  };
 
   return (
     <main className="p-4 sm:p-6 max-w-3xl mx-auto">
@@ -133,6 +154,36 @@ export default async function DiscPage({
             </div>
           </div>
       </div>
+
+      {/* Användare som har denna disc */}
+      {bagUsers.length > 0 && (
+        <div className="rounded-2xl border border-retro-border bg-retro-surface p-4 sm:p-6 mb-6">
+          <h2 className="text-lg font-semibold text-stone-200 mb-3">
+            Användare som har denna disc
+          </h2>
+          <p className="text-sm text-stone-500 mb-4">
+            {bagUsers.length} {bagUsers.length === 1 ? "användare har" : "användare har"} denna disc i sin bag. Status visar hur de använder den.
+          </p>
+          <ul className="space-y-2">
+            {bagUsers.map((row) => (
+              <li key={row.id}>
+                <Link
+                  href={`/profile/${row.user_id}`}
+                  className="flex items-center gap-3 rounded-xl bg-retro-card/50 border border-retro-border px-3 py-2 hover:bg-retro-card transition"
+                >
+                  <BagStatusCircle status={row.status ?? "active"} />
+                  <span className="text-stone-200 font-medium truncate">
+                    {row.profiles?.alias?.trim() || "Anonym"}
+                  </span>
+                  <span className="text-stone-500 text-sm ml-auto shrink-0">
+                    {BAG_STATUS_LABELS[row.status] ?? row.status ?? "Aktiv"}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <h2 className="text-lg font-semibold text-stone-200 mb-3">
         Diskussion & inlägg

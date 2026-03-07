@@ -20,7 +20,7 @@ export async function GET() {
 
   const { data: bagRows, error } = await supabase
     .from("player_bag")
-    .select("id, disc_id, created_at")
+    .select("id, disc_id, created_at, status")
     .eq("user_id", user.id)
     .order("created_at", { ascending: true });
 
@@ -35,7 +35,7 @@ export async function GET() {
   const discIds = bagRows.map((r) => r.disc_id);
   const { data: discs, error: discsError } = await supabase
     .from("discs")
-    .select("id, name, bild, speed, glide, turn, fade")
+    .select("id, name, bild, speed, glide, turn, fade, disc_type")
     .in("id", discIds);
 
   if (discsError) {
@@ -47,6 +47,7 @@ export async function GET() {
     id: r.id,
     disc_id: r.disc_id,
     created_at: r.created_at,
+    status: r.status ?? "active",
     disc: discMap.get(r.disc_id) ?? null,
   }));
 
@@ -126,4 +127,50 @@ export async function DELETE(req: Request) {
   }
 
   return NextResponse.json({ ok: true });
+}
+
+const BAG_STATUSES = ["active", "discarded", "worthless", "for_trade"] as const;
+
+export async function PATCH(req: Request) {
+  const cookieStore = await cookies();
+  const supabase = createRouteHandlerClient<Database>({
+    cookies: () => cookieStore,
+  });
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
+
+  const body = await req.json().catch(() => ({}));
+  const bagItemId = body.bag_item_id as string | undefined;
+  const status = body.status as string | undefined;
+
+  if (!bagItemId || !status || !BAG_STATUSES.includes(status as (typeof BAG_STATUSES)[number])) {
+    return NextResponse.json(
+      { error: "bag_item_id and status (active|discarded|worthless|for_trade) required" },
+      { status: 400 }
+    );
+  }
+
+  const { data, error } = await supabase
+    .from("player_bag")
+    .update({ status })
+    .eq("id", bagItemId)
+    .eq("user_id", user.id)
+    .select("id, status")
+    .single();
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+  if (!data) {
+    return NextResponse.json({ error: "Bag item not found" }, { status: 404 });
+  }
+
+  return NextResponse.json(data);
 }

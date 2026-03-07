@@ -32,6 +32,7 @@ export default function NewDiscPage() {
     const { error } = await supabase.from("discs").insert({
       name: data.name,
       bild: bildUrl,
+      disc_type: data.disc_type ?? null,
       speed: data.speed ?? null,
       glide: data.glide ?? null,
       turn: data.turn ?? null,

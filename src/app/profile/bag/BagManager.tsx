@@ -7,12 +7,30 @@ import { TrashIcon, PlusCircleIcon, StarIcon } from "@heroicons/react/24/outline
 import { StarIcon as StarIconSolid } from "@heroicons/react/24/solid";
 import { createSupabaseClient } from "@/lib/supabase";
 
-type Disc = { id: string; name: string; bild: string | null };
+export type BagStatus = "active" | "discarded" | "worthless" | "for_trade";
+
+const BAG_STATUS_LABELS: Record<BagStatus, string> = {
+  active: "I bruk",
+  discarded: "Bortkastad",
+  worthless: "Värdelös",
+  for_trade: "Vill byta/sälja",
+};
+
+const DISC_TYPE_LABELS: Record<string, string> = {
+  driver: "Driver",
+  fairway: "Fairway",
+  midrange: "Midrange",
+  putter: "Putter",
+  other: "Annan",
+};
+
+type Disc = { id: string; name: string; bild: string | null; disc_type?: string | null };
 type BagItem = {
   id: string;
   disc_id: string;
   created_at: string;
-  disc: { id: string; name: string; bild: string | null } | null;
+  status: BagStatus;
+  disc: { id: string; name: string; bild: string | null; disc_type?: string | null } | null;
 };
 
 export default function BagManager({ discs, favoriteDiscId }: { discs: Disc[]; favoriteDiscId?: string | null }) {
@@ -24,6 +42,7 @@ export default function BagManager({ discs, favoriteDiscId }: { discs: Disc[]; f
   const [settingFavorite, setSettingFavorite] = useState<string | null>(null);
   const [selectedDiscId, setSelectedDiscId] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
 
   useEffect(() => {
     setFavoriteDiscIdState(favoriteDiscId ?? null);
@@ -92,6 +111,26 @@ export default function BagManager({ discs, favoriteDiscId }: { discs: Disc[]; f
     router.refresh();
   };
 
+  const updateBagStatus = async (bagItemId: string, status: BagStatus) => {
+    setUpdatingStatusId(bagItemId);
+    setError(null);
+    const res = await fetch("/api/bag", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ bag_item_id: bagItemId, status }),
+    });
+    setUpdatingStatusId(null);
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error ?? "Kunde inte uppdatera status");
+      return;
+    }
+    setBag((prev) =>
+      prev.map((b) => (b.id === bagItemId ? { ...b, status } : b))
+    );
+    router.refresh();
+  };
+
   const bagDiscIds = new Set(bag.map((b) => b.disc_id));
   const availableDiscs = discs.filter((d) => !bagDiscIds.has(d.id));
 
@@ -144,7 +183,7 @@ export default function BagManager({ discs, favoriteDiscId }: { discs: Disc[]; f
             {bag.map((b) => (
               <li
                 key={b.id}
-                className="flex items-center gap-3 rounded-xl bg-retro-card/50 border border-retro-border p-3"
+                className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 rounded-xl bg-retro-card/50 border border-retro-border p-3"
               >
                 <Link
                   href={`/discs/${b.disc_id}`}
@@ -158,7 +197,14 @@ export default function BagManager({ discs, favoriteDiscId }: { discs: Disc[]; f
                       <span className="text-retro-muted text-xl">🥏</span>
                     )}
                   </div>
-                  <span className="text-stone-200 font-medium truncate">{b.disc?.name ?? "—"}</span>
+                  <div className="min-w-0">
+                    <span className="text-stone-200 font-medium truncate block">{b.disc?.name ?? "—"}</span>
+                    {b.disc?.disc_type && (
+                      <span className="text-xs text-stone-500">
+                        {DISC_TYPE_LABELS[b.disc.disc_type] ?? b.disc.disc_type}
+                      </span>
+                    )}
+                  </div>
                   {favoriteDiscIdState === b.disc_id && (
                     <span className="text-amber-400 shrink-0 flex items-center gap-1 text-xs font-medium">
                       <StarIconSolid className="w-4 h-4" aria-hidden />
@@ -166,7 +212,20 @@ export default function BagManager({ discs, favoriteDiscId }: { discs: Disc[]; f
                     </span>
                   )}
                 </Link>
-                <div className="flex items-center gap-1 shrink-0">
+                <div className="flex items-center gap-2 sm:gap-1 shrink-0 flex-wrap">
+                  <select
+                    value={b.status}
+                    onChange={(e) => updateBagStatus(b.id, e.target.value as BagStatus)}
+                    disabled={updatingStatusId === b.id}
+                    className="rounded-lg border border-retro-border bg-retro-surface text-stone-200 text-xs px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-retro-accent disabled:opacity-50"
+                    aria-label="Status för discen"
+                  >
+                    {(Object.keys(BAG_STATUS_LABELS) as BagStatus[]).map((s) => (
+                      <option key={s} value={s}>
+                        {BAG_STATUS_LABELS[s]}
+                      </option>
+                    ))}
+                  </select>
                   {favoriteDiscIdState !== b.disc_id ? (
                     <button
                       type="button"

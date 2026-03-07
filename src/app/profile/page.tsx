@@ -14,6 +14,7 @@ import ProfileWelcomeToast from "@/components/Toasts/ProfileWelcomeToast";
 import TeamCard from "@/components/Teams/TeamCard";
 import ProfileAvatarModal from "@/components/profile/ProfileAvatarModal";
 import ProfileResultsTable from "./ProfileResultsTable";
+import BagStatusCircle from "@/components/Bag/BagStatusCircle";
 
 type ProfileRow = {
   id: string;
@@ -119,10 +120,16 @@ export default async function ProfileHomePage() {
     if (!res.error && res.data) favoriteDisc = res.data as DiscRow;
   }
 
-  type BagDiscRow = { id: string; disc_id: string; created_at: string; discs: { id: string; name: string; bild: string | null } | null };
+  type BagDiscRow = {
+    id: string;
+    disc_id: string;
+    created_at: string;
+    status: string;
+    discs: { id: string; name: string; bild: string | null; disc_type: string | null } | null;
+  };
   const { data: bagData } = await supabase
     .from("player_bag")
-    .select("id, disc_id, created_at, discs(id, name, bild)")
+    .select("id, disc_id, created_at, status, discs(id, name, bild, disc_type)")
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .eq("user_id", user.id as any)
     .order("created_at", { ascending: true });
@@ -438,6 +445,7 @@ export default async function ProfileHomePage() {
                   href={`/discs/${b.disc_id}`}
                   className="flex items-center gap-2 rounded-xl bg-retro-card/50 border border-retro-border px-3 py-2 hover:bg-retro-card transition"
                 >
+                  <BagStatusCircle status={b.status ?? "active"} className="shrink-0" />
                   <div className="w-10 h-10 rounded-full overflow-hidden bg-retro-surface flex items-center justify-center shrink-0">
                     {b.discs?.bild ? (
                       /* eslint-disable-next-line @next/next/no-img-element */

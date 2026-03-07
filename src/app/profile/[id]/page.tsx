@@ -13,6 +13,7 @@ import {
 import BackButton from "@/components/Buttons/BackButton";
 import TeamCard from "@/components/Teams/TeamCard";
 import ProfileAvatarModal from "@/components/profile/ProfileAvatarModal";
+import BagStatusCircle from "@/components/Bag/BagStatusCircle";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -99,10 +100,16 @@ export default async function PublicProfilePage({ params }: Props) {
     if (!res.error && res.data) favoriteDisc = res.data as DiscRow;
   }
 
-  type BagDiscRow = { id: string; disc_id: string; created_at: string; discs: { id: string; name: string; bild: string | null } | null };
+  type BagDiscRow = {
+    id: string;
+    disc_id: string;
+    created_at: string;
+    status: string;
+    discs: { id: string; name: string; bild: string | null; disc_type: string | null } | null;
+  };
   const { data: bagData } = await supabase
     .from("player_bag")
-    .select("id, disc_id, created_at, discs(id, name, bild)")
+    .select("id, disc_id, created_at, status, discs(id, name, bild, disc_type)")
     .eq("user_id", id)
     .order("created_at", { ascending: true });
   const bagDiscs = (bagData ?? []) as BagDiscRow[];
@@ -403,6 +410,7 @@ export default async function PublicProfilePage({ params }: Props) {
                     href={`/discs/${b.disc_id}`}
                     className="flex items-center gap-2 rounded-xl bg-retro-card/50 border border-retro-border px-3 py-2 hover:bg-retro-card transition"
                   >
+                    <BagStatusCircle status={b.status ?? "active"} className="shrink-0" />
                     <div className="w-10 h-10 rounded-full overflow-hidden bg-retro-surface flex items-center justify-center shrink-0">
                       {b.discs?.bild ? (
                         /* eslint-disable-next-line @next/next/no-img-element */

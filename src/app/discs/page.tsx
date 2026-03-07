@@ -33,11 +33,19 @@ export default async function DiscsPage() {
 
   return (
     <main className="p-4 sm:p-6 max-w-3xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-stone-100">Discar</h1>
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="text-2xl font-bold text-stone-100">Discar</h1>
+          <Link
+            href="/discs/for-trade"
+            className="text-sm text-amber-400 hover:text-amber-300 font-medium transition"
+          >
+            Vill byta
+          </Link>
+        </div>
         <Link
           href="/discs/new"
-          className="px-4 py-2 rounded-xl bg-retro-accent text-stone-100 text-sm font-medium hover:bg-retro-accent-hover transition"
+          className="px-4 py-2 rounded-xl bg-retro-accent text-stone-100 text-sm font-medium hover:bg-retro-accent-hover transition shrink-0"
         >
           Lägg till disc
         </Link>

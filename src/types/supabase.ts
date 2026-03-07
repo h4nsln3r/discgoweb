@@ -219,6 +219,7 @@ export type Database = {
           glide: number | null
           turn: number | null
           fade: number | null
+          disc_type: "driver" | "fairway" | "midrange" | "putter" | "other" | null
         }
         Insert: {
           id?: string
@@ -230,6 +231,7 @@ export type Database = {
           glide?: number | null
           turn?: number | null
           fade?: number | null
+          disc_type?: "driver" | "fairway" | "midrange" | "putter" | "other" | null
         }
         Update: {
           name?: string
@@ -240,6 +242,7 @@ export type Database = {
           glide?: number | null
           turn?: number | null
           fade?: number | null
+          disc_type?: "driver" | "fairway" | "midrange" | "putter" | "other" | null
         }
         Relationships: []
       }
@@ -249,18 +252,21 @@ export type Database = {
           user_id: string
           disc_id: string
           created_at: string
+          status: "active" | "discarded" | "worthless" | "for_trade"
         }
         Insert: {
           id?: string
           user_id: string
           disc_id: string
           created_at?: string
+          status?: "active" | "discarded" | "worthless" | "for_trade"
         }
         Update: {
           id?: string
           user_id?: string
           disc_id?: string
           created_at?: string
+          status?: "active" | "discarded" | "worthless" | "for_trade"
         }
         Relationships: [
           {
