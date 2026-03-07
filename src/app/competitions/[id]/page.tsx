@@ -365,12 +365,18 @@ export default async function CompetitionDetailPage({ params, searchParams }: Pa
         </div>
       )}
 
-      <div className="pt-4">
+      <div className="pt-4 flex flex-wrap gap-3">
         <Link
           href={`/results/new?competition_id=${id}`}
           className="inline-flex items-center gap-2 w-full sm:w-auto justify-center px-4 py-3 rounded-xl bg-retro-accent text-stone-100 text-sm font-medium hover:bg-retro-accent-hover transition"
         >
           🥏 Lägg till resultat
+        </Link>
+        <Link
+          href={`/competitions/${id}/photos`}
+          className="inline-flex items-center gap-2 w-full sm:w-auto justify-center px-4 py-3 rounded-xl border border-retro-border bg-retro-surface text-stone-200 text-sm font-medium hover:border-retro-accent hover:text-retro-accent transition"
+        >
+          📷 Tävlingsbilder
         </Link>
       </div>
         </main>

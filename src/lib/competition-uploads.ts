@@ -22,3 +22,25 @@ export async function uploadCompetitionImage(
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
   return data.publicUrl;
 }
+
+/** Deltagarbilder till en tävling – sparas under photos/{competition_id}/{uuid}.ext i samma bucket. */
+export async function uploadCompetitionParticipantPhoto(
+  supabase: SupabaseClient,
+  competitionId: string,
+  file: File
+): Promise<string | null> {
+  const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+  const path = `photos/${competitionId}/${crypto.randomUUID()}.${ext}`;
+  const { error } = await supabase.storage
+    .from(BUCKET)
+    .upload(path, file, { upsert: false });
+
+  if (error) {
+    const msg = (error as { message?: string }).message ?? String(error);
+    console.error("[competition-uploads] participant photo error:", msg);
+    return null;
+  }
+
+  const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
+  return data.publicUrl;
+}

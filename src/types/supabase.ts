@@ -71,6 +71,45 @@ export type Database = {
         }
         Relationships: []
       }
+      competition_photos: {
+        Row: {
+          id: string
+          competition_id: string
+          uploaded_by: string
+          image_url: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          competition_id: string
+          uploaded_by: string
+          image_url: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          competition_id?: string
+          uploaded_by?: string
+          image_url?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competition_photos_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competition_photos_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       competitions: {
         Row: {
           created_at: string | null
