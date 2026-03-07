@@ -44,7 +44,7 @@ export default function CompetitionsPageClient({ competitions }: Props) {
   }, [sort, setTopbarActions]);
 
   return (
-    <main className="p-4 sm:p-6 max-w-3xl mx-auto">
+    <main className="w-full py-4 sm:py-6">
       <CompetitionList competitions={competitions} sort={sort} q={q} />
     </main>
   );

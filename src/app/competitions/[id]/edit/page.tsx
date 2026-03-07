@@ -8,6 +8,7 @@ import { Database } from "@/types/supabase";
 import { SetTopbarActions } from "@/components/Topbar/TopbarActionsContext";
 import { useToast } from "@/components/Toasts/ToastProvider";
 import CompetitionImageField from "@/components/Forms/CompetitionImageField";
+import DeleteCompetitionButton from "@/components/Competitions/DeleteCompetitionButton";
 
 export default function EditCompetitionPage() {
   const supabase = useMemo(() => createClientComponentClient<Database>(), []);
@@ -307,6 +308,17 @@ export default function EditCompetitionPage() {
             Avbryt
           </Link>
         </div>
+
+        {id && (
+          <div className="mt-8 pt-6 border-t border-retro-border">
+            <p className="text-stone-400 text-sm mb-2">Ta bort tävlingen permanent.</p>
+            <DeleteCompetitionButton
+              competitionId={id}
+              competitionTitle={title || "Tävlingen"}
+              variant="danger"
+            />
+          </div>
+        )}
       </form>
     </div>
   );

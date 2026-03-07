@@ -9,6 +9,7 @@ import { SetTopbarActions } from "@/components/Topbar/TopbarActionsContext";
 import JoinToCompetitionButton from "@/components/Competitions/JoinToCompetitionButton";
 import CompetitionParticipantsSection from "@/components/Competitions/CompetitionParticipantsSection";
 import ScrollToDeltagareOnJoin from "@/components/Competitions/ScrollToDeltagareOnJoin";
+import DeleteCompetitionButton from "@/components/Competitions/DeleteCompetitionButton";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -365,7 +366,7 @@ export default async function CompetitionDetailPage({ params, searchParams }: Pa
         </div>
       )}
 
-      <div className="pt-4 flex flex-wrap gap-3">
+      <div className="pt-4 flex flex-wrap items-center gap-3">
         <Link
           href={`/results/new?competition_id=${id}`}
           className="inline-flex items-center gap-2 w-full sm:w-auto justify-center px-4 py-3 rounded-xl bg-retro-accent text-stone-100 text-sm font-medium hover:bg-retro-accent-hover transition"
@@ -378,6 +379,13 @@ export default async function CompetitionDetailPage({ params, searchParams }: Pa
         >
           📷 Tävlingsbilder
         </Link>
+        {isCreator && (
+          <DeleteCompetitionButton
+            competitionId={id}
+            competitionTitle={competition.title}
+            className="sm:ml-auto"
+          />
+        )}
       </div>
         </main>
       </div>
