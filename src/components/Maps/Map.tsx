@@ -89,7 +89,7 @@ export default function Map({ userName, initialCourses, onSelectionChange, fromD
             </div>
           ) : (
             <>
-              {!welcomeDismissed && (
+              {!welcomeDismissed && !fromDashboard && (
                 <div className="shrink-0 p-3 border-b border-retro-border flex items-center justify-between gap-2 bg-retro-card/50">
                   <p className="text-sm text-stone-300">
                     Välkommen, <span className="font-medium text-stone-100">{userName}</span>!

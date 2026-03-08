@@ -128,12 +128,66 @@ export async function GET() {
         avatar_url: (p as { avatar_url: string | null }).avatar_url ?? null,
       }));
 
+    // Nya discar: senaste tillagda, max 5
+    const { data: newDiscsRows, error: newDiscsError } = await supabase
+      .from("discs")
+      .select("id, name, bild, brand, disc_type")
+      .order("created_at", { ascending: false })
+      .limit(5);
+
+    if (newDiscsError) {
+      console.error("[dashboard-summary] newDiscs error", newDiscsError);
+    }
+
+    const newDiscs: { id: string; name: string; bild: string | null; brand: string | null; disc_type: string | null }[] =
+      (newDiscsRows ?? []).map((d) => ({
+        id: (d as { id: string }).id,
+        name: (d as { name: string }).name,
+        bild: (d as { bild: string | null }).bild ?? null,
+        brand: (d as { brand: string | null }).brand ?? null,
+        disc_type: (d as { disc_type: string | null }).disc_type ?? null,
+      }));
+
+    // Hero-bilder: nyligen tillagda tävlingsbilder först, annars tävlings-/banbilder
+    const { data: recentPhotos } = await supabase
+      .from("competition_photos")
+      .select("image_url")
+      .order("created_at", { ascending: false })
+      .limit(20);
+    const heroUrls: string[] = (recentPhotos ?? []).map((p) => (p as { image_url: string }).image_url).filter(Boolean);
+    if (heroUrls.length < 5) {
+      const { data: compImages } = await supabase
+        .from("competitions")
+        .select("image_url")
+        .not("image_url", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(10);
+      for (const c of compImages ?? []) {
+        const url = (c as { image_url: string | null }).image_url;
+        if (url && !heroUrls.includes(url)) heroUrls.push(url);
+      }
+    }
+    if (heroUrls.length < 5) {
+      const { data: courseImages } = await supabase
+        .from("courses")
+        .select("main_image_url")
+        .not("main_image_url", "is", null)
+        .limit(10);
+      for (const c of courseImages ?? []) {
+        const url = (c as { main_image_url: string | null }).main_image_url;
+        if (url && !heroUrls.includes(url)) heroUrls.push(url);
+      }
+    }
+    const heroImages = heroUrls.map((url) => ({ url }));
+
     return NextResponse.json({
       courses: courses ?? [],
       latestScores,
       competitions: competitions ?? [],
       mapCourses,
       newMembers,
+      newDiscs,
+      heroImages,
     });
   } catch (err: unknown) {
     const msg = `[dashboard-summary] unhandled: ${
