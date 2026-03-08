@@ -12,7 +12,7 @@ export default async function Dashboard() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("alias")
+    .select("alias, city")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -21,5 +21,7 @@ export default async function Dashboard() {
     (user.user_metadata?.full_name as string | undefined)?.trim() ||
     "vän";
 
-  return <DashboardContent userName={displayName} />;
+  const userCity = (profile as { city?: string | null } | null)?.city?.trim() || null;
+
+  return <DashboardContent userName={displayName} userCity={userCity} />;
 }

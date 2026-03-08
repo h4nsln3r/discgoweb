@@ -24,7 +24,7 @@ type DashboardSummary = {
   heroImages?: { url: string }[];
 };
 
-export default function DashboardContent({ userName }: { userName: string }) {
+export default function DashboardContent({ userName, userCity = null }: { userName: string; userCity?: string | null }) {
   const [data, setData] = useState<DashboardSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -194,7 +194,7 @@ export default function DashboardContent({ userName }: { userName: string }) {
   return (
     <div className="flex flex-col min-h-screen">
       <div className="relative">
-        <DashboardHero images={heroImages} userName={userName} />
+        <DashboardHero images={heroImages} userName={userName} userCity={userCity} />
         {hasOverlayCards && (
           <div className="absolute inset-x-4 top-14 bottom-4 md:inset-x-auto md:left-auto md:right-6 md:top-auto md:max-w-[280px] z-10 flex flex-col gap-3">
             {/* Mobil: Nya medlemmar + Nya discar 50/50 bredvid varandra. Desktop: staplade. */}

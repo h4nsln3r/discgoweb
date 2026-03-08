@@ -2,15 +2,17 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
+import DashboardWeather from "./DashboardWeather";
 
 const AUTO_ADVANCE_MS = 10000;
 
 type Props = {
   images: { url: string }[];
   userName?: string;
+  userCity?: string | null;
 };
 
-export default function DashboardHero({ images, userName }: Props) {
+export default function DashboardHero({ images, userName, userCity }: Props) {
   const [index, setIndex] = useState(0);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
@@ -91,16 +93,19 @@ export default function DashboardHero({ images, userName }: Props) {
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseLeave}
     >
-      {userName && (
+      {(userName || userCity != null) && (
         <motion.div
           className="absolute top-4 left-4 md:top-6 md:left-6 z-10 max-w-[85%]"
           initial={{ opacity: 0, x: -32 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6, ease: [0.22, 0.61, 0.36, 1] }}
         >
-          <p className="font-bebas text-2xl md:text-3xl tracking-wide uppercase text-stone-100 drop-shadow-lg">
-            Välkommen, <span className="text-amber-300">{userName}</span>!
-          </p>
+          {userName && (
+            <p className="font-bebas text-2xl md:text-3xl tracking-wide uppercase text-stone-100 drop-shadow-lg">
+              Välkommen, <span className="text-amber-300">{userName}</span>!
+            </p>
+          )}
+          <DashboardWeather userCity={userCity} />
         </motion.div>
       )}
       {images.map((img, i) => (
