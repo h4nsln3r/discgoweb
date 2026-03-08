@@ -66,7 +66,7 @@ export async function GET() {
   const scoreById = new Map(
     (scores ?? []).map((s) => [(s as ScoreRow).id, s as ScoreRow])
   );
-  let acesByCourse: Record<string, { score_id: string; hole_number: number; alias: string; user_id: string | null }[]> = {};
+  const acesByCourse: Record<string, { score_id: string; hole_number: number; alias: string; user_id: string | null }[]> = {};
   if (allScoreIds.length > 0) {
     const { data: acesData } = await supabase
       .from("score_holes")
