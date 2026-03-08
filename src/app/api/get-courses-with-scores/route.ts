@@ -60,6 +60,33 @@ export async function GET() {
     scoresByCourse[score.course_id].push(score);
   }
 
+  const allScoreIds = (scores ?? [])
+    .map((s) => (s as ScoreRow).id)
+    .filter(Boolean);
+  const scoreById = new Map(
+    (scores ?? []).map((s) => [(s as ScoreRow).id, s as ScoreRow])
+  );
+  let acesByCourse: Record<string, { score_id: string; hole_number: number; alias: string; user_id: string | null }[]> = {};
+  if (allScoreIds.length > 0) {
+    const { data: acesData } = await supabase
+      .from("score_holes")
+      .select("score_id, hole_number")
+      .in("score_id", allScoreIds)
+      .eq("throws", 1);
+    for (const a of acesData ?? []) {
+      const row = a as { score_id: string; hole_number: number };
+      const score = scoreById.get(row.score_id);
+      if (!score?.course_id) continue;
+      if (!acesByCourse[score.course_id]) acesByCourse[score.course_id] = [];
+      acesByCourse[score.course_id].push({
+        score_id: row.score_id,
+        hole_number: row.hole_number,
+        alias: score.profiles?.alias ?? "Okänd",
+        user_id: score.user_id ?? null,
+      });
+    }
+  }
+
   const result = (courses ?? []).map((course) => {
     const courseScores = scoresByCourse[course.id as string] ?? [];
     const bestPerUser = new Map<string, ScoreRow>();
@@ -70,11 +97,20 @@ export async function GET() {
     const top3 = [...bestPerUser.values()]
       .sort((a, b) => a.score - b.score)
       .slice(0, 3);
+    const lastPlayed = [...courseScores]
+      .sort((a, b) => {
+        const da = a.date_played ? new Date(a.date_played).getTime() : 0;
+        const db = b.date_played ? new Date(b.date_played).getTime() : 0;
+        return db - da;
+      })
+      .slice(0, 3);
     return {
       ...course,
       hole_count: holeCountByCourse[course.id as string] ?? 0,
       scores: courseScores,
       top3,
+      holeInOnes: acesByCourse[course.id as string] ?? [],
+      lastPlayed,
     };
   });
 

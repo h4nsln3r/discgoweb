@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState, useMemo, useRef, useCallback } from "react";
+import Select from "react-select";
+import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/outline";
 import { useToast } from "@/components/Toasts/ToastProvider";
 import { parseUDiscCsv, type UDiscRound } from "@/lib/udiscCsv";
 
-type Course = { id: string; name: string };
+type Course = { id: string; name: string; main_image_url?: string | null };
 type Player = { id: string; alias: string };
 type CourseHole = { hole_number: number; par: number; length: number | null };
 
@@ -57,8 +59,12 @@ export default function AddScoreForm({
 
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUserAlias, setCurrentUserAlias] = useState<string>("");
-  const [friendSearch, setFriendSearch] = useState("");
   const [manualGuests, setManualGuests] = useState<string[]>([]);
+  const [showGuestInput, setShowGuestInput] = useState(false);
+  const [guestInputValue, setGuestInputValue] = useState("");
+  const [addResultForAliases, setAddResultForAliases] = useState<string[]>([]);
+  const [resultForOthers, setResultForOthers] = useState<Record<string, { throws: string; holeThrows: string[] }>>({});
+  const [expandedOtherResults, setExpandedOtherResults] = useState<Set<string>>(new Set());
   const [invalidFields, setInvalidFields] = useState<Set<string>>(new Set());
   const [udiscRounds, setUdiscRounds] = useState<UDiscRound[] | null>(null);
   const [udiscInputKey, setUdiscInputKey] = useState(0);
@@ -272,14 +278,107 @@ export default function AddScoreForm({
     return currentUserAlias ? [currentUserAlias, ...others, ...guests] : [...others, ...guests];
   }, [currentUserAlias, withFriends, manualGuests]);
 
-  const searchQuery = friendSearch.trim().toLowerCase();
-  const playersForPicker = useMemo(() => {
-    return players.filter((p) => {
-      if (p.id === currentUserId) return false;
-      if (!searchQuery) return true;
-      return (p.alias ?? "").toLowerCase().includes(searchQuery);
+  const playerOptionsForSelect = useMemo(
+    () =>
+      players
+        .filter((p) => p.id !== currentUserId && !withFriends.includes(p.alias))
+        .map((p) => ({ value: p.alias, label: p.alias })),
+    [players, currentUserId, withFriends]
+  );
+
+  // När bana/hål ändras, synka holeThrows-längd för andras resultat
+  useEffect(() => {
+    if (courseHoles.length === 0) return;
+    setResultForOthers((prev) => {
+      let changed = false;
+      const next = { ...prev };
+      for (const alias of Object.keys(next)) {
+        const cur = next[alias].holeThrows;
+        if (cur.length !== courseHoles.length) {
+          next[alias] = {
+            ...next[alias],
+            holeThrows: courseHoles.map((_, i) => cur[i] ?? ""),
+          };
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
     });
-  }, [players, currentUserId, searchQuery]);
+  }, [courseHoles]);
+
+  const toggleAddResultFor = useCallback(
+    (alias: string) => {
+      setAddResultForAliases((prev) => {
+        if (prev.includes(alias)) {
+          setResultForOthers((r) => {
+            const next = { ...r };
+            delete next[alias];
+            return next;
+          });
+          setExpandedOtherResults((e) => {
+            const n = new Set(e);
+            n.delete(alias);
+            return n;
+          });
+          return prev.filter((a) => a !== alias);
+        }
+        setResultForOthers((r) => ({
+          ...r,
+          [alias]: {
+            throws: "",
+            holeThrows: courseHoles.map(() => ""),
+          },
+        }));
+        setExpandedOtherResults((e) => new Set(e).add(alias));
+        return [...prev, alias];
+      });
+    },
+    [courseHoles]
+  );
+
+  const setOtherResultThrows = useCallback((alias: string, throws: string) => {
+    setResultForOthers((r) => (r[alias] ? { ...r, [alias]: { ...r[alias], throws } } : r));
+  }, []);
+
+  const setOtherResultHoleThrow = useCallback((alias: string, holeIndex: number, value: string) => {
+    setResultForOthers((r) => {
+      if (!r[alias]) return r;
+      const next = [...r[alias].holeThrows];
+      next[holeIndex] = value;
+      return { ...r, [alias]: { ...r[alias], holeThrows: next } };
+    });
+  }, []);
+
+  const otherResultTotals = useMemo(() => {
+    const out: Record<string, { throws: number; score: number } | null> = {};
+    const totalPar = courseHoles.reduce((s, h) => s + h.par, 0);
+    for (const alias of addResultForAliases) {
+      const data = resultForOthers[alias];
+      if (!data) {
+        out[alias] = null;
+        continue;
+      }
+      if (usePerHole && data.holeThrows.length === courseHoles.length) {
+        let totalThrows = 0;
+        let valid = true;
+        for (const t of data.holeThrows) {
+          const n = Number(t);
+          if (Number.isNaN(n) || n < 1) {
+            valid = false;
+            break;
+          }
+          totalThrows += n;
+        }
+        out[alias] = valid ? { throws: totalThrows, score: totalThrows - totalPar } : null;
+      } else if (!usePerHole && data.throws.trim() !== "") {
+        const n = Number(data.throws);
+        out[alias] = !Number.isNaN(n) ? { throws: n, score: n - totalPar } : null;
+      } else {
+        out[alias] = null;
+      }
+    }
+    return out;
+  }, [addResultForAliases, resultForOthers, courseHoles, usePerHole]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -292,6 +391,10 @@ export default function AddScoreForm({
       const throwsNum = Number(throws);
       if (throws.trim() === "" || Number.isNaN(throwsNum)) invalid.add("throws");
     }
+    for (const alias of addResultForAliases) {
+      const tot = otherResultTotals[alias];
+      if (tot === null) invalid.add(`other-${alias}`);
+    }
     if (invalid.size > 0) {
       setInvalidFields(invalid);
       const order: string[] = ["course", "date", usePerHole ? "holes" : "throws"].filter(Boolean);
@@ -301,14 +404,19 @@ export default function AddScoreForm({
       if (ref) {
         ref.scrollIntoView({ behavior: "smooth", block: "center" });
       }
+      const hasOtherInvalid = addResultForAliases.some((a) => invalid.has(`other-${a}`));
       showToast(
         !selectedCourse?.trim()
           ? "Välj en bana."
           : !datePlayed?.trim()
             ? "Fyll i datum."
-            : usePerHole
+            : usePerHole && totalFromHoles === null
               ? "Fyll i slag för alla hål."
-              : "Fyll i antal kast.",
+              : !usePerHole && (throws.trim() === "" || Number.isNaN(Number(throws)))
+                ? "Fyll i antal kast."
+                : hasOtherInvalid
+                  ? "Fyll i resultat för alla medspelare du valt att lägga till."
+                  : "Fyll i alla obligatoriska fält.",
         "error"
       );
       return;
@@ -354,28 +462,65 @@ export default function AddScoreForm({
       });
     }
 
+    if (!res.ok) {
+      setLoading(false);
+      showToast("Något gick fel vid sparandet av resultatet.", "error");
+      return;
+    }
+
+    let otherFailed = false;
+    for (const alias of addResultForAliases) {
+      const tot = otherResultTotals[alias];
+      if (tot === null) continue;
+      const player = players.find((p) => p.alias === alias);
+      if (!player?.id) continue;
+      const otherPayload = {
+        ...payload,
+        for_user_id: player.id,
+        score: tot.score,
+        throws: tot.throws,
+        with_friends: combinedFriendsForSubmit,
+      } as const;
+      if (usePerHole && resultForOthers[alias]?.holeThrows.length === courseHoles.length) {
+        (otherPayload as { hole_scores?: { hole_number: number; throws: number }[] }).hole_scores = courseHoles.map(
+          (h, i) => ({
+            hole_number: h.hole_number,
+            throws: Number(resultForOthers[alias].holeThrows[i]) || 0,
+          })
+        );
+      }
+      const otherRes = await fetch("/api/add-score", {
+        method: "POST",
+        body: JSON.stringify(otherPayload),
+      });
+      if (!otherRes.ok) otherFailed = true;
+    }
+
     setLoading(false);
 
-    if (res.ok) {
+    if (otherFailed) {
+      showToast("Ditt resultat sparades, men något gick fel för en eller flera medspelares resultat.", "error");
+    } else {
       showToast(
-        editingScore ? "Resultatet har uppdaterats!" : "Resultatet har sparats!",
+        editingScore ? "Resultatet har uppdaterats!" : addResultForAliases.length > 0 ? "Alla resultat har sparats!" : "Resultatet har sparats!",
         "success"
       );
-      onSuccess?.();
+    }
+    onSuccess?.();
 
-      if (editingScore) {
-        onClose();
-      } else {
-        setThrows("");
-        setDatePlayed(new Date().toISOString().split("T")[0]);
-        setWithFriends([]);
-        setManualGuests([]);
-        setSelectedCourse("");
-        setCourseHoles([]);
-        setHoleThrows([]);
-      }
+    if (editingScore) {
+      onClose();
     } else {
-      showToast("Något gick fel vid sparandet av resultatet.", "error");
+      setThrows("");
+      setDatePlayed(new Date().toISOString().split("T")[0]);
+      setWithFriends([]);
+      setManualGuests([]);
+      setAddResultForAliases([]);
+      setResultForOthers({});
+      setExpandedOtherResults(new Set());
+      setSelectedCourse("");
+      setCourseHoles([]);
+      setHoleThrows([]);
     }
   };
 
@@ -400,13 +545,116 @@ export default function AddScoreForm({
     [showToast]
   );
 
+  const courseOptions = useMemo(
+    () => courses.map((c) => ({ value: c.id, label: c.name })),
+    [courses]
+  );
+  const selectedCourseOption = useMemo(
+    () => courseOptions.find((o) => o.value === selectedCourse) ?? null,
+    [courseOptions, selectedCourse]
+  );
+
+  const selectedCourseData = useMemo(
+    () => courses.find((c) => c.id === selectedCourse) ?? null,
+    [courses, selectedCourse]
+  );
+
+  const formatPreviewDate = (dateStr: string) => {
+    if (!dateStr.trim()) return null;
+    const d = new Date(dateStr);
+    if (Number.isNaN(d.getTime())) return null;
+    return d.toLocaleDateString("sv-SE", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+  };
+
+  const holeScoreStatus = useMemo(() => {
+    if (!usePerHole || courseHoles.length === 0 || holeThrows.length !== courseHoles.length) return null;
+    return courseHoles.map((h, i) => {
+      const t = Number(holeThrows[i]);
+      if (Number.isNaN(t) || t < 1) return { hole_number: h.hole_number, par: h.par, relative: null };
+      return { hole_number: h.hole_number, par: h.par, relative: t - h.par };
+    });
+  }, [usePerHole, courseHoles, holeThrows]);
+
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="space-y-5 mt-4 rounded-xl border border-retro-border bg-retro-surface p-4 md:p-5"
-    >
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10 items-start mt-6">
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-8 min-w-0"
+      >
+      {/* Bana först – sökbar dropdown */}
+      <section ref={courseRef}>
+        <label className="block font-medium text-stone-200 mb-2">
+          {isCompetitionMode ? "Bana (i tävlingen)" : "Vilken bana körde du?"}
+        </label>
+        {isCompetitionMode && competitionTitle && (
+          <p className="text-xs text-stone-400 mb-2">Bara banor som ingår i tävlingen kan väljas.</p>
+        )}
+        {isCompetitionMode && courses.length === 0 ? (
+          <p className="text-sm text-amber-400 bg-amber-400/10 border border-amber-400/30 rounded-lg px-3 py-2">
+            Tävlingen har inga banor kopplade. Gå till Redigera tävling och lägg till banor.
+          </p>
+        ) : (
+          <Select
+            aria-label={isCompetitionMode ? "Välj bana (i tävlingen)" : "Sök och välj bana"}
+            placeholder="Sök eller välj bana..."
+            value={selectedCourseOption}
+            options={courseOptions}
+            onChange={(opt) => {
+              setSelectedCourse(opt?.value ?? "");
+              clearInvalid("course");
+            }}
+            isClearable
+            isSearchable
+            noOptionsMessage={() => "Ingen bana matchar sökningen"}
+            loadingMessage={() => "Laddar banor..."}
+            instanceId="course-select"
+            classNamePrefix="course-select"
+            inputId="course-select-input"
+            styles={{
+              control: (base, state) => ({
+                ...base,
+                minHeight: 44,
+                backgroundColor: "var(--retro-card, #1c1917)",
+                borderColor: invalidFields.has("course")
+                  ? "rgb(239 68 68)"
+                  : state.isFocused
+                    ? "var(--retro-accent, #f59e0b)"
+                    : "var(--retro-border, #44403c)",
+                boxShadow: state.isFocused && !invalidFields.has("course") ? "0 0 0 2px rgba(245, 158, 11, 0.3)" : "none",
+                "&:hover": {
+                  borderColor: invalidFields.has("course") ? "rgb(239 68 68)" : "var(--retro-border, #44403c)",
+                },
+              }),
+              menu: (base) => ({
+                ...base,
+                backgroundColor: "var(--retro-card, #1c1917)",
+                border: "1px solid var(--retro-border, #44403c)",
+                zIndex: 50,
+              }),
+              option: (base, state) => ({
+                ...base,
+                backgroundColor: state.isFocused ? "var(--retro-surface, #292524)" : "transparent",
+                color: "var(--stone-200, #e7e5e4)",
+              }),
+              singleValue: (base) => ({
+                ...base,
+                color: "var(--stone-100, #f5f5f4)",
+              }),
+              input: (base) => ({
+                ...base,
+                color: "var(--stone-100, #f5f5f4)",
+              }),
+              placeholder: (base) => ({
+                ...base,
+                color: "var(--stone-500, #78716c)",
+              }),
+            }}
+          />
+        )}
+      </section>
+
       {!editingScore && !isCompetitionMode && (
-        <div className="rounded-xl border border-retro-border bg-retro-card/50 p-4 space-y-3">
+        <section className="space-y-3">
           <p className="text-sm font-medium text-stone-200">Importera från UDisc</p>
           <p className="text-xs text-stone-400">
             Exportera dina rundor i UDisc (Du → Runder → ☰ → Exportera till CSV) och ladda upp filen här. Välj sedan vilken runda du vill lägga in.
@@ -444,49 +692,18 @@ export default function AddScoreForm({
               </ul>
             </div>
           )}
-        </div>
+        </section>
       )}
 
       {isCompetitionMode && competitionTitle && (
         <div className="rounded-lg border border-retro-accent/40 bg-retro-accent/10 px-3 py-2">
           <p className="text-xs text-retro-muted font-medium">Tävling</p>
           <p className="text-stone-100 font-semibold">{competitionTitle}</p>
-          <p className="text-xs text-stone-400 mt-0.5">Bara banor som ingår i tävlingen kan väljas.</p>
         </div>
       )}
 
-      {/* Dropdown för bana */}
-      <div ref={courseRef}>
-        <label className="block font-medium text-stone-200 mb-1">
-          {isCompetitionMode ? "Välj bana (i tävlingen)" : "Välj bana"}
-        </label>
-        {isCompetitionMode && courses.length === 0 ? (
-          <p className="text-sm text-amber-400 bg-amber-400/10 border border-amber-400/30 rounded-lg px-3 py-2">
-            Tävlingen har inga banor kopplade. Gå till Redigera tävling och lägg till banor.
-          </p>
-        ) : (
-          <select
-            value={selectedCourse}
-            onChange={(e) => {
-              setSelectedCourse(e.target.value);
-              clearInvalid("course");
-            }}
-            required
-            className={`w-full rounded-lg border bg-retro-card px-3 py-2 text-stone-100 focus:outline-none focus:ring-2 ${invalidFields.has("course") ? `border-red-500 ring-2 ring-red-500/50 focus:ring-red-500` : "border-retro-border focus:ring-retro-accent"}`}
-          >
-            <option value="">-- Välj bana --</option>
-            {courses.map((course) => (
-              <option key={course.id} value={String(course.id)}>
-                {course.name}
-              </option>
-            ))}
-          </select>
-        )}
-      </div>
-
-      {/* Datum – samma rad som Välj idag */}
-      <div ref={dateRef}>
-        <label className="block font-medium text-stone-200 mb-1">Datum</label>
+      <section ref={dateRef}>
+        <label className="block font-medium text-stone-200 mb-2">Datum</label>
         <div className="flex gap-2">
           <input
             type="date"
@@ -505,7 +722,7 @@ export default function AddScoreForm({
             Välj idag
           </button>
         </div>
-      </div>
+      </section>
 
       {/* Score / Slag per hål */}
       {usePerHole ? (
@@ -588,63 +805,157 @@ export default function AddScoreForm({
         </>
       )}
 
-      {/* Vilka var med – sök profiler, lägg till med checkmark, visa valda under */}
-      <div>
-        <label className="block font-medium text-stone-200 mb-1">Vilka var med?</label>
-        <p className="text-sm text-stone-400 mb-2">Sök och lägg till spelare som var med. Du behöver inte välja någon.</p>
-        <input
-          type="text"
-          placeholder="Sök spelare..."
-          value={friendSearch}
-          onChange={(e) => setFriendSearch(e.target.value)}
-          className="w-full rounded-lg border border-retro-border bg-retro-card px-3 py-2 text-stone-100 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-retro-accent mb-2"
-        />
-        <div className="max-h-40 overflow-y-auto rounded-lg border border-retro-border bg-retro-card divide-y divide-retro-border">
-          {playersForPicker.length === 0 ? (
-            <div className="px-3 py-2 text-sm text-stone-500">
-              {searchQuery ? "Inga spelare matchar sökningen." : "Skriv för att söka spelare."}
-            </div>
-          ) : (
-            playersForPicker.map((player) => {
-              const isSelected = withFriends.includes(player.alias);
-              return (
-                <label
-                  key={player.id}
-                  className="flex items-center gap-2 px-3 py-2 hover:bg-retro-surface cursor-pointer"
-                >
-                  <input
-                    type="checkbox"
-                    checked={isSelected}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setWithFriends([...withFriends, player.alias]);
-                      } else {
-                        setWithFriends(withFriends.filter((a) => a !== player.alias));
-                      }
-                    }}
-                    className="rounded border-retro-border text-retro-accent focus:ring-retro-accent"
-                  />
-                  <span className="text-stone-200">{player.alias}</span>
-                </label>
-              );
-            })
-          )}
+      <section>
+        <label className="block font-medium text-stone-200 mb-2">Vilka var med?</label>
+        <p className="text-sm text-stone-400 mb-2">Lägg till medspelare eller gäster. Du behöver inte välja någon.</p>
+        <div className="flex gap-2 flex-wrap items-stretch">
+          <div className="flex-1 min-w-[200px]" style={{ minHeight: 44 }}>
+            <Select
+              aria-label="Sök och lägg till medspelare"
+              placeholder="Sök spelare..."
+              value={null}
+              options={playerOptionsForSelect}
+              onChange={(opt) => {
+                if (opt?.value) {
+                  setWithFriends([...withFriends, opt.value]);
+                }
+              }}
+              isClearable
+              isSearchable
+              noOptionsMessage={() => "Inga fler spelare att lägga till"}
+              instanceId="player-select"
+              classNamePrefix="player-select"
+              inputId="player-select-input"
+              styles={{
+                control: (base, state) => ({
+                  ...base,
+                  minHeight: 44,
+                  backgroundColor: "var(--retro-card, #1c1917)",
+                  borderColor: state.isFocused ? "var(--retro-accent, #f59e0b)" : "var(--retro-border, #44403c)",
+                  boxShadow: state.isFocused ? "0 0 0 2px rgba(245, 158, 11, 0.3)" : "none",
+                  "&:hover": { borderColor: "var(--retro-border, #44403c)" },
+                }),
+                menu: (base) => ({
+                  ...base,
+                  backgroundColor: "var(--retro-card, #1c1917)",
+                  border: "1px solid var(--retro-border, #44403c)",
+                  zIndex: 50,
+                }),
+                option: (base, state) => ({
+                  ...base,
+                  backgroundColor: state.isFocused ? "var(--retro-surface, #292524)" : "transparent",
+                  color: "var(--stone-200, #e7e5e4)",
+                }),
+                input: (base) => ({ ...base, color: "var(--stone-100, #f5f5f4)" }),
+                placeholder: (base) => ({ ...base, color: "var(--stone-500, #78716c)" }),
+              }}
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowGuestInput(true)}
+            className="shrink-0 px-4 py-2.5 rounded-lg border border-retro-border bg-retro-card text-stone-200 hover:bg-retro-border/30 transition text-sm font-medium"
+          >
+            Lägg till gäst
+          </button>
         </div>
-        {withFriends.length > 0 && (
-          <div className="mt-2">
-            <span className="text-xs font-medium text-stone-500 block mb-1">Registrerade som var med</span>
+        {showGuestInput && (
+          <div className="mt-2 flex gap-2 items-center">
+            <input
+              type="text"
+              placeholder="Skriv gästnamn"
+              value={guestInputValue}
+              onChange={(e) => setGuestInputValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  const name = guestInputValue.trim();
+                  if (name) {
+                    setManualGuests([...manualGuests, name]);
+                    setGuestInputValue("");
+                  }
+                  setShowGuestInput(false);
+                }
+                if (e.key === "Escape") {
+                  setShowGuestInput(false);
+                  setGuestInputValue("");
+                }
+              }}
+              className="flex-1 min-w-0 rounded-lg border border-retro-border bg-retro-card px-3 py-2 text-stone-100 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-retro-accent"
+              autoFocus
+            />
+            <button
+              type="button"
+              onClick={() => {
+                const name = guestInputValue.trim();
+                if (name) {
+                  setManualGuests([...manualGuests, name]);
+                  setGuestInputValue("");
+                }
+                setShowGuestInput(false);
+              }}
+              className="shrink-0 px-3 py-2 rounded-lg bg-retro-accent/80 text-stone-100 text-sm hover:bg-retro-accent transition"
+            >
+              Lägg till
+            </button>
+          </div>
+        )}
+        {(withFriends.length > 0 || manualGuests.some((g) => g.trim() !== "")) && (
+          <div className="mt-3">
+            <span className="text-xs font-medium text-stone-500 block mb-1">Var med</span>
             <div className="flex flex-wrap gap-2">
-              {withFriends.map((alias) => (
+              {withFriends.map((alias) => {
+                const addingResult = addResultForAliases.includes(alias);
+                return (
+                  <span
+                    key={alias}
+                    className="inline-flex flex-wrap items-center gap-1 px-2.5 py-1 rounded-lg bg-retro-accent/20 border border-retro-accent/40 text-stone-200 text-sm"
+                  >
+                    {alias}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setWithFriends(withFriends.filter((a) => a !== alias));
+                        setAddResultForAliases((prev) => prev.filter((a) => a !== alias));
+                        setResultForOthers((r) => {
+                          const next = { ...r };
+                          delete next[alias];
+                          return next;
+                        });
+                        setExpandedOtherResults((e) => {
+                          const n = new Set(e);
+                          n.delete(alias);
+                          return n;
+                        });
+                      }}
+                      className="text-stone-400 hover:text-stone-100 ml-0.5"
+                      aria-label={`Ta bort ${alias}`}
+                    >
+                      ×
+                    </button>
+                    {!editingScore && (
+                      <button
+                        type="button"
+                        onClick={() => toggleAddResultFor(alias)}
+                        className="ml-1 text-xs text-retro-accent hover:text-amber-300 underline"
+                      >
+                        {addingResult ? "Ta bort resultat" : "Lägg till resultat"}
+                      </button>
+                    )}
+                  </span>
+                );
+              })}
+              {manualGuests.filter((g) => g.trim() !== "").map((guest) => (
                 <span
-                  key={alias}
+                  key={`guest-${guest}`}
                   className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-retro-accent/20 border border-retro-accent/40 text-stone-200 text-sm"
                 >
-                  {alias}
+                  Gäst: {guest}
                   <button
                     type="button"
-                    onClick={() => setWithFriends(withFriends.filter((a) => a !== alias))}
+                    onClick={() => setManualGuests(manualGuests.filter((g) => g !== guest))}
                     className="text-stone-400 hover:text-stone-100 ml-0.5"
-                    aria-label={`Ta bort ${alias}`}
+                    aria-label={`Ta bort gäst ${guest}`}
                   >
                     ×
                   </button>
@@ -654,32 +965,98 @@ export default function AddScoreForm({
           </div>
         )}
 
-        <div className="mt-3 space-y-2">
-          {manualGuests.map((guest, index) => (
-            <input
-              key={index}
-              type="text"
-              className="w-full rounded-lg border border-retro-border bg-retro-card px-3 py-2 text-stone-100 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-retro-accent"
-              placeholder="Gästnamn"
-              value={guest}
-              onChange={(e) => {
-                const next = [...manualGuests];
-                next[index] = e.target.value;
-                setManualGuests(next);
-              }}
-            />
-          ))}
-          <button
-            type="button"
-            onClick={() => setManualGuests([...manualGuests, ""])}
-            className="px-3 py-2 rounded-lg border border-retro-border bg-retro-card text-stone-200 hover:bg-retro-border/30 transition text-sm"
-          >
-            Lägg till gäst
-          </button>
-        </div>
-      </div>
+        {!editingScore && addResultForAliases.length > 0 && (
+          <div className="mt-4 space-y-3">
+            {addResultForAliases.map((alias) => {
+              const data = resultForOthers[alias];
+              const totals = otherResultTotals[alias];
+              const isExpanded = expandedOtherResults.has(alias);
+              const isInvalid = invalidFields.has(`other-${alias}`);
+              return (
+                <div
+                  key={alias}
+                  className={`rounded-lg border overflow-hidden ${isInvalid ? "border-red-500" : "border-retro-border"}`}
+                >
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setExpandedOtherResults((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(alias)) next.delete(alias);
+                        else next.add(alias);
+                        return next;
+                      })
+                    }
+                    className="w-full flex items-center justify-between px-3 py-2.5 bg-retro-card/60 text-left text-stone-200 hover:bg-retro-border/20 transition-colors"
+                  >
+                    <span className="font-medium">Resultat för {alias}</span>
+                    {isExpanded ? (
+                      <ChevronUpIcon className="w-4 h-4 shrink-0" aria-hidden />
+                    ) : (
+                      <ChevronDownIcon className="w-4 h-4 shrink-0" aria-hidden />
+                    )}
+                  </button>
+                  {isExpanded && data && (
+                    <div className="p-3 pt-1 border-t border-retro-border bg-retro-card/30 space-y-3">
+                      {usePerHole ? (
+                        <>
+                          <p className="text-xs text-stone-400">Slag per hål för {alias}</p>
+                          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                            {courseHoles.map((h, i) => (
+                              <div key={h.hole_number} className="flex flex-col gap-0.5">
+                                <span className="text-xs text-stone-500">
+                                  {h.hole_number} (Par {h.par})
+                                </span>
+                                <input
+                                  type="number"
+                                  min={1}
+                                  placeholder="–"
+                                  value={data.holeThrows[i] ?? ""}
+                                  onChange={(e) => setOtherResultHoleThrow(alias, i, e.target.value)}
+                                  className="w-full rounded-lg border border-retro-border bg-retro-surface px-2 py-1.5 text-stone-100 text-sm focus:outline-none focus:ring-2 focus:ring-retro-accent"
+                                />
+                              </div>
+                            ))}
+                          </div>
+                          {totals !== null && (
+                            <p className="text-sm text-stone-300">
+                              Totalt: <strong>{totals.throws}</strong> slag · Poäng:{" "}
+                              <strong>
+                                {totals.score === 0 ? "Par" : totals.score > 0 ? `+${totals.score}` : totals.score}
+                              </strong>
+                            </p>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          <label className="block text-sm font-medium text-stone-200">Antal kast för {alias}</label>
+                          <input
+                            type="number"
+                            min={1}
+                            placeholder="t.ex. 54"
+                            value={data.throws}
+                            onChange={(e) => setOtherResultThrows(alias, e.target.value)}
+                            className="w-full rounded-lg border border-retro-border bg-retro-surface px-3 py-2 text-stone-100 focus:outline-none focus:ring-2 focus:ring-retro-accent"
+                          />
+                          {totals !== null && (
+                            <p className="text-sm text-stone-300">
+                              Poäng:{" "}
+                              <strong>
+                                {totals.score === 0 ? "Par" : totals.score > 0 ? `+${totals.score}` : totals.score}
+                              </strong>
+                            </p>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
 
-      {/* Actions */}
       <div className="flex flex-wrap gap-3 pt-2">
         <button
           type="submit"
@@ -703,5 +1080,69 @@ export default function AddScoreForm({
         )}
       </div>
     </form>
+
+      {/* Höger: förhandsvisning – banbild, datum, hål med färger */}
+      <aside className="min-w-0 lg:sticky lg:top-24 space-y-4 rounded-lg border border-retro-border bg-retro-card/40 overflow-hidden">
+        {selectedCourseData ? (
+          <>
+            <div className="relative aspect-video w-full bg-retro-surface">
+              {selectedCourseData.main_image_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={selectedCourseData.main_image_url}
+                  alt={selectedCourseData.name}
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center text-stone-500 text-sm">
+                  Ingen bild
+                </div>
+              )}
+            </div>
+            <div className="px-4 pb-4 space-y-3">
+              <p className="text-lg font-semibold text-stone-100">{selectedCourseData.name}</p>
+              {datePlayed.trim() && formatPreviewDate(datePlayed) && (
+                <p className="text-stone-300 capitalize">{formatPreviewDate(datePlayed)}</p>
+              )}
+              {holeScoreStatus && (
+                <div>
+                  <p className="text-xs font-medium text-stone-500 uppercase tracking-wider mb-2">Hål</p>
+                  <div className="grid grid-cols-6 sm:grid-cols-9 gap-1.5">
+                    {holeScoreStatus.map(({ hole_number, par, relative }) => {
+                      let bg = "bg-stone-600";
+                      let label = "–";
+                      if (relative !== null) {
+                        if (relative <= -1) bg = "bg-blue-600";
+                        else if (relative === 0) bg = "bg-green-600";
+                        else if (relative === 1) bg = "bg-red-500";
+                        else if (relative === 2) bg = "bg-red-700";
+                        else bg = "bg-red-900";
+                        label = relative <= 0 ? String(relative) : `+${relative}`;
+                      } else {
+                        label = `Par ${par}`;
+                      }
+                      return (
+                        <div
+                          key={hole_number}
+                          className={`${bg} rounded flex flex-col items-center justify-center py-2 px-1 min-h-[52px]`}
+                          title={`Hål ${hole_number} (Par ${par})${relative !== null ? ` · ${label}` : ""}`}
+                        >
+                          <span className="text-xs text-white/90">{hole_number}</span>
+                          <span className="text-xs font-semibold text-white">{label}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          </>
+        ) : (
+          <div className="aspect-video flex items-center justify-center text-stone-500 text-sm px-4">
+            Välj en bana för att se förhandsvisning
+          </div>
+        )}
+      </aside>
+    </div>
   );
 }

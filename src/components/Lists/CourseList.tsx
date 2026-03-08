@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef, useLayoutEffect } from "react";
 import Link from "next/link";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { motion } from "framer-motion";
 import PageLoading from "@/components/PageLoading";
 import { formatScorePar } from "@/lib/scoreDisplay";
-import { MagnifyingGlassIcon, PlusCircleIcon } from "@heroicons/react/24/outline";
+import { MagnifyingGlassIcon, PlusCircleIcon, ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/outline";
 
 export type Top3Score = {
   id: string;
@@ -13,6 +14,13 @@ export type Top3Score = {
   score: number;
   date_played: string | null;
   profiles: { alias: string | null } | null;
+};
+
+export type HoleInOne = {
+  score_id: string;
+  hole_number: number;
+  alias: string;
+  user_id: string | null;
 };
 
 export type Course = {
@@ -28,15 +36,43 @@ export type Course = {
   hole_count?: number;
   created_at?: string | null;
   top3?: Top3Score[];
+  holeInOnes?: HoleInOne[];
+  lastPlayed?: Top3Score[];
   scores?: { id: string; score: number; date_played: string | null; profiles: { alias: string | null } | null }[];
 };
 
+function formatDate(dateStr: string | null): string {
+  if (!dateStr) return "—";
+  const d = new Date(dateStr);
+  return d.toLocaleDateString("sv-SE", { year: "numeric", month: "short", day: "numeric" });
+}
+
 import type { SortValue } from "@/components/Courses/CourseSortDropdown";
 
+const tableBase = "rounded-none bg-retro-card/60 border border-retro-border overflow-hidden";
+const tableHeader = "text-xs font-semibold text-retro-muted uppercase tracking-wider px-3 pt-3 pb-2";
+
+const playerNameClass = "font-bebas tracking-wide uppercase text-retro-accent hover:text-amber-300";
+
 function CourseCard({ course }: { course: Course }) {
+  const [tablesOpen, setTablesOpen] = useState(false);
+  const [contentHeight, setContentHeight] = useState(0);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+  const hasTop3 = course.top3 && course.top3.length > 0;
+  const hasHoleInOne = course.holeInOnes && course.holeInOnes.length > 0;
+  const hasLastPlayed = course.lastPlayed && course.lastPlayed.length > 0;
+  const hasAnyTables = hasTop3 || hasHoleInOne || hasLastPlayed;
+
+  useLayoutEffect(() => {
+    if (tablesOpen && contentRef.current) {
+      setContentHeight(contentRef.current.scrollHeight);
+    }
+  }, [tablesOpen, hasTop3, hasHoleInOne, hasLastPlayed]);
+
   return (
     <article
-      className="rounded-2xl border border-retro-border bg-retro-surface shadow-md overflow-hidden hover:border-retro-muted/50 hover:shadow-lg transition-all flex flex-col"
+      className="rounded-none border border-retro-border bg-retro-surface shadow-md overflow-hidden hover:border-retro-muted/50 hover:shadow-lg transition-all flex flex-col"
     >
       <div className="relative w-full h-56 sm:h-72 bg-retro-card shrink-0 overflow-hidden group">
         {course.main_image_url ? (
@@ -90,39 +126,142 @@ function CourseCard({ course }: { course: Course }) {
         <p className="text-sm text-stone-400 mt-0.5">{course.location || "—"}</p>
       </div>
 
-      {course.top3 && course.top3.length > 0 && (
-        <div className="px-5 pb-2">
-          <div className="rounded-xl bg-retro-card/60 border border-retro-border overflow-hidden">
-            <h4 className="text-xs font-semibold text-retro-muted uppercase tracking-wider px-3 pt-3 pb-2">
-              🏆 Topp 3
-            </h4>
-            <table className="w-full text-sm text-stone-200">
-              <thead>
-                <tr className="border-t border-retro-border text-left text-xs font-medium text-stone-500 uppercase tracking-wider">
-                  <th className="px-3 py-1.5 w-8">#</th>
-                  <th className="px-3 py-1.5">Spelare</th>
-                  <th className="px-3 py-1.5 text-right">Score</th>
-                </tr>
-              </thead>
-              <tbody>
-                {course.top3.map((s, idx) => (
-                  <tr key={s.id} className="border-t border-retro-border/70">
-                    <td className="px-3 py-2 text-retro-muted">{idx + 1}</td>
-                    <td className="px-3 py-2">
-                      {s.user_id ? (
-                        <Link href={`/profile/${s.user_id}`} className="text-retro-accent hover:underline" onClick={(e) => e.stopPropagation()}>
-                          {s.profiles?.alias ?? "Okänd"}
-                        </Link>
-                      ) : (
-                        (s.profiles?.alias ?? "Okänd")
-                      )}
-                    </td>
-                    <td className="px-3 py-2 text-right font-medium text-stone-100">{formatScorePar(s.score)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+      {hasAnyTables && (
+        <div className="px-5 pb-5">
+          <button
+            type="button"
+            onClick={() => setTablesOpen((v) => !v)}
+            className="w-full flex items-center justify-between rounded-none border border-retro-border bg-retro-card/60 px-3 py-2.5 text-sm font-medium text-stone-200 hover:bg-retro-border/30 transition-colors"
+            aria-expanded={tablesOpen}
+          >
+            <span>Senast</span>
+            {tablesOpen ? (
+              <ChevronUpIcon className="w-4 h-4 shrink-0" aria-hidden />
+            ) : (
+              <ChevronDownIcon className="w-4 h-4 shrink-0" aria-hidden />
+            )}
+          </button>
+          <motion.div
+            initial={false}
+            animate={{ height: tablesOpen ? contentHeight : 0 }}
+            transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
+            style={{ overflow: "hidden" }}
+          >
+            <div ref={contentRef} className="flex flex-col md:flex-row gap-3 md:gap-2 pt-3">
+              {hasTop3 && (
+                <div className={`flex-1 min-w-0 ${tableBase}`}>
+                  <h4 className={tableHeader}>🏆 Topp 3</h4>
+                  <table className="w-full text-sm text-stone-200">
+                    <thead>
+                      <tr className="border-t border-retro-border text-left text-xs font-medium text-stone-500 uppercase tracking-wider">
+                        <th className="px-3 py-1.5 w-8">#</th>
+                        <th className="px-3 py-1.5">Spelare</th>
+                        <th className="px-3 py-1.5 text-right">Score</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {course.top3!.map((s, idx) => (
+                        <tr
+                          key={s.id}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => router.push(`/results/${s.id}`)}
+                          onKeyDown={(e) => e.key === "Enter" && router.push(`/results/${s.id}`)}
+                          className="border-t border-retro-border/70 cursor-pointer hover:bg-retro-border/20 transition-colors"
+                        >
+                          <td className="px-3 py-2 text-retro-muted">{idx + 1}</td>
+                          <td className="px-3 py-2">
+                            {s.user_id ? (
+                              <Link href={`/profile/${s.user_id}`} className={playerNameClass} onClick={(e) => e.stopPropagation()}>
+                                {s.profiles?.alias ?? "Okänd"}
+                              </Link>
+                            ) : (
+                              <span className={playerNameClass}>{(s.profiles?.alias ?? "Okänd")}</span>
+                            )}
+                          </td>
+                          <td className="px-3 py-2 text-right font-medium text-stone-100">{formatScorePar(s.score)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              {hasHoleInOne && (
+                <div className={`flex-1 min-w-0 ${tableBase}`}>
+                  <h4 className={tableHeader}>⛳ Hole in one</h4>
+                  <table className="w-full text-sm text-stone-200">
+                    <thead>
+                      <tr className="border-t border-retro-border text-left text-xs font-medium text-stone-500 uppercase tracking-wider">
+                        <th className="px-3 py-1.5">Hål</th>
+                        <th className="px-3 py-1.5">Spelare</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {course.holeInOnes!.map((ace, idx) => (
+                        <tr
+                          key={`${ace.score_id}-${ace.hole_number}-${idx}`}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => router.push(`/results/${ace.score_id}`)}
+                          onKeyDown={(e) => e.key === "Enter" && router.push(`/results/${ace.score_id}`)}
+                          className="border-t border-retro-border/70 cursor-pointer hover:bg-retro-border/20 transition-colors"
+                        >
+                          <td className="px-3 py-2 text-retro-muted">{ace.hole_number}</td>
+                          <td className="px-3 py-2">
+                            {ace.user_id ? (
+                              <Link href={`/profile/${ace.user_id}`} className={playerNameClass} onClick={(e) => e.stopPropagation()}>
+                                {ace.alias}
+                              </Link>
+                            ) : (
+                              <span className={playerNameClass}>{ace.alias}</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              {hasLastPlayed && (
+                <div className={`flex-1 min-w-0 ${tableBase}`}>
+                  <h4 className={tableHeader}>Senast spelad</h4>
+                  <table className="w-full text-sm text-stone-200">
+                    <thead>
+                      <tr className="border-t border-retro-border text-left text-xs font-medium text-stone-500 uppercase tracking-wider">
+                        <th className="px-3 py-1.5 w-8">#</th>
+                        <th className="px-3 py-1.5">Spelare</th>
+                        <th className="px-3 py-1.5 text-right">Datum</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {course.lastPlayed!.map((s, idx) => (
+                        <tr
+                          key={s.id}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => router.push(`/results/${s.id}`)}
+                          onKeyDown={(e) => e.key === "Enter" && router.push(`/results/${s.id}`)}
+                          className="border-t border-retro-border/70 cursor-pointer hover:bg-retro-border/20 transition-colors"
+                        >
+                          <td className="px-3 py-2 text-retro-muted">{idx + 1}</td>
+                          <td className="px-3 py-2">
+                            {s.user_id ? (
+                              <Link href={`/profile/${s.user_id}`} className={playerNameClass} onClick={(e) => e.stopPropagation()}>
+                                {s.profiles?.alias ?? "Okänd"}
+                              </Link>
+                            ) : (
+                              <span className={playerNameClass}>{(s.profiles?.alias ?? "Okänd")}</span>
+                            )}
+                          </td>
+                          <td className="px-3 py-2 text-right text-stone-300">{formatDate(s.date_played)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </motion.div>
         </div>
       )}
     </article>
@@ -326,7 +465,7 @@ export default function CourseList({
       </aside>
 
       {/* Huvudinnehåll: landskap endast på mobil + kort */}
-      <div className="min-w-0 px-1 py-4 space-y-4 md:p-6 md:py-6">
+      <div className="min-w-0 px-1 pt-0 pb-4 space-y-4 md:px-0 md:pt-0 md:pb-6">
       <div className="w-full md:hidden">
         <select
           value={landskapFilter}
@@ -361,7 +500,7 @@ export default function CourseList({
                 {landskap !== "—" && <span>{landskap}</span>}
                 {country === "—" && landskap === "—" && <span>Övrigt</span>}
               </h2>
-              <div className="grid gap-3 md:gap-6 md:grid-cols-2">
+              <div className="grid gap-3 md:gap-0 md:grid-cols-2">
                 {groupCourses.map((course) => (
                   <CourseCard key={course.id} course={course} />
                 ))}
@@ -370,7 +509,7 @@ export default function CourseList({
           ))}
         </div>
       ) : (
-      <div className="grid gap-3 md:gap-6 md:grid-cols-2">
+      <div className="grid gap-3 md:gap-0 md:grid-cols-2">
         {sortedCourses.map((course) => (
           <CourseCard key={course.id} course={course} />
         ))}

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import BackLink from "@/components/Buttons/BackLink";
+import { useTopbarActions } from "@/components/Topbar/TopbarActionsContext";
 import AddScoreForm from "@/components/Forms/AddScoreForm";
 
 type CompetitionData = { id: string; title: string; courses: { id: string; name: string }[] } | null;
@@ -10,6 +10,7 @@ type CompetitionData = { id: string; title: string; courses: { id: string; name:
 export default function AddResultPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { setTopbarActions } = useTopbarActions();
   const courseIdFromUrl = searchParams.get("course_id");
   const competitionIdFromUrl = searchParams.get("competition_id");
 
@@ -17,6 +18,21 @@ export default function AddResultPage() {
   const [coursesForForm, setCoursesForForm] = useState<{ id: string; name: string }[] | null>(null);
   const [coursesLoading, setCoursesLoading] = useState(!!courseIdFromUrl);
   const [competitionLoading, setCompetitionLoading] = useState(!!competitionIdFromUrl);
+
+  useEffect(() => {
+    setTopbarActions({
+      backHref: "/results",
+      editHref: null,
+      editLabel: null,
+      pageTitle: "Lägg till resultat",
+    });
+    return () => {
+      setTopbarActions({
+        backHref: null,
+        pageTitle: null,
+      });
+    };
+  }, [setTopbarActions]);
 
   useEffect(() => {
     if (!courseIdFromUrl) {
@@ -69,11 +85,7 @@ export default function AddResultPage() {
   }, [competitionIdFromUrl]);
 
   return (
-    <main className="p-6 max-w-2xl mx-auto space-y-6">
-      <div>
-        <BackLink />
-      </div>
-      <h1 className="text-2xl font-bold mb-4">Lägg till resultat</h1>
+    <main className="p-4 md:p-6 w-full max-w-6xl mx-auto">
       {(courseIdFromUrl && coursesLoading) || (competitionIdFromUrl && competitionLoading) ? (
         <AddResultFormSkeleton />
       ) : (
