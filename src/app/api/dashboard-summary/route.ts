@@ -10,12 +10,12 @@ export async function GET() {
   });
 
   try {
-    // Hämta senaste banor
+    // Hämta senaste banor (top 3 för dashboard)
     const { data: courses, error: coursesError } = await supabase
       .from("courses")
       .select("id, name, location, created_at")
       .order("created_at", { ascending: false })
-      .limit(5);
+      .limit(3);
 
     if (coursesError) {
       console.error("[dashboard-summary] latest courses error", coursesError);
