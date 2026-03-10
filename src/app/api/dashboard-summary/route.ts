@@ -105,17 +105,12 @@ export async function GET() {
       hole_count: holeCountByCourse[c.id as string] ?? 0,
     }));
 
-    // Nya medlemmar: max 6 st, endast registrerade senaste veckan
-    const oneWeekAgo = new Date();
-    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-    const oneWeekAgoIso = oneWeekAgo.toISOString();
-
+    // Senaste 3 medlemmarna (oavsett när de registrerade sig)
     const { data: newMembersRows, error: newMembersError } = await supabase
       .from("profiles")
       .select("id, alias, avatar_url")
-      .gte("created_at", oneWeekAgoIso)
       .order("created_at", { ascending: false })
-      .limit(6);
+      .limit(3);
 
     if (newMembersError) {
       console.error("[dashboard-summary] newMembers error", newMembersError);
@@ -128,12 +123,12 @@ export async function GET() {
         avatar_url: (p as { avatar_url: string | null }).avatar_url ?? null,
       }));
 
-    // Nya discar: senaste tillagda, max 5
+    // Senaste 3 discarna (oavsett när de lades till)
     const { data: newDiscsRows, error: newDiscsError } = await supabase
       .from("discs")
       .select("id, name, bild, brand, disc_type")
       .order("created_at", { ascending: false })
-      .limit(5);
+      .limit(3);
 
     if (newDiscsError) {
       console.error("[dashboard-summary] newDiscs error", newDiscsError);
