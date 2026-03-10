@@ -206,13 +206,16 @@ export default function DashboardContent({ userName, userCity = null }: { userNa
           </div>
         )}
       </div>
-      <div className="p-4 pt-6 sm:pt-4 space-y-6">
-        <Map
-          userName={userName}
-          initialCourses={data.mapCourses}
-          onSelectionChange={setSelectedMapCourseId}
-          fromDashboard
-        />
+      <div className="p-4 pt-0 pb-4 space-y-6">
+        {/* Kartan går kant-till-kant på mobil och desktop (-mx-4 tar bort sidpadding) */}
+        <div className="-mx-4">
+          <Map
+            userName={userName}
+            initialCourses={data.mapCourses}
+            onSelectionChange={setSelectedMapCourseId}
+            fromDashboard
+          />
+        </div>
         <DashboardFeeds initialData={initialData} />
       </div>
     </div>

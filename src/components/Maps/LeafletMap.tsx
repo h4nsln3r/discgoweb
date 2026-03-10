@@ -141,6 +141,8 @@ type Props = {
   centerOffsetPxY?: number;
   /** Om true, centrera och zooma kartan så att alla banor visas. */
   fitToCourses?: boolean;
+  /** På mobil: kräv en tryckning på kartan innan pan/zoom – så att sidan kan skrolla tills användaren aktivt väljer kartan. */
+  isMobile?: boolean;
 };
 
 export default function LeafletMap({
@@ -151,9 +153,12 @@ export default function LeafletMap({
   centerOffsetPx,
   centerOffsetPxY,
   fitToCourses,
+  isMobile = false,
 }: Props) {
   const [mounted, setMounted] = useState(false);
   const [defaultZoom, setDefaultZoom] = useState(6);
+  /** På mobil: kartan fångar inte touch förrän användaren tryckt en gång (så sidan kan skrolla). */
+  const [touchActivated, setTouchActivated] = useState(false);
   useEffect(() => {
     setMounted(true);
     const tablet = window.matchMedia("(min-width: 768px) and (max-width: 1024px)");
@@ -184,15 +189,19 @@ export default function LeafletMap({
     );
   }
 
+  const mapInteractive = !isMobile || touchActivated;
+
   return (
-    <MapContainer
-      key="dashboard-map"
-      center={defaultCenter}
-      zoom={defaultZoom}
-      scrollWheelZoom={true}
-      className="w-full z-0 rounded-lg shadow"
-      style={{ height }}
-    >
+    <div className="relative w-full" style={{ height }}>
+      <MapContainer
+        key="dashboard-map"
+        center={defaultCenter}
+        zoom={defaultZoom}
+        scrollWheelZoom={mapInteractive}
+        dragging={mapInteractive}
+        className="w-full h-full z-0 rounded-lg shadow"
+        style={{ height }}
+      >
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a>'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -247,6 +256,20 @@ export default function LeafletMap({
             </Marker>
           );
         })}
-    </MapContainer>
+      </MapContainer>
+      {isMobile && !touchActivated && (
+        <button
+          type="button"
+          onClick={() => setTouchActivated(true)}
+          className="absolute inset-0 z-[1000] w-full h-full min-h-full bg-stone-900/70 backdrop-blur-[2px] rounded-lg text-stone-200 text-sm font-medium touch-manipulation"
+          style={{ touchAction: "pan-y" }}
+          aria-label="Tryck för att använda kartan"
+        >
+          <span className="absolute left-1/2 top-[42%] -translate-x-1/2 -translate-y-1/2 whitespace-nowrap">
+            Tryck för att använda kartan
+          </span>
+        </button>
+      )}
+    </div>
   );
 }

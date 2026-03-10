@@ -71,9 +71,9 @@ export default function Map({ userName, initialCourses, onSelectionChange, fromD
 
   return (
     <>
-      {/* Kartan – full storlek. På desktop ligger banpanelen ovanpå till vänster (overlay). */}
+      {/* Kartan – full storlek. På dashboard kant-till-kant utan rundade hörn. */}
       <div
-        className="relative w-full rounded-xl overflow-hidden border border-retro-border bg-retro-card"
+        className={`relative w-full overflow-hidden border border-retro-border bg-retro-card ${fromDashboard ? "rounded-none" : "rounded-xl"}`}
         style={{ height: mapHeight }}
       >
         {/* Desktop: overlay till vänster – antingen banlista (sök + lista) eller vald banpanel */}
@@ -170,6 +170,7 @@ export default function Map({ userName, initialCourses, onSelectionChange, fromD
             selectedCourseId={selectedId}
             centerOffsetPx={isMobile ? undefined : 180}
             fitToCourses={fromDashboard === true}
+            isMobile={isMobile}
           />
         </div>
       </div>
@@ -201,6 +202,7 @@ export default function Map({ userName, initialCourses, onSelectionChange, fromD
                     courses={[selectedCourse]}
                     selectedCourseId={selectedCourse.id}
                     height="280px"
+                    isMobile
                   />
                 </div>
               )}
