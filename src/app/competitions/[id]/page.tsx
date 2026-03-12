@@ -1,15 +1,15 @@
-import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
-import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
-import { Database } from "@/types/supabase";
 import { getCurrentUserWithAdmin } from "@/lib/auth-server";
+import { createServerSupabaseClient } from "@/lib/supabase-server";
 import Link from "next/link";
-import CompetitionCoursesMap from "@/components/Maps/CompetitionCoursesMap";
+import { CalendarDaysIcon } from "@heroicons/react/24/outline";
 import { SetTopbarActions } from "@/components/Topbar/TopbarActionsContext";
+import CompetitionCoursesMapClient from "@/components/Competitions/CompetitionCoursesMapClient";
 import JoinToCompetitionButton from "@/components/Competitions/JoinToCompetitionButton";
 import CompetitionParticipantsSection from "@/components/Competitions/CompetitionParticipantsSection";
 import ScrollToDeltagareOnJoin from "@/components/Competitions/ScrollToDeltagareOnJoin";
 import DeleteCompetitionButton from "@/components/Competitions/DeleteCompetitionButton";
+import CompetitionBanorResultatSection from "@/components/Competitions/CompetitionBanorResultatSection";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -35,12 +35,9 @@ export default async function CompetitionDetailPage({ params, searchParams }: Pa
   const resolvedSearchParams = searchParams ? await searchParams : {};
   const justJoined = resolvedSearchParams?.joined === "1";
 
-  const cookieStore = await cookies();
-  const supabase = createServerComponentClient<Database>({
-    cookies: () => cookieStore,
-  });
+  const supabase = await createServerSupabaseClient();
 
-  const { data: competition, error } = await supabase
+  const { data: rawCompetition, error } = await supabase
     .from("competitions")
     .select(
       `
@@ -58,7 +55,9 @@ export default async function CompetitionDetailPage({ params, searchParams }: Pa
     `
     )
     .eq("id", id as string)
-    .single<CompetitionWithCourses>();
+    .single();
+
+  const competition = rawCompetition as CompetitionWithCourses | null;
 
   if (!competition || error) {
     console.error("[FETCH COMPETITION ERROR]", error);
@@ -158,7 +157,7 @@ export default async function CompetitionDetailPage({ params, searchParams }: Pa
   );
 
   return (
-    <div>
+    <div className="pt-2 md:pt-7">
       <SetTopbarActions
         backHref="/competitions"
         editHref={isCreator ? `/competitions/${id}/edit` : null}
@@ -178,11 +177,11 @@ export default async function CompetitionDetailPage({ params, searchParams }: Pa
             className="absolute bottom-0 left-0 right-0 pt-16 pb-4 px-4 md:px-6 bg-gradient-to-t from-black/80 via-black/40 to-transparent"
             aria-hidden
           >
-            <h1 className="font-bebas text-7xl sm:text-8xl md:text-[10rem] lg:text-[14rem] xl:text-[18rem] tracking-wide uppercase text-white drop-shadow-lg max-w-5xl leading-none">
+            <h1 className="font-bebas text-7xl sm:text-8xl md:text-[10rem] lg:text-[14rem] xl:text-[18rem] tracking-wide uppercase text-white drop-shadow-lg max-w-5xl leading-none md:mt-6">
               {competition.title}
             </h1>
             {competition.start_date && competition.end_date && (
-              <p className="mt-5 md:mt-8 text-white/95 text-lg md:text-xl font-medium drop-shadow-md uppercase tracking-wide">
+              <p className="mt-2 md:mt-1 md:mb-6 text-white/95 text-lg md:text-xl font-medium drop-shadow-md uppercase tracking-wide">
                 {formatDateWithWeekday(competition.start_date)} – {formatDateWithWeekday(competition.end_date)}
               </p>
             )}
@@ -239,7 +238,7 @@ export default async function CompetitionDetailPage({ params, searchParams }: Pa
           />
         </aside>
         <main className="min-w-0 space-y-6 md:pl-4 md:pr-6">
-      <CompetitionCoursesMap
+      <CompetitionCoursesMapClient
         competitionId={id}
         courses={competition.competition_courses
           .map((e) => e.courses)
@@ -254,81 +253,23 @@ export default async function CompetitionDetailPage({ params, searchParams }: Pa
           />
         )}
       </div>
-
-      <div>
-        <h2 className="text-xl font-semibold mb-3 text-stone-100">🏞️ Banor och resultat</h2>
-        <div className="space-y-6">
-          {competition.competition_courses.map((entry) => {
-            const courseScores = scoresByCourse[entry.course_id] ?? [];
-            const sorted = [...courseScores].sort(
-              (a, b) => (a.score ?? 0) - (b.score ?? 0)
-            );
-            return (
-              <div
-                key={entry.course_id}
-                className="rounded-xl border border-retro-border bg-retro-surface overflow-hidden"
-              >
-                <div className="px-4 py-3 border-b border-retro-border bg-retro-card">
-                  <Link
-                    href={`/courses/${entry.course_id}?from=competition&competitionId=${id}`}
-                    className="inline-block text-lg font-semibold text-retro-accent transition-all duration-200 origin-left hover:scale-105 hover:text-amber-400"
-                  >
-                    {entry.courses?.name ?? "Okänd bana"}
-                  </Link>
-                </div>
-                <div className="p-4">
-                  {sorted.length === 0 ? (
-                    <p className="text-stone-400 text-sm">Inga resultat än.</p>
-                  ) : (
-                    <table className="w-full text-left text-sm">
-                      <thead>
-                        <tr className="text-stone-400 border-b border-retro-border">
-                          <th className="pb-2 font-medium">#</th>
-                          <th className="pb-2 font-medium">Spelare</th>
-                          <th className="pb-2 font-medium">Kast</th>
-                          <th className="pb-2 font-medium">Poäng</th>
-                          <th className="pb-2 font-medium">Datum</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {sorted.map((score, idx) => (
-                          <tr
-                            key={score.id}
-                            className="border-b border-retro-border/50 last:border-0"
-                          >
-                            <td className="py-2 text-stone-500">{idx + 1}</td>
-                            <td className="py-2 text-stone-100">
-                              {score.user_id ? (
-                                <Link href={`/profile/${score.user_id}`} className="text-retro-accent hover:underline">
-                                  {score.profiles?.alias ?? "—"}
-                                </Link>
-                              ) : (
-                                (score.profiles?.alias ?? "—")
-                              )}
-                            </td>
-                            <td className="py-2 text-stone-200">
-                              {score.throws ?? score.score ?? "—"}
-                            </td>
-                            <td className="py-2 font-semibold text-stone-100">
-                              {score.score}
-                            </td>
-                            <td className="py-2 text-stone-400">
-                              {score.date_played
-                                ? formatDate(score.date_played)
-                                : formatDate(score.created_at)}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        </main>
       </div>
 
+      {/* Banor och resultat – egen container, full bredd */}
+      <section className="w-full px-4 py-8 md:px-6 md:py-10">
+        <CompetitionBanorResultatSection
+          competitionId={id}
+          entries={competition.competition_courses.map((entry) => ({
+            course_id: entry.course_id,
+            courseName: entry.courses?.name ?? "Okänd bana",
+            main_image_url: entry.courses?.main_image_url ?? null,
+          }))}
+          scoresByCourse={scoresByCourse}
+        />
+      </section>
+
+      <div className="w-full px-4 md:px-6 pb-8">
       {totalRows.length > 0 && (
         <div className="rounded-xl border border-retro-border bg-retro-surface overflow-hidden">
           <h2 className="text-xl font-semibold px-4 py-3 border-b border-retro-border bg-retro-card text-stone-100">
@@ -387,20 +328,10 @@ export default async function CompetitionDetailPage({ params, searchParams }: Pa
           />
         )}
       </div>
-        </main>
       </div>
       </div>
     </div>
   );
-}
-
-function formatDate(date: string | null) {
-  if (!date) return "";
-  return new Intl.DateTimeFormat("sv-SE", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  }).format(new Date(date));
 }
 
 function formatDateWithWeekday(date: string | null) {
@@ -449,14 +380,18 @@ function CompetitionDateCard({ startDate, endDate }: { startDate: string; endDat
   const days = getDatesInRange(startDate, endDate);
   const monthLabel = new Intl.DateTimeFormat("sv-SE", { month: "long" }).format(start);
   return (
-    <div className="rounded-xl border border-retro-border bg-retro-surface overflow-hidden">
-      <div className="px-4 py-3 border-b border-retro-border bg-retro-card flex flex-wrap items-center gap-x-4 gap-y-1">
-        <span className="font-semibold text-stone-100">🗓️ Datum</span>
-        <span className="text-stone-400 text-sm">{weekLabel}</span>
-        <span className="text-stone-400 text-sm">{monthLabel} {year}</span>
-      </div>
-      <div className="p-4">
-        <div className="flex flex-wrap gap-2">
+    <div>
+      <h2 className="font-bebas text-xl md:text-2xl tracking-wide uppercase text-stone-100 leading-none mb-0 pb-0 flex items-center gap-2">
+        <CalendarDaysIcon className="w-5 h-5 text-stone-500 shrink-0" aria-hidden />
+        Datum
+      </h2>
+      <div className="rounded-xl border border-retro-border bg-retro-surface overflow-hidden -mt-px">
+        <div className="p-4">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-4">
+            <span className="text-stone-400 text-sm">{weekLabel}</span>
+            <span className="text-stone-400 text-sm">{monthLabel} {year}</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
           {days.map(({ date, day, shortWeekday }) => (
             <div
               key={date.toISOString()}
@@ -474,6 +409,7 @@ function CompetitionDateCard({ startDate, endDate }: { startDate: string; endDat
         <p className="mt-3 text-sm text-stone-400">
           {formatDateWithWeekday(startDate)} – {formatDateWithWeekday(endDate)}
         </p>
+        </div>
       </div>
     </div>
   );

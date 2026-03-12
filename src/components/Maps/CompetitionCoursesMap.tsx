@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
+import { MapIcon } from "@heroicons/react/24/outline";
 import CoursePreviewPanel from "./CoursePreviewPanel";
 import type { Course } from "../Lists/CourseList";
 
@@ -52,11 +53,12 @@ export default function CompetitionCoursesMap({ courses, competitionId }: Props)
 
   return (
     <>
-      <div className="rounded-xl border border-retro-border overflow-hidden">
-        <h2 className="text-xl font-semibold px-4 py-3 border-b border-retro-border bg-retro-card text-stone-100">
-          🗺️ Banor i tävlingen
-        </h2>
-        <div className="px-4 py-3 flex flex-wrap gap-x-4 gap-y-1 border-b border-retro-border bg-retro-card">
+      <h2 className="font-bebas text-xl md:text-2xl tracking-wide uppercase text-stone-100 leading-none mb-0 pb-0 flex items-center gap-2">
+        <MapIcon className="w-5 h-5 text-stone-500 shrink-0" aria-hidden />
+        Banor i tävlingen
+      </h2>
+      <div className="rounded-xl border border-retro-border overflow-hidden -mt-1">
+        <div className="px-4 py-3 flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-retro-border bg-retro-card">
           {validCourses.map((course) => (
             <button
               key={course.id}

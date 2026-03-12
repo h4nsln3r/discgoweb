@@ -96,9 +96,17 @@ export default function AddResultPage() {
           competitionTitle={competitionData?.title ?? null}
           competitionCourses={competitionData?.courses ?? null}
           preloadedCourses={coursesForForm ?? undefined}
-          onClose={() => router.push("/results")}
+          onClose={() =>
+            competitionIdFromUrl
+              ? router.push(`/competitions/${competitionIdFromUrl}`)
+              : router.push("/results")
+          }
           onSuccess={() => {
-            router.push("/results");
+            if (competitionIdFromUrl) {
+              router.push(`/competitions/${competitionIdFromUrl}`);
+            } else {
+              router.push("/results");
+            }
             router.refresh();
           }}
         />

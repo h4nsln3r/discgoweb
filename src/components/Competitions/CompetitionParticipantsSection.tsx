@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { UserGroupIcon } from "@heroicons/react/24/outline";
 import LeaveCompetitionButton from "./LeaveCompetitionButton";
 
 export type ParticipantRow = {
@@ -28,23 +29,29 @@ export default function CompetitionParticipantsSection({
 }: Props) {
   if (participants.length === 0) {
     return (
-      <div id={sectionId} className="scroll-mt-24 rounded-xl border border-retro-border bg-retro-surface overflow-hidden">
-        <h2 className="text-xl font-semibold px-4 py-3 border-b border-retro-border bg-retro-card text-stone-100">
-          👥 Deltagare
+      <div id={sectionId} className="scroll-mt-24">
+        <h2 className="font-bebas text-xl md:text-2xl tracking-wide uppercase text-stone-100 leading-none mb-0 pb-0 flex items-center gap-2">
+          <UserGroupIcon className="w-5 h-5 text-stone-500 shrink-0" aria-hidden />
+          Deltagare
         </h2>
-        <div className="p-4">
-          <p className="text-stone-400 text-sm">Inga spelare har gått med än.</p>
+        <div className="rounded-xl border border-retro-border bg-retro-surface overflow-hidden -mt-px">
+          <div className="p-4">
+            <p className="text-stone-400 text-sm">Inga spelare har gått med än.</p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div id={sectionId} className="scroll-mt-24 rounded-xl border border-retro-border bg-retro-surface overflow-hidden">
-      <h2 className="text-xl font-semibold px-4 py-3 border-b border-retro-border bg-retro-card text-stone-100">
-        👥 Deltagare ({participants.length})
+    <div id={sectionId} className="scroll-mt-24">
+      <h2 className="font-bebas text-xl md:text-2xl tracking-wide uppercase text-stone-100 leading-none mb-0 pb-0 flex items-center gap-2">
+        <UserGroupIcon className="w-5 h-5 text-stone-500 shrink-0" aria-hidden />
+        Deltagare ({participants.length})
       </h2>
-      <ul className="p-4 space-y-2">
+      <div className="rounded-xl border border-retro-border bg-retro-surface overflow-hidden -mt-px">
+        <div className="p-4">
+        <ul className="space-y-2">
         {participants.map((p) => {
           const isJustJoined = Boolean(justJoined && currentUserId && p.user_id === currentUserId);
           const isCurrentUser = Boolean(currentUserId && p.user_id === currentUserId);
@@ -86,7 +93,9 @@ export default function CompetitionParticipantsSection({
           </li>
           );
         })}
-      </ul>
+        </ul>
+        </div>
+      </div>
     </div>
   );
 }
