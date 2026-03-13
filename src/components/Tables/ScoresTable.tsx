@@ -2,7 +2,7 @@
 import { useMemo, useState, useEffect, Fragment } from "react";
 import Link from "next/link";
 import { TrophyIcon, ChevronDownIcon, ChevronUpIcon, UserIcon, CalendarDaysIcon, HashtagIcon } from "@heroicons/react/24/outline";
-import { getHoleThrowBg, getHoleThrowStyle } from "@/lib/holeColors";
+import HoleByHoleList from "@/components/HoleByHoleList";
 import { formatScorePar } from "@/lib/scoreDisplay";
 
 type ScoreRow = {
@@ -140,24 +140,12 @@ function ScoresTable({
               <p className="text-sm text-stone-400">Ingen hålfördelning sparad.</p>
             ) : (
               <div className="flex items-center justify-between gap-3 flex-nowrap">
-                <div className="flex flex-wrap gap-2 min-w-0 flex-1">
-                  {recordHoles
-                    .sort((a, b) => a.hole_number - b.hole_number)
-                    .map((h) => {
-                      const par = h.par ?? parByHole?.[h.hole_number];
-                      const bg = getHoleThrowBg(h.throws, par);
-                      const style = getHoleThrowStyle(h.throws, par);
-                      return (
-                        <span
-                          key={h.hole_number}
-                          className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-sm text-stone-200 ${bg || "bg-retro-card"}`}
-                          style={Object.keys(style).length > 0 ? style : undefined}
-                        >
-                          <span className="text-retro-muted">H{h.hole_number}</span>
-                          <span className="font-medium">{h.throws}</span>
-                        </span>
-                      );
-                    })}
+                <div className="min-w-0 flex-1">
+                  <HoleByHoleList
+                    holes={recordHoles}
+                    parByHole={parByHole}
+                    badgeClassName="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-sm text-stone-200 bg-retro-card"
+                  />
                 </div>
                 <Link
                   href={`/results/${record.id}`}
@@ -282,24 +270,11 @@ function ScoresTable({
                           <p className="text-sm text-stone-400">Ingen hålfördelning sparad.</p>
                         ) : (
                           <div className="flex items-center justify-between gap-3 flex-nowrap">
-                            <div className="flex flex-wrap gap-2 min-w-0 flex-1">
-                              {[...rowHoles]
-                                .sort((a, b) => a.hole_number - b.hole_number)
-                                .map((h) => {
-                                  const par = (h as HoleRow).par ?? parByHole?.[h.hole_number];
-                                  const bg = getHoleThrowBg(h.throws, par);
-                                  const style = getHoleThrowStyle(h.throws, par);
-                                  return (
-                                    <span
-                                      key={h.hole_number}
-                                      className={`inline-flex items-center gap-1 rounded-lg border border-retro-border px-2.5 py-1 text-sm text-stone-200 ${bg || "bg-retro-surface"}`}
-                                      style={Object.keys(style).length > 0 ? style : undefined}
-                                    >
-                                      <span className="text-retro-muted">H{h.hole_number}</span>
-                                      <span className="font-medium">{h.throws}</span>
-                                    </span>
-                                  );
-                                })}
+                            <div className="min-w-0 flex-1">
+                              <HoleByHoleList
+                                holes={rowHoles}
+                                parByHole={parByHole}
+                              />
                             </div>
                             <Link
                               href={`/results/${scoreId}`}

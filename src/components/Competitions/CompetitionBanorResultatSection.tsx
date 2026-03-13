@@ -3,7 +3,7 @@
 import { useState, useCallback, Fragment, useRef } from "react";
 import Link from "next/link";
 import { ChevronDownIcon, ChevronUpIcon, HashtagIcon, TrophyIcon, PlusCircleIcon } from "@heroicons/react/24/outline";
-import { getHoleThrowBg, getHoleThrowStyle } from "@/lib/holeColors";
+import HoleByHoleList from "@/components/HoleByHoleList";
 
 export type ScoreRow = {
   id: string;
@@ -219,38 +219,7 @@ export default function CompetitionBanorResultatSection({
                                       Ingen hålfördelning sparad för detta resultat.
                                     </p>
                                   ) : (
-                                    <div className="flex flex-wrap gap-2">
-                                      {[...rowHoles]
-                                        .sort((a, b) => a.hole_number - b.hole_number)
-                                        .map((h) => {
-                                          const bg = getHoleThrowBg(
-                                            h.throws,
-                                            h.par
-                                          );
-                                          const style = getHoleThrowStyle(
-                                            h.throws,
-                                            h.par
-                                          );
-                                          return (
-                                            <span
-                                              key={h.hole_number}
-                                              className={`inline-flex items-center gap-1 rounded-lg border border-retro-border px-2.5 py-1 text-sm text-stone-200 ${bg || "bg-retro-surface"}`}
-                                              style={
-                                                Object.keys(style).length > 0
-                                                  ? style
-                                                  : undefined
-                                              }
-                                            >
-                                              <span className="text-retro-muted">
-                                                H{h.hole_number}
-                                              </span>
-                                              <span className="font-medium">
-                                                {h.throws}
-                                              </span>
-                                            </span>
-                                          );
-                                        })}
-                                    </div>
+                                    <HoleByHoleList holes={rowHoles} />
                                   )}
                                 </td>
                               </tr>

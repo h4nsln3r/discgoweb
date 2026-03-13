@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { MapContainer, TileLayer, CircleMarker, Marker, Popup, useMap } from "react-leaflet";
-import type { Course } from "../CourseList";
+import type { Course } from "../Lists/CourseList";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -40,9 +40,15 @@ const activeIcon = new L.Icon({
 
 const ZOOM_SELECTED = 14;
 const ZOOM_DEFAULT = 6;
+const FALLBACK_CENTER: [number, number] = [58.2, 15.0];
 
 function isValidLatLng(lat: number, lng: number): boolean {
   return Number.isFinite(lat) && Number.isFinite(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+}
+
+function toSafeCenter(lat: number, lng: number): [number, number] {
+  if (isValidLatLng(lat, lng)) return [lat, lng];
+  return FALLBACK_CENTER;
 }
 
 function MapViewController({
@@ -69,23 +75,54 @@ function MapViewController({
     if (selectedCourseId) {
       const course = courses.find((c) => c.id === selectedCourseId);
       if (!course) return;
-      const lat = Number(course.latitude);
-      const lng = Number(course.longitude);
-      if (!isValidLatLng(lat, lng)) return;
-      const center: [number, number] = [lat, lng];
-      if (!isValidLatLng(center[0], center[1])) return;
-      lastCenterRef.current = center;
+      const c = course as { latitude?: unknown; longitude?: unknown; lat?: unknown; lng?: unknown };
+      const rawLat = c.latitude ?? c.lat;
+      const rawLng = c.longitude ?? c.lng;
+      const lat = typeof rawLat === "number" && Number.isFinite(rawLat) ? rawLat : Number(rawLat);
+      const lng = typeof rawLng === "number" && Number.isFinite(rawLng) ? rawLng : Number(rawLng);
+      const safeCenter = toSafeCenter(lat, lng);
+      const useFallback = safeCenter[0] === FALLBACK_CENTER[0] && safeCenter[1] === FALLBACK_CENTER[1];
+      const centerLat = Number.isFinite(safeCenter[0]) ? safeCenter[0] : 58.2;
+      const centerLng = Number.isFinite(safeCenter[1]) ? safeCenter[1] : 15.0;
+      const centerForFly: [number, number] = [centerLat, centerLng];
+      if (!useFallback) lastCenterRef.current = centerForFly;
+      else lastCenterRef.current = null;
       const offsetX = centerOffsetPx ?? 0;
       const offsetY = centerOffsetPxY ?? 0;
-      if (offsetX !== 0 || offsetY !== 0) {
+      if ((offsetX !== 0 || offsetY !== 0) && !useFallback) {
         map.once("moveend", () => {
           map.panBy([-offsetX, offsetY], { duration: 0.25 });
         });
       }
-      map.flyTo(center, ZOOM_SELECTED, { duration: 0.6 });
+      const zoom = useFallback ? ZOOM_DEFAULT : ZOOM_SELECTED;
+      let attempts = 0;
+      const maxAttempts = 50;
+      const doFly = () => {
+        const size = map.getSize();
+        if (size.x > 0 && size.y > 0) {
+          try {
+            map.flyTo(centerForFly, zoom, { duration: 0.6 });
+          } catch {
+            map.setView(centerForFly, zoom);
+          }
+        } else if (attempts < maxAttempts) {
+          attempts += 1;
+          requestAnimationFrame(doFly);
+        } else {
+          try {
+            map.setView(centerForFly, zoom);
+          } catch {
+            // Kartan har inte giltig storlek – ignorerar
+          }
+        }
+      };
+      map.whenReady(() => {
+        requestAnimationFrame(doFly);
+      });
     } else if (!fitToCourses) {
       const target = lastCenterRef.current ?? defaultCenter;
-      const [tLat, tLng] = target;
+      const tLat = Number.isFinite(target[0]) ? target[0] : FALLBACK_CENTER[0];
+      const tLng = Number.isFinite(target[1]) ? target[1] : FALLBACK_CENTER[1];
       const offsetX = centerOffsetPx ?? 0;
       const offsetY = centerOffsetPxY ?? 0;
       if (offsetX !== 0 || offsetY !== 0) {
@@ -93,13 +130,33 @@ function MapViewController({
           map.panBy([-offsetX, offsetY], { duration: 0.25 });
         });
       }
-      if (!isValidLatLng(tLat, tLng)) {
-        lastCenterRef.current = null;
-        map.flyTo(defaultCenter, ZOOM_DEFAULT, { duration: 0.6 });
-      } else {
-        map.flyTo(target, ZOOM_DEFAULT, { duration: 0.6 });
-        lastCenterRef.current = null;
-      }
+      const fallbackLat = Number.isFinite(defaultCenter[0]) ? defaultCenter[0] : FALLBACK_CENTER[0];
+      const fallbackLng = Number.isFinite(defaultCenter[1]) ? defaultCenter[1] : FALLBACK_CENTER[1];
+      const targetCenter: [number, number] = !isValidLatLng(tLat, tLng) ? [fallbackLat, fallbackLng] : [tLat, tLng];
+      lastCenterRef.current = null;
+      let attemptsOther = 0;
+      const doFlyOther = () => {
+        const size = map.getSize();
+        if (size.x > 0 && size.y > 0) {
+          try {
+            map.flyTo(targetCenter, ZOOM_DEFAULT, { duration: 0.6 });
+          } catch {
+            map.setView(targetCenter, ZOOM_DEFAULT);
+          }
+        } else if (attemptsOther < 50) {
+          attemptsOther += 1;
+          requestAnimationFrame(doFlyOther);
+        } else {
+          try {
+            map.setView(targetCenter, ZOOM_DEFAULT);
+          } catch {
+            // Kartan har inte giltig storlek
+          }
+        }
+      };
+      map.whenReady(() => {
+        requestAnimationFrame(doFlyOther);
+      });
     }
   }, [selectedCourseId, courses, defaultCenter, map, centerOffsetPx, centerOffsetPxY, fitToCourses]);
 

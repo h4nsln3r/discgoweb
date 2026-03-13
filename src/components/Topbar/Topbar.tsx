@@ -162,32 +162,23 @@ export default function Topbar({
 
         {/* Mitten: logga/titel, vertikalt centrerad */}
         <div className="flex items-center justify-center min-w-0 flex-1 md:absolute md:left-1/2 md:-translate-x-1/2 md:flex-none">
-          {topbarActions.pageTitle ? (
-            <>
-              {/* Mobil: bara sidtitel, ingen logga */}
-              <span className="md:hidden font-bebas text-lg tracking-wide uppercase text-stone-100 truncate max-w-[180px] text-center">
-                {topbarActions.pageTitle}
-              </span>
-              {/* Desktop: logga + titel bredvid */}
-              <div className="hidden md:flex items-center gap-2.5">
-                <Link
-                  href="/dashboard"
-                  className="flex items-center shrink-0 rounded-lg hover:opacity-90 transition"
-                  aria-label="Till startsida"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src="/logo/logo.png"
-                    alt=""
-                    className="h-11 w-auto max-w-[160px] object-contain"
-                  />
-                </Link>
-                <span className="font-bebas text-xl tracking-wide uppercase text-stone-100 whitespace-nowrap truncate max-w-[240px]">
-                  {topbarActions.pageTitle}
-                </span>
-              </div>
-            </>
-          ) : (
+          {/* Titeln sätts i useEffect på klienten – visa först efter mount för att undvika hydration-mismatch */}
+          <span className="md:hidden font-bebas text-lg tracking-wide uppercase text-stone-100 truncate max-w-[180px] text-center" suppressHydrationWarning>
+            {topbarActions.pageTitle ?? ""}
+          </span>
+          <Link
+            href="/dashboard"
+            className={`flex items-center shrink-0 rounded-lg hover:opacity-90 transition md:hidden ${topbarActions.pageTitle ? "hidden" : ""}`}
+            aria-label="Till startsida"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo/logo.png"
+              alt=""
+              className="h-8 w-auto max-w-[90px] object-contain"
+            />
+          </Link>
+          <div className="hidden md:flex items-center gap-2.5">
             <Link
               href="/dashboard"
               className="flex items-center shrink-0 rounded-lg hover:opacity-90 transition"
@@ -197,10 +188,15 @@ export default function Topbar({
               <img
                 src="/logo/logo.png"
                 alt=""
-                className="h-8 w-auto max-w-[90px] md:h-11 md:max-w-[160px] object-contain"
+                className="h-11 w-auto max-w-[160px] object-contain"
               />
             </Link>
-          )}
+            {topbarActions.pageTitle && (
+              <span className="font-bebas text-xl tracking-wide uppercase text-stone-100 whitespace-nowrap truncate max-w-[240px]">
+                {topbarActions.pageTitle}
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Höger: extra (t.ex. sortering) + primär knapp + redigera + profil */}

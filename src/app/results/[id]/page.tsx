@@ -15,7 +15,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import type { Database } from "@/types/supabase";
-import { getHoleThrowBg, getHoleThrowStyle } from "@/lib/holeColors";
+import HoleByHoleList from "@/components/HoleByHoleList";
 import { formatScorePar } from "@/lib/scoreDisplay";
 import { SetTopbarActions } from "@/components/Topbar/TopbarActionsContext";
 
@@ -375,24 +375,10 @@ export default function ScoreDetailPage() {
         ) : holes.length === 0 ? (
           <p className="text-stone-400 text-sm">Ingen hålfördelning sparad för detta resultat.</p>
         ) : (
-          <div className="flex flex-wrap gap-2">
-            {[...holes]
-              .sort((a, b) => a.hole_number - b.hole_number)
-              .map((h) => {
-                const bg = getHoleThrowBg(h.throws, h.par);
-                const style = getHoleThrowStyle(h.throws, h.par);
-                return (
-                  <span
-                    key={h.hole_number}
-                    className={`inline-flex items-center gap-1.5 rounded-lg border border-retro-border px-3 py-1.5 text-sm text-stone-200 ${bg || "bg-retro-card"}`}
-                    style={Object.keys(style).length > 0 ? style : undefined}
-                  >
-                    <span className="text-retro-muted font-medium">H{h.hole_number}</span>
-                    <span className="font-semibold text-stone-100">{h.throws}</span>
-                  </span>
-                );
-              })}
-          </div>
+          <HoleByHoleList
+            holes={holes}
+            badgeClassName="inline-flex items-center gap-1.5 rounded-lg border border-retro-border px-3 py-1.5 text-sm text-stone-200 bg-retro-card"
+          />
         )}
       </div>
 
