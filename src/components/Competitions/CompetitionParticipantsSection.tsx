@@ -47,7 +47,7 @@ export default function CompetitionParticipantsSection({
     <div id={sectionId} className="scroll-mt-24">
       <h2 className="font-bebas text-xl md:text-2xl tracking-wide uppercase text-stone-100 leading-none mb-0 pb-0 flex items-center gap-2">
         <UserGroupIcon className="w-5 h-5 text-stone-500 shrink-0" aria-hidden />
-        Deltagare ({participants.length})
+        Deltagare: {participants.length}
       </h2>
       <div className="rounded-xl border border-retro-border bg-retro-surface overflow-hidden -mt-px">
         <div className="p-4">

@@ -69,3 +69,27 @@ export function throwsByHole(holes: HoleDatum[]): { hole: number; throws: number
     .sort((a, b) => a.hole_number - b.hole_number)
     .map((h) => ({ hole: h.hole_number, throws: h.throws }));
 }
+
+/**
+ * Hål där spelaren gjorde hole in one (1 slag).
+ */
+export function holeInOnes(holes: HoleDatum[]): { hole_number: number; par?: number }[] {
+  return holes.filter((h) => h.throws === 1).map((h) => ({ hole_number: h.hole_number, par: h.par }));
+}
+
+/**
+ * Hål där spelaren gjorde eagle (2 under par, t.ex. 2 på par 4).
+ * Exkluderar hole in one (1 slag) – det räknas bara som HIO.
+ */
+export function eagles(holes: HoleDatum[]): { hole_number: number; par: number; throws: number }[] {
+  return holes.filter(
+    (h) => h.par != null && h.throws === h.par - 2 && h.throws > 1
+  ) as { hole_number: number; par: number; throws: number }[];
+}
+
+/**
+ * Antal birdies (1 under par).
+ */
+export function birdieCount(holes: HoleDatum[]): number {
+  return holes.filter((h) => h.par != null && h.throws === h.par - 1).length;
+}
