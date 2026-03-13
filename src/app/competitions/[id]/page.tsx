@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { getCurrentUserWithAdmin } from "@/lib/auth-server";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import Link from "next/link";
-import { CalendarDaysIcon } from "@heroicons/react/24/outline";
+import { CalendarDaysIcon, TrophyIcon } from "@heroicons/react/24/outline";
 import { SetTopbarActions } from "@/components/Topbar/TopbarActionsContext";
 import CompetitionCoursesMapClient from "@/components/Competitions/CompetitionCoursesMapClient";
 import JoinToCompetitionButton from "@/components/Competitions/JoinToCompetitionButton";
@@ -296,10 +296,12 @@ export default async function CompetitionDetailPage({ params, searchParams }: Pa
 
       <div className="w-full px-4 md:px-6 pb-8">
       {totalRows.length > 0 && (
-        <div className="rounded-xl border border-retro-border bg-retro-surface overflow-hidden">
-          <h2 className="text-xl font-semibold px-4 py-3 border-b border-retro-border bg-retro-card text-stone-100">
-            📊 Totalt resultat (hela tävlingen)
+        <div>
+          <h2 className="font-bebas text-xl md:text-2xl tracking-wide uppercase text-stone-100 leading-none mb-0 pb-0 flex items-center gap-2">
+            <TrophyIcon className="w-5 h-5 text-stone-500 shrink-0" aria-hidden />
+            Totalt resultat (hela tävlingen)
           </h2>
+          <div className="rounded-xl border border-retro-border bg-retro-surface overflow-hidden -mt-px">
           <div className="p-4">
             <table className="w-full text-left text-sm">
               <thead>
@@ -328,6 +330,7 @@ export default async function CompetitionDetailPage({ params, searchParams }: Pa
                 ))}
               </tbody>
             </table>
+          </div>
           </div>
         </div>
       )}

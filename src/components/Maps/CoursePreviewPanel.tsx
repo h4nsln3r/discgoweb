@@ -273,11 +273,11 @@ export default function CoursePreviewPanel({ course, onClose, embedded, fromDash
               </div>
             )}
 
-            {/* Actions – döljs i compact-läge; endast Lägg till resultat */}
-            {!compact && (
+            {/* Actions – Lägg till resultat (visas alltid vid tävling, annars bara när inte compact) */}
+            {(!compact || competitionId) && (
               <div className="mt-4">
                 <Link
-                  href={`/results/new?course_id=${course.id}`}
+                  href={competitionId ? `/results/new?competition_id=${competitionId}&course_id=${course.id}` : `/results/new?course_id=${course.id}`}
                   onClick={onClose}
                   className="inline-flex items-center justify-center gap-2 rounded-lg border border-retro-accent bg-retro-accent/20 px-4 py-2 text-sm font-medium text-retro-accent hover:bg-retro-accent/30 transition"
                 >

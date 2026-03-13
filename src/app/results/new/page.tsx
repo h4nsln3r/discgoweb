@@ -20,8 +20,11 @@ export default function AddResultPage() {
   const [competitionLoading, setCompetitionLoading] = useState(!!competitionIdFromUrl);
 
   useEffect(() => {
+    const backHref = competitionIdFromUrl
+      ? `/competitions/${competitionIdFromUrl}`
+      : "/results";
     setTopbarActions({
-      backHref: "/results",
+      backHref,
       editHref: null,
       editLabel: null,
       pageTitle: "Lägg till resultat",
@@ -32,7 +35,7 @@ export default function AddResultPage() {
         pageTitle: null,
       });
     };
-  }, [setTopbarActions]);
+  }, [setTopbarActions, competitionIdFromUrl]);
 
   useEffect(() => {
     if (!courseIdFromUrl) {

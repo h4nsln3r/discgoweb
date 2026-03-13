@@ -52,12 +52,12 @@ export default function CompetitionCoursesMap({ courses, competitionId }: Props)
   if (validCourses.length === 0) return null;
 
   return (
-    <>
+    <div>
       <h2 className="font-bebas text-xl md:text-2xl tracking-wide uppercase text-stone-100 leading-none mb-0 pb-0 flex items-center gap-2">
         <MapIcon className="w-5 h-5 text-stone-500 shrink-0" aria-hidden />
         Banor i tävlingen
       </h2>
-      <div className="rounded-xl border border-retro-border overflow-hidden -mt-1">
+      <div className="rounded-xl border border-retro-border overflow-hidden -mt-px">
         <div className="px-4 py-3 flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-retro-border bg-retro-card">
           {validCourses.map((course) => (
             <button
@@ -115,6 +115,6 @@ export default function CompetitionCoursesMap({ courses, competitionId }: Props)
           />
         </div>
       </div>
-    </>
+    </div>
   );
 }

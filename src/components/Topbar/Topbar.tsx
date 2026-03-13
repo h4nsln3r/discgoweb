@@ -106,6 +106,15 @@ export default function Topbar({
 
   const isProfileWelcome = (pathname === "/profile" || pathname?.startsWith("/profile")) && searchParams.get("welcome") != null;
 
+  // Deriva tillbaka-länk från pathname så server och klient renderar lika (undviker hydration-fel).
+  const showBackLink =
+    pathname != null && pathname !== "/" && pathname !== "/dashboard";
+  const backHref =
+    topbarActions.backHref ??
+    (pathname
+      ? "/" + pathname.split("/").filter(Boolean).slice(0, -1).join("/") || "/"
+      : "/");
+
   const linkClass = (href: string, highlight = false) =>
     navLinkClass(
       href,
@@ -139,9 +148,9 @@ export default function Topbar({
           {topbarActions.topbarExtraLeft != null && (
             <div className="shrink-0 -ml-0.5">{topbarActions.topbarExtraLeft}</div>
           )}
-          {topbarActions.backHref && (
+          {showBackLink && (
             <Link
-              href={topbarActions.backHref}
+              href={backHref}
               className="inline-flex items-center gap-1 p-1 md:p-1.5 rounded-lg hover:bg-retro-card text-stone-400 hover:text-stone-200 transition shrink-0"
               aria-label="Tillbaka"
             >

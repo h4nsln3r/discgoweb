@@ -2,7 +2,7 @@
 
 import { useState, useCallback, Fragment, useRef } from "react";
 import Link from "next/link";
-import { ChevronDownIcon, ChevronUpIcon, HashtagIcon } from "@heroicons/react/24/outline";
+import { ChevronDownIcon, ChevronUpIcon, HashtagIcon, TrophyIcon, PlusCircleIcon } from "@heroicons/react/24/outline";
 import { getHoleThrowBg, getHoleThrowStyle } from "@/lib/holeColors";
 
 export type ScoreRow = {
@@ -77,10 +77,11 @@ export default function CompetitionBanorResultatSection({
 
   return (
     <div>
-      <h2 className="text-xl font-semibold mb-3 text-stone-100">
-        🏞️ Banor och resultat
+      <h2 className="font-bebas text-xl md:text-2xl tracking-wide uppercase text-stone-100 leading-none mb-0 pb-0 flex items-center gap-2">
+        <TrophyIcon className="w-5 h-5 text-stone-500 shrink-0" aria-hidden />
+        Banor och resultat
       </h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 -mt-px">
         {entries.map((entry) => {
           const courseScores = scoresByCourse[entry.course_id] ?? [];
           const sorted = [...courseScores].sort(
@@ -112,12 +113,22 @@ export default function CompetitionBanorResultatSection({
                 />
               </div>
               <div className="p-4 flex flex-col flex-1">
-                <Link
-                  href={`/courses/${entry.course_id}?from=competition&competitionId=${competitionId}`}
-                  className="font-bebas text-2xl sm:text-3xl tracking-wide text-stone-100 text-retro-accent uppercase transition-colors hover:text-amber-400 mb-3 inline-block"
-                >
-                  {entry.courseName}
-                </Link>
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                  <Link
+                    href={`/courses/${entry.course_id}?from=competition&competitionId=${competitionId}`}
+                    className="font-bebas text-2xl sm:text-3xl tracking-wide text-stone-100 text-retro-accent uppercase transition-colors hover:text-amber-400"
+                  >
+                    {entry.courseName}
+                  </Link>
+                  <Link
+                    href={`/results/new?competition_id=${competitionId}&course_id=${entry.course_id}`}
+                    className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-retro-border text-stone-300 text-sm font-medium hover:bg-retro-card hover:text-stone-100 transition shrink-0"
+                    aria-label={`Lägg till resultat för ${entry.courseName}`}
+                  >
+                    <PlusCircleIcon className="w-5 h-5 shrink-0" aria-hidden />
+                    Lägg till resultat
+                  </Link>
+                </div>
               <div className="flex-1 min-w-0">
                 {sorted.length === 0 ? (
                   <p className="text-stone-400 text-sm">Inga resultat än.</p>

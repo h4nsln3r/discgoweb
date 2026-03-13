@@ -13,6 +13,7 @@ import {
   ReferenceLine,
 } from "recharts";
 import { motion } from "framer-motion";
+import { PresentationChartLineIcon } from "@heroicons/react/24/outline";
 import type {
   CompetitionScoreWithHoles,
   ScoreEntryForHoles,
@@ -208,12 +209,15 @@ export default function CompetitionRoundCharts({
 
   if (loading) {
     return (
-      <section className="rounded-xl border border-retro-border bg-retro-surface overflow-hidden">
-        <h2 className="text-xl font-semibold px-4 py-3 border-b border-retro-border bg-retro-card text-stone-100 font-bebas tracking-wide uppercase">
-          📊 Rundans utveckling
+      <section>
+        <h2 className="font-bebas text-xl md:text-2xl tracking-wide uppercase text-stone-100 leading-none mb-0 pb-0 flex items-center gap-2">
+          <PresentationChartLineIcon className="w-5 h-5 text-stone-500 shrink-0" aria-hidden />
+          Rundans utveckling
         </h2>
-        <div className="p-6 flex items-center justify-center text-stone-400 text-sm min-h-[280px]">
-          Laddar grafer…
+        <div className="rounded-xl border border-retro-border bg-retro-surface overflow-hidden -mt-px">
+          <div className="p-6 flex items-center justify-center text-stone-400 text-sm min-h-[280px]">
+            Laddar grafer…
+          </div>
         </div>
       </section>
     );
@@ -221,12 +225,15 @@ export default function CompetitionRoundCharts({
 
   if (rounds.filter((r) => r.holes.length >= 2).length === 0) {
     return (
-      <section className="rounded-xl border border-retro-border bg-retro-surface overflow-hidden">
-        <h2 className="text-xl font-semibold px-4 py-3 border-b border-retro-border bg-retro-card text-stone-100 font-bebas tracking-wide uppercase">
-          📊 Rundans utveckling
+      <section>
+        <h2 className="font-bebas text-xl md:text-2xl tracking-wide uppercase text-stone-100 leading-none mb-0 pb-0 flex items-center gap-2">
+          <PresentationChartLineIcon className="w-5 h-5 text-stone-500 shrink-0" aria-hidden />
+          Rundans utveckling
         </h2>
-        <div className="p-6 text-stone-400 text-sm min-h-[200px]">
-          Ingen hål-för-hål-data tillgänglig. Lägg till resultat med slag per hål för att se grafer.
+        <div className="rounded-xl border border-retro-border bg-retro-surface overflow-hidden -mt-px">
+          <div className="p-6 text-stone-400 text-sm min-h-[200px]">
+            Ingen hål-för-hål-data tillgänglig. Lägg till resultat med slag per hål för att se grafer.
+          </div>
         </div>
       </section>
     );
@@ -237,11 +244,12 @@ export default function CompetitionRoundCharts({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="rounded-xl border border-retro-border bg-retro-surface overflow-hidden"
     >
-      <h2 className="text-xl font-semibold px-4 py-3 border-b border-retro-border bg-retro-card text-stone-100 font-bebas tracking-wide uppercase">
-        📊 Rundans utveckling
+      <h2 className="font-bebas text-xl md:text-2xl tracking-wide uppercase text-stone-100 leading-none mb-0 pb-0 flex items-center gap-2">
+        <PresentationChartLineIcon className="w-5 h-5 text-stone-500 shrink-0" aria-hidden />
+        Rundans utveckling
       </h2>
+      <div className="rounded-xl border border-retro-border bg-retro-surface overflow-hidden -mt-px">
       <div className="p-4">
         {courses.length > 1 && (
           <div className="mb-4">
@@ -337,6 +345,7 @@ export default function CompetitionRoundCharts({
         <p className="mt-2 text-xs text-stone-500">
           Kumulativt resultat till par (hål för hål). Par = 0.
         </p>
+      </div>
       </div>
     </motion.section>
   );
