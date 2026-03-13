@@ -10,6 +10,8 @@ import CompetitionParticipantsSection from "@/components/Competitions/Competitio
 import ScrollToDeltagareOnJoin from "@/components/Competitions/ScrollToDeltagareOnJoin";
 import DeleteCompetitionButton from "@/components/Competitions/DeleteCompetitionButton";
 import CompetitionBanorResultatSection from "@/components/Competitions/CompetitionBanorResultatSection";
+import CompetitionStabilitySection from "@/components/Competitions/CompetitionStabilitySection";
+import CompetitionRoundCharts from "@/components/Competitions/CompetitionRoundCharts";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -156,6 +158,17 @@ export default async function CompetitionDetailPage({ params, searchParams }: Pa
     (a, b) => a[1].score - b[1].score
   );
 
+  const scoreEntriesForHoles = (competitionScores ?? []).map((row) => {
+    const r = row as ScoreRow;
+    return {
+      scoreId: r.id,
+      userId: r.user_id ?? "",
+      alias: r.profiles?.alias ?? null,
+      courseId: r.course_id,
+      courseName: r.courses?.name ?? "Okänd bana",
+    };
+  });
+
   return (
     <div className="pt-2 md:pt-7">
       <SetTopbarActions
@@ -266,6 +279,18 @@ export default async function CompetitionDetailPage({ params, searchParams }: Pa
             main_image_url: entry.courses?.main_image_url ?? null,
           }))}
           scoresByCourse={scoresByCourse}
+        />
+      </section>
+
+      {/* Statistik och grafer – använder samma resultat som under Banor, hämtar hål via /api/score-holes */}
+      <section className="w-full px-4 py-6 md:px-6 md:py-8 space-y-6">
+        <CompetitionStabilitySection
+          competitionId={id}
+          scoreEntries={scoreEntriesForHoles}
+        />
+        <CompetitionRoundCharts
+          competitionId={id}
+          scoreEntries={scoreEntriesForHoles}
         />
       </section>
 
