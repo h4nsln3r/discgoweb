@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import { getCurrentUserWithAdmin } from "@/lib/auth-server";
 import { createServerSupabaseClient, createSupabaseAdminClient } from "@/lib/supabase-server";
-import Link from "next/link";
 import { CalendarDaysIcon, TrophyIcon } from "@heroicons/react/24/outline";
 import AuthAwareLink from "@/components/AuthAwareLink";
 import { SetTopbarActions } from "@/components/Topbar/TopbarActionsContext";
@@ -213,7 +212,9 @@ export default async function CompetitionDetailPage({ params, searchParams }: Pa
             </h1>
             {competition.start_date && competition.end_date && (
               <p className="mt-2 md:mt-1 md:mb-3 text-white/95 text-lg md:text-xl font-medium drop-shadow-md uppercase tracking-wide">
-                {formatDateWithWeekday(competition.start_date)} – {formatDateWithWeekday(competition.end_date)}
+                {isSameDay(competition.start_date, competition.end_date)
+                  ? formatDateWithWeekday(competition.start_date)
+                  : `${formatDateWithWeekday(competition.start_date)} – ${formatDateWithWeekday(competition.end_date)}`}
               </p>
             )}
           </div>
@@ -387,6 +388,12 @@ export default async function CompetitionDetailPage({ params, searchParams }: Pa
   );
 }
 
+function isSameDay(a: string, b: string): boolean {
+  const d1 = new Date(a);
+  const d2 = new Date(b);
+  return d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate();
+}
+
 function formatDateWithWeekday(date: string | null) {
   if (!date) return "";
   return new Intl.DateTimeFormat("sv-SE", {
@@ -460,7 +467,9 @@ function CompetitionDateCard({ startDate, endDate }: { startDate: string; endDat
           ))}
         </div>
         <p className="mt-3 text-sm text-stone-400">
-          {formatDateWithWeekday(startDate)} – {formatDateWithWeekday(endDate)}
+          {isSameDay(startDate, endDate)
+            ? formatDateWithWeekday(startDate)
+            : `${formatDateWithWeekday(startDate)} – ${formatDateWithWeekday(endDate)}`}
         </p>
         </div>
       </div>
