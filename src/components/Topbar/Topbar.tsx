@@ -37,6 +37,11 @@ export default function Topbar({
   const { actions: topbarActions } = useTopbarActions();
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  // Synka pageTitle efter mount så server och klient har samma första render (undviker hydration)
+  const [hasPageTitle, setHasPageTitle] = useState(false);
+  useEffect(() => {
+    setHasPageTitle(!!topbarActions.pageTitle);
+  }, [topbarActions.pageTitle]);
   const [searchQuery, setSearchQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
@@ -168,7 +173,7 @@ export default function Topbar({
           </span>
           <Link
             href="/dashboard"
-            className={`flex items-center shrink-0 rounded-lg hover:opacity-90 transition md:hidden ${topbarActions.pageTitle ? "hidden" : ""}`}
+            className={`flex items-center shrink-0 rounded-lg hover:opacity-90 transition md:hidden ${hasPageTitle ? "hidden" : ""}`}
             aria-label="Till startsida"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -191,7 +196,7 @@ export default function Topbar({
                 className="h-11 w-auto max-w-[160px] object-contain"
               />
             </Link>
-            {topbarActions.pageTitle && (
+            {hasPageTitle && topbarActions.pageTitle && (
               <span className="font-bebas text-xl tracking-wide uppercase text-stone-100 whitespace-nowrap truncate max-w-[240px]">
                 {topbarActions.pageTitle}
               </span>

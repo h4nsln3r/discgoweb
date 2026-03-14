@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
 import { getCurrentUserWithAdmin } from "@/lib/auth-server";
-import { createServerSupabaseClient } from "@/lib/supabase-server";
+import { createServerSupabaseClient, createSupabaseAdminClient } from "@/lib/supabase-server";
 import Link from "next/link";
 import { CalendarDaysIcon, TrophyIcon } from "@heroicons/react/24/outline";
+import AuthAwareLink from "@/components/AuthAwareLink";
 import { SetTopbarActions } from "@/components/Topbar/TopbarActionsContext";
 import CompetitionCoursesMapClient from "@/components/Competitions/CompetitionCoursesMapClient";
 import JoinToCompetitionButton from "@/components/Competitions/JoinToCompetitionButton";
@@ -38,8 +39,10 @@ export default async function CompetitionDetailPage({ params, searchParams }: Pa
   const justJoined = resolvedSearchParams?.joined === "1";
 
   const supabase = await createServerSupabaseClient();
+  // Admin-klient för publik data så gäster (utan inloggning) också ser tävling + banor + deltagare + resultat
+  const admin = createSupabaseAdminClient();
 
-  const { data: rawCompetition, error } = await supabase
+  const { data: rawCompetition, error } = await admin
     .from("competitions")
     .select(
       `
@@ -67,17 +70,14 @@ export default async function CompetitionDetailPage({ params, searchParams }: Pa
   }
 
   const { user, isAdmin } = await getCurrentUserWithAdmin(supabase);
-  const isCreator = Boolean(
-    competition.created_by && user?.id && (competition.created_by === user.id || isAdmin)
-  );
 
-  const { data: participantsData } = await supabase
+  const { data: participantsData } = await admin
     .from("competition_participants")
     .select("user_id, profiles(alias, avatar_url)")
     .eq("competition_id", id);
 
   const { data: creatorProfile } = competition.created_by
-    ? await supabase
+    ? await admin
         .from("profiles")
         .select("id, alias, avatar_url")
         .eq("id", competition.created_by)
@@ -103,11 +103,27 @@ export default async function CompetitionDetailPage({ params, searchParams }: Pa
   }
   const participants = participantsFromJoin as ParticipantRow[];
 
+  const organizerIds = new Set<string>();
+  if (competition.created_by) organizerIds.add(competition.created_by);
+  try {
+    const { data: extraOrganizersData } = await admin
+      .from("competition_organizers")
+      .select("user_id")
+      .eq("competition_id", id);
+    (extraOrganizersData ?? []).forEach((r) => organizerIds.add(r.user_id));
+  } catch {
+    // Tabellen competition_organizers kanske inte finns än
+  }
+
+  const canEditCompetition = Boolean(
+    user?.id && (competition.created_by === user.id || isAdmin || organizerIds.has(user.id))
+  );
+
   const hasJoined = Boolean(
     user?.id && (participantIds.has(user.id) || competition.created_by === user.id)
   );
 
-  const { data: competitionScores } = await supabase
+  const { data: competitionScores } = await admin
     .from("scores")
     .select("id, score, throws, date_played, created_at, course_id, user_id, courses ( name ), profiles!scores_user_id_fkey( alias )")
     .eq("competition_id", id)
@@ -169,11 +185,13 @@ export default async function CompetitionDetailPage({ params, searchParams }: Pa
     };
   });
 
+  const isGuest = !user;
+
   return (
-    <div className="pt-2 md:pt-7">
+    <div className={isGuest ? "" : "pt-2 md:pt-7"}>
       <SetTopbarActions
         backHref="/competitions"
-        editHref={isCreator ? `/competitions/${id}/edit` : null}
+        editHref={canEditCompetition ? `/competitions/${id}/edit` : null}
         editLabel="Redigera tävling"
         pageTitle={competition.title}
       />
@@ -187,24 +205,24 @@ export default async function CompetitionDetailPage({ params, searchParams }: Pa
           />
           {/* Tävlingsnamn + datum nere till vänster på bilden */}
           <div
-            className="absolute bottom-0 left-0 right-0 pt-16 pb-4 px-4 md:px-6 bg-gradient-to-t from-black/80 via-black/40 to-transparent"
+            className="absolute bottom-0 left-0 right-0 pt-16 pb-4 px-4 md:px-6 md:pt-10 md:pb-3 bg-gradient-to-t from-black/80 via-black/40 to-transparent"
             aria-hidden
           >
-            <h1 className="font-bebas text-7xl sm:text-8xl md:text-[10rem] lg:text-[14rem] xl:text-[18rem] tracking-wide uppercase text-white drop-shadow-lg max-w-5xl leading-none md:mt-6">
+            <h1 className="font-bebas text-7xl sm:text-8xl md:text-[5.5rem] lg:text-[7rem] xl:text-[8.5rem] tracking-wide uppercase text-white drop-shadow-lg max-w-5xl md:max-w-4xl leading-none md:mt-2 md:leading-tight">
               {competition.title}
             </h1>
             {competition.start_date && competition.end_date && (
-              <p className="mt-2 md:mt-1 md:mb-6 text-white/95 text-lg md:text-xl font-medium drop-shadow-md uppercase tracking-wide">
+              <p className="mt-2 md:mt-1 md:mb-3 text-white/95 text-lg md:text-xl font-medium drop-shadow-md uppercase tracking-wide">
                 {formatDateWithWeekday(competition.start_date)} – {formatDateWithWeekday(competition.end_date)}
               </p>
             )}
           </div>
-          {user && !hasJoined && (
-            <div className="absolute bottom-16 right-4 md:bottom-6 md:right-6 z-10">
+          {!hasJoined && (
+            <div className="absolute bottom-28 right-4 left-4 md:bottom-20 md:left-auto md:right-8 z-10 flex justify-end">
               <JoinToCompetitionButton
                 competitionId={id}
                 competitionTitle={competition.title}
-                className="font-bebas text-xl md:text-2xl tracking-wide uppercase text-white drop-shadow-lg px-5 py-2.5 rounded-lg bg-black/50 backdrop-blur-sm border border-amber-400/60 transition-all duration-300 hover:text-amber-100 hover:border-amber-400 hover:shadow-[0_0_20px_rgba(251,191,36,0.9),0_0_40px_rgba(251,191,36,0.5),0_0_60px_rgba(251,191,36,0.25)] hover:scale-[1.02] animate-pulse"
+                className="font-bebas text-xl md:text-3xl tracking-wide uppercase text-white drop-shadow-lg px-5 py-2.5 md:px-8 md:py-4 rounded-lg bg-black/50 backdrop-blur-sm border border-amber-400/60 transition-all duration-300 hover:text-amber-100 hover:border-amber-400 hover:shadow-[0_0_20px_rgba(251,191,36,0.9),0_0_40px_rgba(251,191,36,0.5),0_0_60px_rgba(251,191,36,0.25)] hover:scale-[1.02] animate-pulse"
               />
             </div>
           )}
@@ -245,9 +263,11 @@ export default async function CompetitionDetailPage({ params, searchParams }: Pa
             competitionId={id}
             competitionTitle={competition.title}
             createdBy={competition.created_by}
+            organizerIds={Array.from(organizerIds)}
             participants={participants}
             currentUserId={user?.id ?? null}
             justJoined={justJoined}
+            isGuest={isGuest}
           />
         </aside>
         <main className="min-w-0 space-y-6 md:pl-4 md:pr-6">
@@ -259,10 +279,11 @@ export default async function CompetitionDetailPage({ params, searchParams }: Pa
       />
 
       <div className="flex flex-wrap items-center gap-3">
-        {user && !hasJoined && (
+        {!hasJoined && (
           <JoinToCompetitionButton
             competitionId={id}
             competitionTitle={competition.title}
+            className="md:text-lg md:px-6 md:py-3"
           />
         )}
       </div>
@@ -271,15 +292,16 @@ export default async function CompetitionDetailPage({ params, searchParams }: Pa
 
       {/* Banor och resultat – egen container, full bredd */}
       <section className="w-full px-4 py-8 md:px-6 md:py-10">
-        <CompetitionBanorResultatSection
-          competitionId={id}
-          entries={competition.competition_courses.map((entry) => ({
-            course_id: entry.course_id,
-            courseName: entry.courses?.name ?? "Okänd bana",
-            main_image_url: entry.courses?.main_image_url ?? null,
-          }))}
-          scoresByCourse={scoresByCourse}
-        />
+      <CompetitionBanorResultatSection
+        competitionId={id}
+        entries={competition.competition_courses.map((entry) => ({
+          course_id: entry.course_id,
+          courseName: entry.courses?.name ?? "Okänd bana",
+          main_image_url: entry.courses?.main_image_url ?? null,
+        }))}
+        scoresByCourse={scoresByCourse}
+        isGuest={isGuest}
+      />
       </section>
 
       {/* Statistik och grafer – använder samma resultat som under Banor, hämtar hål via /api/score-holes */}
@@ -287,6 +309,7 @@ export default async function CompetitionDetailPage({ params, searchParams }: Pa
         <CompetitionStabilitySection
           competitionId={id}
           scoreEntries={scoreEntriesForHoles}
+          isGuest={isGuest}
         />
         <CompetitionRoundCharts
           competitionId={id}
@@ -320,9 +343,9 @@ export default async function CompetitionDetailPage({ params, searchParams }: Pa
                   >
                     <td className="py-2 text-stone-500">{idx + 1}</td>
                     <td className="py-2 font-medium text-stone-100">
-                      <Link href={`/profile/${userId}`} className="text-retro-accent hover:underline">
+                      <AuthAwareLink href={`/profile/${userId}`} isGuest={isGuest} className="text-retro-accent hover:underline">
                         {tot.alias}
-                      </Link>
+                      </AuthAwareLink>
                     </td>
                     <td className="py-2 text-stone-200">{tot.throws}</td>
                     <td className="py-2 font-semibold text-stone-100">{tot.score}</td>
@@ -336,19 +359,21 @@ export default async function CompetitionDetailPage({ params, searchParams }: Pa
       )}
 
       <div className="pt-4 flex flex-wrap items-center gap-3">
-        <Link
+        <AuthAwareLink
           href={`/results/new?competition_id=${id}`}
+          isGuest={isGuest}
           className="inline-flex items-center gap-2 w-full sm:w-auto justify-center px-4 py-3 rounded-xl bg-retro-accent text-stone-100 text-sm font-medium hover:bg-retro-accent-hover transition"
         >
           🥏 Lägg till resultat
-        </Link>
-        <Link
+        </AuthAwareLink>
+        <AuthAwareLink
           href={`/competitions/${id}/photos`}
+          isGuest={isGuest}
           className="inline-flex items-center gap-2 w-full sm:w-auto justify-center px-4 py-3 rounded-xl border border-retro-border bg-retro-surface text-stone-200 text-sm font-medium hover:border-retro-accent hover:text-retro-accent transition"
         >
           📷 Tävlingsbilder
-        </Link>
-        {isCreator && (
+        </AuthAwareLink>
+        {canEditCompetition && (competition.created_by === user?.id || isAdmin) && (
           <DeleteCompetitionButton
             competitionId={id}
             competitionTitle={competition.title}

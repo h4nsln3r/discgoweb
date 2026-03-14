@@ -1,14 +1,24 @@
 "use client";
 
 import { useMemo, useState, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import type { Database } from "@/types/supabase";
 import { ArrowPathIcon } from "@heroicons/react/24/outline";
 import { CenterToast } from "@/components/Toasts/CenterToast";
 
+/** Säker redirect-URL: måste vara relativ path (börjar med /), ingen // eller extern URL. */
+function getSafeRedirect(redirect: string | null): string | null {
+  if (!redirect || typeof redirect !== "string") return null;
+  const trimmed = redirect.trim();
+  if (trimmed === "" || !trimmed.startsWith("/") || trimmed.startsWith("//")) return null;
+  return trimmed;
+}
+
 export default function AuthPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = getSafeRedirect(searchParams.get("redirect"));
   const supabase = useMemo(() => createClientComponentClient<Database>(), []);
 
   const [email, setEmail] = useState("");
@@ -22,11 +32,11 @@ export default function AuthPage() {
     supabase.auth.getUser().then(({ data: { user } }) => {
       setCheckingSession(false);
       if (user) {
-        router.replace("/profile");
+        router.replace(redirectTo ?? "/profile");
         router.refresh();
       }
     });
-  }, [supabase, router]);
+  }, [supabase, router, redirectTo]);
   const [error, setError] = useState<string | null>(null);
 
   const [toastOpen, setToastOpen] = useState(false);
@@ -64,8 +74,9 @@ export default function AuthPage() {
 
         // if session exists, check profile
         const userId = data.user?.id;
+        const postLoginUrl = redirectTo ?? "/dashboard";
         if (!userId) {
-          router.push("/dashboard");
+          router.push(postLoginUrl);
           router.refresh();
           return;
         }
@@ -78,7 +89,7 @@ export default function AuthPage() {
 
         if (pErr) {
           console.warn("[auth] profile check error:", pErr);
-          router.push("/dashboard");
+          router.push(postLoginUrl);
           router.refresh();
           return;
         }
@@ -94,7 +105,7 @@ export default function AuthPage() {
           return;
         }
 
-        router.push("/dashboard");
+        router.push(postLoginUrl);
         router.refresh();
         return;
       }

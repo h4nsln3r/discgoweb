@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { UserGroupIcon } from "@heroicons/react/24/outline";
+import AuthAwareLink from "@/components/AuthAwareLink";
 import LeaveCompetitionButton from "./LeaveCompetitionButton";
 
 export type ParticipantRow = {
@@ -13,9 +14,12 @@ type Props = {
   competitionId?: string;
   competitionTitle?: string;
   createdBy?: string | null;
+  /** Alla arrangörer (skaparen + inbjudna). Om inte satt används endast createdBy. */
+  organizerIds?: string[];
   participants: ParticipantRow[];
   currentUserId?: string | null;
   justJoined?: boolean;
+  isGuest?: boolean;
 };
 
 export default function CompetitionParticipantsSection({
@@ -23,9 +27,11 @@ export default function CompetitionParticipantsSection({
   competitionId,
   competitionTitle = "",
   createdBy,
+  organizerIds,
   participants,
   currentUserId,
   justJoined,
+  isGuest = false,
 }: Props) {
   if (participants.length === 0) {
     return (
@@ -55,35 +61,65 @@ export default function CompetitionParticipantsSection({
         {participants.map((p) => {
           const isJustJoined = Boolean(justJoined && currentUserId && p.user_id === currentUserId);
           const isCurrentUser = Boolean(currentUserId && p.user_id === currentUserId);
-          const isCreator = Boolean(createdBy && p.user_id === createdBy);
-          const canLeave = isCurrentUser && !isCreator && competitionId;
+          const isOrganizer = organizerIds?.length
+            ? organizerIds.includes(p.user_id)
+            : Boolean(createdBy && p.user_id === createdBy);
+          const canLeave = isCurrentUser && !isOrganizer && competitionId;
           return (
           <li
             key={p.user_id}
             className={`flex items-center justify-between gap-2 py-2 rounded-lg hover:bg-retro-card/50 transition ${isJustJoined ? "animate-participant-in" : ""}`}
           >
-            <Link
-              href={`/profile/${p.user_id}`}
-              className="flex items-center gap-3 min-w-0 flex-1 py-1 rounded-lg hover:bg-retro-card/50 transition"
-            >
-              {p.avatar_url ? (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img
-                  src={p.avatar_url}
-                  alt=""
-                  className="w-10 h-10 rounded-full object-cover shrink-0"
-                />
-              ) : (
-                <div className="w-10 h-10 rounded-full bg-retro-card flex items-center justify-center text-stone-500 shrink-0">
-                  <span className="text-sm font-medium">
-                    {(p.alias || "?")[0].toUpperCase()}
-                  </span>
-                </div>
-              )}
-              <span className="font-medium text-stone-100 truncate">
-                {p.alias || "Okänd spelare"}
-              </span>
-            </Link>
+            {isGuest ? (
+              <AuthAwareLink
+                href={`/profile/${p.user_id}`}
+                isGuest
+                className="flex items-center gap-3 min-w-0 flex-1 py-1 rounded-lg hover:bg-retro-card/50 transition"
+              >
+                {p.avatar_url ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={p.avatar_url}
+                    alt=""
+                    className="w-10 h-10 rounded-full object-cover shrink-0"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-retro-card flex items-center justify-center text-stone-500 shrink-0">
+                    <span className="text-sm font-medium">
+                      {(p.alias || "?")[0].toUpperCase()}
+                    </span>
+                  </div>
+                )}
+                <span className="font-medium text-stone-100 truncate">
+                  {p.alias || "Okänd spelare"}
+                  {isOrganizer && <span className="text-stone-400 font-normal"> (arrangör)</span>}
+                </span>
+              </AuthAwareLink>
+            ) : (
+              <Link
+                href={`/profile/${p.user_id}`}
+                className="flex items-center gap-3 min-w-0 flex-1 py-1 rounded-lg hover:bg-retro-card/50 transition"
+              >
+                {p.avatar_url ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={p.avatar_url}
+                    alt=""
+                    className="w-10 h-10 rounded-full object-cover shrink-0"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-retro-card flex items-center justify-center text-stone-500 shrink-0">
+                    <span className="text-sm font-medium">
+                      {(p.alias || "?")[0].toUpperCase()}
+                    </span>
+                  </div>
+                )}
+                <span className="font-medium text-stone-100 truncate">
+                  {p.alias || "Okänd spelare"}
+                  {isOrganizer && <span className="text-stone-400 font-normal"> (arrangör)</span>}
+                </span>
+              </Link>
+            )}
             {canLeave && (
               <LeaveCompetitionButton
                 competitionId={competitionId}

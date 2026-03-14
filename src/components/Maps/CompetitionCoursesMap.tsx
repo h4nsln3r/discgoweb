@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import dynamic from "next/dynamic";
 import { MapIcon, MapPinIcon } from "@heroicons/react/24/outline";
 import CoursePreviewPanel from "./CoursePreviewPanel";
@@ -27,14 +27,6 @@ type Props = {
 
 export default function CompetitionCoursesMap({ courses, competitionId }: Props) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [isMobile, setIsMobile] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 767px)");
-    const update = () => setIsMobile(mq.matches);
-    update();
-    mq.addEventListener("change", update);
-    return () => mq.removeEventListener("change", update);
-  }, []);
 
   const validCourses: Course[] = courses
     .filter((c) => c.latitude != null && c.longitude != null)

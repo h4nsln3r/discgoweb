@@ -35,7 +35,11 @@ export default function EditCompetitionPage() {
   const [invalidFields, setInvalidFields] = useState<Set<string>>(new Set());
   const titleRef = useRef<HTMLDivElement>(null);
 
-  // Hämta tävling + befintliga banor + alla banor (endast när id ändras)
+  const [creatorId, setCreatorId] = useState<string | null>(null);
+  const [organizerIds, setOrganizerIds] = useState<string[]>([]);
+  const [participants, setParticipants] = useState<{ user_id: string; alias: string | null; avatar_url: string | null }[]>([]);
+
+  // Hämta tävling + befintliga banor + alla banor + arrangörer (endast när id ändras)
   useEffect(() => {
     if (!id) return;
 
@@ -46,10 +50,12 @@ export default function EditCompetitionPage() {
         { data: { user } },
         currentUserRes,
         { data: competition, error: compError },
+        organizersRes,
       ] = await Promise.all([
         supabase.auth.getUser(),
         fetch("/api/get-current-user").then((r) => (r.ok ? r.json() : null)),
         supabase.from("competitions").select("id, title, description, start_date, end_date, image_url, created_by").eq("id", id).single(),
+        fetch(`/api/competitions/${id}/organizers`).then((r) => (r.ok ? r.json() : null)),
       ]);
 
       if (cancelled) return;
@@ -62,8 +68,17 @@ export default function EditCompetitionPage() {
       }
 
       const isAdmin = (currentUserRes as { is_admin?: boolean } | null)?.is_admin === true;
-      const creatorId = (competition as { created_by?: string | null }).created_by;
-      setIsCreator(Boolean(creatorId && user?.id && (creatorId === user.id || isAdmin)));
+      const cId = (competition as { created_by?: string | null }).created_by ?? null;
+      setCreatorId(cId);
+
+      const orgData = organizersRes as { creatorId?: string | null; organizerIds?: string[]; participants?: { user_id: string; alias: string | null; avatar_url: string | null }[] } | null;
+      if (orgData) {
+        setOrganizerIds(orgData.organizerIds ?? []);
+        setParticipants(orgData.participants ?? []);
+      }
+
+      const canEdit = user?.id && (cId === user.id || isAdmin || (orgData?.organizerIds?.includes(user.id) ?? false));
+      setIsCreator(Boolean(canEdit));
 
       setTitle(competition.title ?? "");
       setDescription(competition.description ?? "");
@@ -185,11 +200,41 @@ export default function EditCompetitionPage() {
       <div className="max-w-2xl mx-auto p-6 space-y-4">
         <SetTopbarActions backHref={id ? `/competitions/${id}` : null} />
         <p className="text-stone-400">
-          Du kan bara redigera tävlingar som du själv skapat.
+          Endast arrangörer kan redigera denna tävling.
         </p>
       </div>
     );
   }
+
+  const canAddOrganizer = participants.filter((p) => !organizerIds.includes(p.user_id));
+  const addOrganizer = async (userId: string) => {
+    if (!id) return;
+    const res = await fetch(`/api/competitions/${id}/organizers`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      showToast(data.error || "Kunde inte lägga till arrangör.", "error");
+      return;
+    }
+    setOrganizerIds((prev) => (prev.includes(userId) ? prev : [...prev, userId]));
+    showToast("Arrangör tillagd.", "success");
+  };
+  const removeOrganizer = async (userId: string) => {
+    if (!id || userId === creatorId) return;
+    const res = await fetch(`/api/competitions/${id}/organizers?userId=${encodeURIComponent(userId)}`, {
+      method: "DELETE",
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      showToast(data.error || "Kunde inte ta bort arrangör.", "error");
+      return;
+    }
+    setOrganizerIds((prev) => prev.filter((id) => id !== userId));
+    showToast("Arrangör borttagen.", "success");
+  };
 
   const inputClass =
     "w-full border border-retro-border bg-retro-surface text-stone-100 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-retro-accent placeholder:text-stone-500";
@@ -289,6 +334,69 @@ export default function EditCompetitionPage() {
                   {c.name}
                 </label>
               ))
+            )}
+          </div>
+        </div>
+
+        <div>
+          <h2 className="font-semibold mb-2 text-stone-200">Arrangörer</h2>
+          <p className="text-sm text-stone-500 mb-2">
+            Arrangörer kan redigera tävlingen och bjuda in fler arrangörer. Endast deltagare i tävlingen kan läggas till.
+          </p>
+          <div className="rounded-lg border border-retro-border p-3 bg-retro-card space-y-2">
+            {organizerIds.length === 0 ? (
+              <p className="text-sm text-stone-500">Inga arrangörer.</p>
+            ) : (
+              <ul className="space-y-1.5">
+                {organizerIds.map((uid) => {
+                  const part = participants.find((p) => p.user_id === uid);
+                  const alias = part?.alias?.trim() || "Okänd";
+                  const isCreatorUser = uid === creatorId;
+                  return (
+                    <li key={uid} className="flex items-center justify-between gap-2 py-1">
+                      <span className="text-stone-200 text-sm">
+                        {alias}
+                        {isCreatorUser && <span className="text-stone-500 ml-1">(skapare)</span>}
+                      </span>
+                      {!isCreatorUser && (
+                        <button
+                          type="button"
+                          onClick={() => removeOrganizer(uid)}
+                          className="text-xs text-amber-400 hover:text-amber-300"
+                        >
+                          Ta bort som arrangör
+                        </button>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            {canAddOrganizer.length > 0 && (
+              <div className="pt-2 border-t border-retro-border">
+                <label htmlFor="add-organizer" className="block text-xs text-stone-500 mb-1">
+                  Lägg till arrangör
+                </label>
+                <select
+                  id="add-organizer"
+                  className="w-full border border-retro-border bg-retro-surface text-stone-100 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-retro-accent"
+                  value=""
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v) {
+                      addOrganizer(v);
+                      e.target.value = "";
+                    }
+                  }}
+                >
+                  <option value="">Välj deltagare…</option>
+                  {canAddOrganizer.map((p) => (
+                    <option key={p.user_id} value={p.user_id}>
+                      {p.alias?.trim() || "Okänd"}
+                    </option>
+                  ))}
+                </select>
+              </div>
             )}
           </div>
         </div>

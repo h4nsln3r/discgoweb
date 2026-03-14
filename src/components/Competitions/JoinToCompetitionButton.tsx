@@ -21,7 +21,7 @@ export default function JoinToCompetitionButton({ competitionId, competitionTitl
   const handleJoin = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      showToast("Logga in för att gå med i tävlingen.", "error");
+      router.push(`/auth?redirect=${encodeURIComponent(`/competitions/${competitionId}`)}`);
       return;
     }
     setLoading(true);

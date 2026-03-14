@@ -30,13 +30,25 @@ export default async function CompetitionPhotosPage({ params }: PageProps) {
   const isCreator = Boolean(
     competition.created_by && user?.id && competition.created_by === user.id
   );
+  let isOrganizer = false;
+  try {
+    const { data: organizerRow } = await supabase
+      .from("competition_organizers")
+      .select("user_id")
+      .eq("competition_id", id)
+      .eq("user_id", user?.id ?? "")
+      .maybeSingle();
+    isOrganizer = Boolean(organizerRow);
+  } catch {
+    // Tabellen competition_organizers kanske inte finns än
+  }
   const { data: participant } = await supabase
     .from("competition_participants")
     .select("user_id")
     .eq("competition_id", id)
     .eq("user_id", user?.id ?? "")
     .maybeSingle();
-  const canUpload = Boolean(user && (isCreator || participant));
+  const canUpload = Boolean(user && (isCreator || isOrganizer || participant));
 
   return (
     <div>

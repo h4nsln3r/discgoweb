@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import AuthAwareLink from "@/components/AuthAwareLink";
 import {
   ChartBarIcon,
   TrophyIcon,
@@ -29,6 +30,7 @@ type Props = {
   competitionId: string;
   /** Resultat från sidan (samma som under Banor) – används för att hämta hål via /api/score-holes. */
   scoreEntries?: ScoreEntryForHoles[];
+  isGuest?: boolean;
 };
 
 type RoundStat = {
@@ -90,6 +92,7 @@ async function fetchHolesForEntries(
 export default function CompetitionStabilitySection({
   competitionId,
   scoreEntries = [],
+  isGuest = false,
 }: Props) {
   const [rounds, setRounds] = useState<CompetitionScoreWithHoles[]>([]);
   const [loading, setLoading] = useState(true);
@@ -252,9 +255,15 @@ export default function CompetitionStabilitySection({
             <ul className="space-y-2 mt-1">
               {holeInOneResults.map((result, i) => (
                 <li key={`${result.userId}-${result.courseName}-${i}`}>
-                  <Link href={`/profile/${result.userId}`} className="text-lg font-bebas text-amber-100 tracking-wide hover:text-amber-300 transition-colors">
-                    {result.alias}
-                  </Link>
+                  {isGuest ? (
+                    <AuthAwareLink href={`/profile/${result.userId}`} isGuest className="text-lg font-bebas text-amber-100 tracking-wide hover:text-amber-300 transition-colors">
+                      {result.alias}
+                    </AuthAwareLink>
+                  ) : (
+                    <Link href={`/profile/${result.userId}`} className="text-lg font-bebas text-amber-100 tracking-wide hover:text-amber-300 transition-colors">
+                      {result.alias}
+                    </Link>
+                  )}
                   <span className="text-stone-300 text-sm ml-1">
                     – {result.courseName}:{" "}
                     {result.holes
@@ -281,9 +290,15 @@ export default function CompetitionStabilitySection({
             <ul className="space-y-2 mt-1">
               {eagleList.map((entry, i) => (
                 <li key={`${entry.userId}-${entry.courseName}-${entry.hole_number}-${i}`}>
-                  <Link href={`/profile/${entry.userId}`} className="text-lg font-bebas text-blue-100 tracking-wide hover:text-blue-300 transition-colors">
-                    {entry.alias}
-                  </Link>
+                  {isGuest ? (
+                    <AuthAwareLink href={`/profile/${entry.userId}`} isGuest className="text-lg font-bebas text-blue-100 tracking-wide hover:text-blue-300 transition-colors">
+                      {entry.alias}
+                    </AuthAwareLink>
+                  ) : (
+                    <Link href={`/profile/${entry.userId}`} className="text-lg font-bebas text-blue-100 tracking-wide hover:text-blue-300 transition-colors">
+                      {entry.alias}
+                    </Link>
+                  )}
                   <span className="text-stone-300 text-sm ml-1">
                     – {entry.courseName}, hål {entry.hole_number} ({entry.throws} på par {entry.par})
                   </span>
@@ -305,9 +320,15 @@ export default function CompetitionStabilitySection({
               <span className="text-xs font-medium uppercase tracking-wide">Flest birdies</span>
             </div>
             <p className="text-2xl font-bebas text-stone-100 tracking-wide uppercase leading-tight">
-              <Link href={`/profile/${mostBirdies.userId}`} className="text-retro-accent hover:text-amber-400 transition-colors">
-                {mostBirdies.alias}
-              </Link>
+              {isGuest ? (
+                <AuthAwareLink href={`/profile/${mostBirdies.userId}`} isGuest className="text-retro-accent hover:text-amber-400 transition-colors">
+                  {mostBirdies.alias}
+                </AuthAwareLink>
+              ) : (
+                <Link href={`/profile/${mostBirdies.userId}`} className="text-retro-accent hover:text-amber-400 transition-colors">
+                  {mostBirdies.alias}
+                </Link>
+              )}
             </p>
             <p className="text-sm text-stone-400 mt-1">{mostBirdies.courseName}</p>
             <p className="mt-2 text-emerald-400/90 font-semibold text-lg">
@@ -328,9 +349,15 @@ export default function CompetitionStabilitySection({
               <span className="text-xs font-medium uppercase tracking-wide">Minst variation</span>
             </div>
             <p className="text-2xl font-bebas text-stone-100 tracking-wide uppercase leading-tight">
-              <Link href={`/profile/${minVariation.userId}`} className="text-retro-accent hover:text-amber-400 transition-colors">
-                {minVariation.alias}
-              </Link>
+              {isGuest ? (
+                <AuthAwareLink href={`/profile/${minVariation.userId}`} isGuest className="text-retro-accent hover:text-amber-400 transition-colors">
+                  {minVariation.alias}
+                </AuthAwareLink>
+              ) : (
+                <Link href={`/profile/${minVariation.userId}`} className="text-retro-accent hover:text-amber-400 transition-colors">
+                  {minVariation.alias}
+                </Link>
+              )}
             </p>
             <p className="text-sm text-stone-400 mt-1">{minVariation.courseName}</p>
             <p className="mt-2 text-amber-400/90 font-semibold text-lg">
@@ -351,9 +378,15 @@ export default function CompetitionStabilitySection({
               <span className="text-xs font-medium uppercase tracking-wide">Flest par</span>
             </div>
             <p className="text-2xl font-bebas text-stone-100 tracking-wide uppercase leading-tight">
-              <Link href={`/profile/${mostPars.userId}`} className="text-retro-accent hover:text-amber-400 transition-colors">
-                {mostPars.alias}
-              </Link>
+              {isGuest ? (
+                <AuthAwareLink href={`/profile/${mostPars.userId}`} isGuest className="text-retro-accent hover:text-amber-400 transition-colors">
+                  {mostPars.alias}
+                </AuthAwareLink>
+              ) : (
+                <Link href={`/profile/${mostPars.userId}`} className="text-retro-accent hover:text-amber-400 transition-colors">
+                  {mostPars.alias}
+                </Link>
+              )}
             </p>
             <p className="text-sm text-stone-400 mt-1">{mostPars.courseName}</p>
             <p className="mt-2 text-amber-400/90 font-semibold text-lg">
@@ -374,9 +407,15 @@ export default function CompetitionStabilitySection({
               <span className="text-xs font-medium uppercase tracking-wide">Längsta par-streak</span>
             </div>
             <p className="text-2xl font-bebas text-stone-100 tracking-wide uppercase leading-tight">
-              <Link href={`/profile/${longestStreak.userId}`} className="text-retro-accent hover:text-amber-400 transition-colors">
-                {longestStreak.alias}
-              </Link>
+              {isGuest ? (
+                <AuthAwareLink href={`/profile/${longestStreak.userId}`} isGuest className="text-retro-accent hover:text-amber-400 transition-colors">
+                  {longestStreak.alias}
+                </AuthAwareLink>
+              ) : (
+                <Link href={`/profile/${longestStreak.userId}`} className="text-retro-accent hover:text-amber-400 transition-colors">
+                  {longestStreak.alias}
+                </Link>
+              )}
             </p>
             <p className="text-sm text-stone-400 mt-1">{longestStreak.courseName}</p>
             <p className="mt-2 text-amber-400/90 font-semibold text-lg">

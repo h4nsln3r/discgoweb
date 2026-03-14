@@ -176,12 +176,13 @@ function FitBoundsToCourses({
     const valid = courses.filter((c) => c.latitude != null && c.longitude != null);
     if (valid.length === 0) return;
     if (valid.length === 1) {
-      map.setView([valid[0].latitude!, valid[0].longitude!], 12, { animate: false });
+      map.setView([valid[0].latitude!, valid[0].longitude!], 14, { animate: false });
       return;
     }
     const points = valid.map((c) => [c.latitude!, c.longitude!] as [number, number]);
     const bounds = L.latLngBounds(points);
-    map.fitBounds(bounds, { padding: [48, 48], maxZoom: 8, animate: false });
+    // Högre maxZoom (14) så att när banor ligger nära varandra zoomas kartan in mer
+    map.fitBounds(bounds, { padding: [40, 40], maxZoom: 14, animate: false });
   }, [courses, map, selectedCourseId]);
   return null;
 }

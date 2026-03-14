@@ -39,6 +39,7 @@ export async function DELETE(
 
   // Ta bort kopplade data (RLS tillåter där det behövs)
   await supabase.from("competition_photos").delete().eq("competition_id", competitionId);
+  await supabase.from("competition_organizers").delete().eq("competition_id", competitionId);
   await supabase.from("competition_participants").delete().eq("competition_id", competitionId);
   await supabase.from("competition_courses").delete().eq("competition_id", competitionId);
   await supabase.from("scores").update({ competition_id: null }).eq("competition_id", competitionId);

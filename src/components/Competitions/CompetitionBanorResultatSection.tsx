@@ -3,6 +3,7 @@
 import { useState, useCallback, Fragment, useRef } from "react";
 import Link from "next/link";
 import { ChevronDownIcon, ChevronUpIcon, HashtagIcon, TrophyIcon, PlusCircleIcon } from "@heroicons/react/24/outline";
+import AuthAwareLink from "@/components/AuthAwareLink";
 import HoleByHoleList from "@/components/HoleByHoleList";
 
 export type ScoreRow = {
@@ -26,6 +27,7 @@ type Props = {
   competitionId: string;
   entries: CourseEntry[];
   scoresByCourse: Record<string, ScoreRow[]>;
+  isGuest?: boolean;
 };
 
 type HoleInfo = { hole_number: number; throws: number; par?: number };
@@ -43,6 +45,7 @@ export default function CompetitionBanorResultatSection({
   competitionId,
   entries,
   scoresByCourse,
+  isGuest = false,
 }: Props) {
   const [expandedHolesId, setExpandedHolesId] = useState<string | null>(null);
   const [holesByScoreId, setHolesByScoreId] = useState<
@@ -106,28 +109,59 @@ export default function CompetitionBanorResultatSection({
                     Ingen bild
                   </div>
                 )}
-                <Link
-                  href={`/courses/${entry.course_id}?from=competition&competitionId=${competitionId}`}
-                  className="absolute inset-0 z-0"
-                  aria-label={`Visa ${entry.courseName}`}
-                />
+                {isGuest ? (
+                  <AuthAwareLink
+                    href={`/courses/${entry.course_id}?from=competition&competitionId=${competitionId}`}
+                    isGuest
+                    className="absolute inset-0 z-0"
+                    ariaLabel={`Visa ${entry.courseName}`}
+                  />
+                ) : (
+                  <Link
+                    href={`/courses/${entry.course_id}?from=competition&competitionId=${competitionId}`}
+                    className="absolute inset-0 z-0"
+                    aria-label={`Visa ${entry.courseName}`}
+                  />
+                )}
               </div>
               <div className="p-4 flex flex-col flex-1">
                 <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                  <Link
-                    href={`/courses/${entry.course_id}?from=competition&competitionId=${competitionId}`}
-                    className="font-bebas text-2xl sm:text-3xl tracking-wide text-stone-100 text-retro-accent uppercase transition-colors hover:text-amber-400"
-                  >
-                    {entry.courseName}
-                  </Link>
-                  <Link
-                    href={`/results/new?competition_id=${competitionId}&course_id=${entry.course_id}`}
-                    className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-retro-border text-stone-300 text-sm font-medium hover:bg-retro-card hover:text-stone-100 transition shrink-0"
-                    aria-label={`Lägg till resultat för ${entry.courseName}`}
-                  >
-                    <PlusCircleIcon className="w-5 h-5 shrink-0" aria-hidden />
-                    Lägg till resultat
-                  </Link>
+                  {isGuest ? (
+                    <AuthAwareLink
+                      href={`/courses/${entry.course_id}?from=competition&competitionId=${competitionId}`}
+                      isGuest
+                      className="font-bebas text-2xl sm:text-3xl tracking-wide text-stone-100 text-retro-accent uppercase transition-colors hover:text-amber-400"
+                    >
+                      {entry.courseName}
+                    </AuthAwareLink>
+                  ) : (
+                    <Link
+                      href={`/courses/${entry.course_id}?from=competition&competitionId=${competitionId}`}
+                      className="font-bebas text-2xl sm:text-3xl tracking-wide text-stone-100 text-retro-accent uppercase transition-colors hover:text-amber-400"
+                    >
+                      {entry.courseName}
+                    </Link>
+                  )}
+                  {isGuest ? (
+                    <AuthAwareLink
+                      href={`/results/new?competition_id=${competitionId}&course_id=${entry.course_id}`}
+                      isGuest
+                      className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-retro-border text-stone-300 text-sm font-medium hover:bg-retro-card hover:text-stone-100 transition shrink-0"
+                      ariaLabel={`Lägg till resultat för ${entry.courseName}`}
+                    >
+                      <PlusCircleIcon className="w-5 h-5 shrink-0" aria-hidden />
+                      Lägg till resultat
+                    </AuthAwareLink>
+                  ) : (
+                    <Link
+                      href={`/results/new?competition_id=${competitionId}&course_id=${entry.course_id}`}
+                      className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-retro-border text-stone-300 text-sm font-medium hover:bg-retro-card hover:text-stone-100 transition shrink-0"
+                      aria-label={`Lägg till resultat för ${entry.courseName}`}
+                    >
+                      <PlusCircleIcon className="w-5 h-5 shrink-0" aria-hidden />
+                      Lägg till resultat
+                    </Link>
+                  )}
                 </div>
               <div className="flex-1 min-w-0">
                 {sorted.length === 0 ? (
@@ -157,12 +191,22 @@ export default function CompetitionBanorResultatSection({
                               <td className="py-2 text-stone-500">{idx + 1}</td>
                               <td className="py-2 text-stone-100">
                                 {score.user_id ? (
-                                  <Link
-                                    href={`/profile/${score.user_id}`}
-                                    className="text-retro-accent hover:underline"
-                                  >
-                                    {score.profiles?.alias ?? "—"}
-                                  </Link>
+                                  isGuest ? (
+                                    <AuthAwareLink
+                                      href={`/profile/${score.user_id}`}
+                                      isGuest
+                                      className="text-retro-accent hover:underline"
+                                    >
+                                      {score.profiles?.alias ?? "—"}
+                                    </AuthAwareLink>
+                                  ) : (
+                                    <Link
+                                      href={`/profile/${score.user_id}`}
+                                      className="text-retro-accent hover:underline"
+                                    >
+                                      {score.profiles?.alias ?? "—"}
+                                    </Link>
+                                  )
                                 ) : (
                                   (score.profiles?.alias ?? "—")
                                 )}
