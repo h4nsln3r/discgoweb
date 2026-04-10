@@ -28,8 +28,12 @@ export default function DashboardContent({ userName, userCity = null }: { userNa
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedMapCourseId, setSelectedMapCourseId] = useState<string | null>(null);
+  const [desktopMapActive, setDesktopMapActive] = useState(false);
   const mobileHeroScrollRef = useRef<HTMLDivElement | null>(null);
+  const heroSectionRef = useRef<HTMLElement | null>(null);
+  const mapSectionRef = useRef<HTMLElement | null>(null);
   const [mobileHeroPanelIndex, setMobileHeroPanelIndex] = useState(0);
+  const [mapSectionProminent, setMapSectionProminent] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -74,6 +78,28 @@ export default function DashboardContent({ userName, userCity = null }: { userNa
     return () => el.removeEventListener("scroll", onScroll);
   }, []);
 
+  useEffect(() => {
+    const endMapInteraction = () => setDesktopMapActive(false);
+    window.addEventListener("pointerup", endMapInteraction);
+    window.addEventListener("pointercancel", endMapInteraction);
+    return () => {
+      window.removeEventListener("pointerup", endMapInteraction);
+      window.removeEventListener("pointercancel", endMapInteraction);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (loading || error || !data) return;
+    const el = mapSectionRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([e]) => setMapSectionProminent(e.isIntersecting && e.intersectionRatio > 0.45),
+      { threshold: [0, 0.25, 0.45, 0.65, 1] }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [loading, error, data]);
+
   if (loading) return <PageLoading title="Laddar dashboard..." />;
   if (error) return <p className="text-amber-400 p-4">{error}</p>;
   if (!data) return null;
@@ -81,7 +107,7 @@ export default function DashboardContent({ userName, userCity = null }: { userNa
   const newMembers = data.newMembers ?? [];
 
   const newMembersBlock = newMembers.length > 0 ? (
-    <div className="mt-4 md:mt-4 rounded-xl bg-stone-900/60 backdrop-blur-sm px-2 py-2 md:px-4 md:py-3 min-w-0">
+    <div className="rounded-xl bg-stone-900/60 backdrop-blur-sm px-2 py-2 md:px-4 md:py-3 min-w-0">
       <h2 className="text-sm md:text-lg font-semibold text-stone-100 mb-1.5 md:mb-2 flex items-center gap-1.5 md:gap-2">
         <UserGroupIcon className="h-4 w-4 md:h-5 md:w-5 text-retro-accent shrink-0" aria-hidden />
         <span className="truncate">Nya medlemmar</span>
@@ -263,9 +289,13 @@ export default function DashboardContent({ userName, userCity = null }: { userNa
   );
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-var(--topbar-offset))] overflow-y-auto overscroll-contain snap-y snap-mandatory">
+    <div
+      className={`flex flex-col h-[calc(100dvh-var(--topbar-offset))] overflow-y-auto overscroll-contain snap-y snap-mandatory scroll-smooth ${
+        desktopMapActive ? "md:snap-none" : "md:snap-mandatory"
+      }`}
+    >
       {/* Sektion 1: hero i full viewport-höjd (mobil + desktop). */}
-      <section className="relative h-[calc(100dvh-var(--topbar-offset))] shrink-0 snap-start">
+      <section ref={heroSectionRef} className="relative h-[calc(100dvh-var(--topbar-offset))] shrink-0 snap-start">
         <div className="relative h-full">
           <DashboardHero
             images={heroImages}
@@ -307,7 +337,7 @@ export default function DashboardContent({ userName, userCity = null }: { userNa
           </div>
 
           {hasOverlayCards && (
-            <div className="absolute inset-x-4 top-14 bottom-4 md:inset-x-auto md:left-auto md:right-6 md:top-auto md:max-w-[280px] z-10 hidden md:flex flex-col gap-3 pointer-events-none">
+            <div className="absolute inset-x-4 top-14 bottom-4 md:inset-x-auto md:left-auto md:right-6 md:top-4 md:bottom-auto md:max-w-[280px] z-10 hidden md:flex flex-col gap-3 pointer-events-none">
               {/* Mobil: Nya medlemmar + Nya discar 50/50 bredvid varandra. Desktop: staplade. */}
               <div className="flex flex-row gap-2 md:flex-col md:gap-3 pointer-events-auto">
                 {newMembersBlock && <div className="min-w-0 flex-1 md:flex-none pointer-events-auto">{newMembersBlock}</div>}
@@ -316,12 +346,29 @@ export default function DashboardContent({ userName, userCity = null }: { userNa
               <div className="pointer-events-auto">{newCoursesCard}</div>
             </div>
           )}
+
+          <button
+            type="button"
+            onClick={() => mapSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+            className="group absolute right-4 bottom-3 z-30 transition-transform duration-300 hover:scale-110 active:scale-95 md:right-6 md:bottom-4"
+            aria-label="Scrolla ner till kartan"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/icons/greenarrow.png"
+              alt=""
+              className="arrow-pulse h-16 w-16 md:h-32 md:w-32 object-contain transition-transform duration-300 group-hover:scale-110"
+            />
+          </button>
         </div>
       </section>
 
       {/* Sektion 2: karta i full viewport-höjd (mobil + desktop). */}
-      <section className="h-[calc(100dvh-var(--topbar-offset))] shrink-0 snap-start">
-        <div className="-mx-4 h-full md:mx-0 flex flex-col">
+      <section ref={mapSectionRef} className="relative h-[calc(100dvh-var(--topbar-offset))] shrink-0 snap-start">
+        <div
+          className="-mx-4 h-full md:mx-0 flex flex-col"
+          onPointerDown={() => setDesktopMapActive(true)}
+        >
           <Map
             userName={userName}
             initialCourses={data.mapCourses}
@@ -331,6 +378,23 @@ export default function DashboardContent({ userName, userCity = null }: { userNa
           />
         </div>
       </section>
+
+      {mapSectionProminent && (
+        <button
+          type="button"
+          onClick={() => heroSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+          className="group fixed right-14 z-[100] transition-transform duration-300 hover:scale-110 active:scale-95 md:right-10"
+          style={{ top: "calc(var(--topbar-offset) - 2.5rem)" }}
+          aria-label="Scrolla upp till hero"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/icons/BLUEARROW.png"
+            alt=""
+            className="arrow-pulse h-20 w-20 md:h-36 md:w-36 object-contain transition-transform duration-300 group-hover:scale-110"
+          />
+        </button>
+      )}
     </div>
   );
 }

@@ -231,6 +231,8 @@ type Props = {
   fitToCourses?: boolean;
   /** På mobil: kräv en tryckning på kartan innan pan/zoom – så att sidan kan skrolla tills användaren aktivt väljer kartan. */
   isMobile?: boolean;
+  /** Om true, visa inte "Tryck för att använda kartan"-overlay på mobil. */
+  disableTouchGate?: boolean;
 };
 
 export default function LeafletMap({
@@ -242,6 +244,7 @@ export default function LeafletMap({
   centerOffsetPxY,
   fitToCourses,
   isMobile = false,
+  disableTouchGate = false,
 }: Props) {
   const [mounted, setMounted] = useState(false);
   const [defaultZoom, setDefaultZoom] = useState(6);
@@ -277,7 +280,7 @@ export default function LeafletMap({
     );
   }
 
-  const mapInteractive = !isMobile || touchActivated;
+  const mapInteractive = !isMobile || disableTouchGate || touchActivated;
 
   return (
     <div className="relative w-full" style={{ height }}>
@@ -346,7 +349,7 @@ export default function LeafletMap({
           );
         })}
       </MapContainer>
-      {isMobile && !touchActivated && (
+      {isMobile && !disableTouchGate && !touchActivated && (
         <button
           type="button"
           onClick={() => setTouchActivated(true)}

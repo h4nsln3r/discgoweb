@@ -121,6 +121,7 @@ export default function CoursePreviewPanel({ course, onClose, embedded, fromDash
 
   // Early return placed AFTER all hooks are declared
   if (!course) return null;
+  const dashboardSplitLayout = embedded && fromDashboard;
 
   const panelContent = (
     <div
@@ -132,7 +133,13 @@ export default function CoursePreviewPanel({ course, onClose, embedded, fromDash
             <Link
               href={courseHref}
               onClick={onClose}
-              className={`relative block w-full overflow-hidden md:rounded-t-2xl cursor-pointer ${compact ? (compactImageSmall ? "aspect-[3/2] max-h-14" : "aspect-[3/2] max-h-28") : "aspect-[16/9]"}`}
+              className={`relative block w-full overflow-hidden md:rounded-t-2xl cursor-pointer ${
+                dashboardSplitLayout
+                  ? "h-[40%] min-h-[150px] md:min-h-[180px]"
+                  : compact
+                    ? (compactImageSmall ? "aspect-[3/2] max-h-14" : "aspect-[3/2] max-h-28")
+                    : "aspect-[16/9]"
+              }`}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -173,7 +180,7 @@ export default function CoursePreviewPanel({ course, onClose, embedded, fromDash
           )}
 
           {/* Content */}
-          <div className="p-4">
+          <div className={dashboardSplitLayout ? "p-4 h-[60%] overflow-y-auto" : "p-4"}>
             {/* Title & location – samma stil som lagnamn på lagsidan, mindre storlek + hover */}
             <div className="mb-2">
               <h3 className="text-xl font-bebas tracking-wide text-stone-100 uppercase">

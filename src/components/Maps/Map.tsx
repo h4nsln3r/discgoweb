@@ -174,6 +174,7 @@ export default function Map({ userName, initialCourses, onSelectionChange, fromD
             centerOffsetPx={isMobile ? undefined : 180}
             fitToCourses={fromDashboard === true}
             isMobile={isMobile}
+            disableTouchGate={fromDashboard === true}
           />
         </div>
       </div>
@@ -210,6 +211,7 @@ export default function Map({ userName, initialCourses, onSelectionChange, fromD
                     selectedCourseId={selectedCourse.id}
                     height="100%"
                     isMobile
+                    disableTouchGate={fromDashboard === true}
                   />
                 </div>
               )}
