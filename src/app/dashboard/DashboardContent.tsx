@@ -1,12 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Map from "@/components/Maps/Map";
-import DashboardFeeds from "./DashboardFeeds";
 import DashboardHero from "./DashboardHero";
 import PageLoading from "@/components/PageLoading";
-import { CircleStackIcon, MapPinIcon, UserCircleIcon, UserGroupIcon } from "@heroicons/react/24/outline";
+import { CircleStackIcon, MapPinIcon, TrophyIcon, UserCircleIcon, UserGroupIcon } from "@heroicons/react/24/outline";
 
 type NewMember = { id: string; alias: string; avatar_url: string | null };
 
@@ -29,6 +28,8 @@ export default function DashboardContent({ userName, userCity = null }: { userNa
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedMapCourseId, setSelectedMapCourseId] = useState<string | null>(null);
+  const mobileHeroScrollRef = useRef<HTMLDivElement | null>(null);
+  const [mobileHeroPanelIndex, setMobileHeroPanelIndex] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -61,17 +62,17 @@ export default function DashboardContent({ userName, userCity = null }: { userNa
     };
   }, []);
 
-  const initialData = useMemo(
-    () =>
-      data
-        ? {
-            courses: data.courses,
-            latestScores: data.latestScores,
-            competitions: data.competitions,
-          }
-        : undefined,
-    [data]
-  );
+  useEffect(() => {
+    const el = mobileHeroScrollRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      const width = el.clientWidth || 1;
+      const idx = Math.round(el.scrollLeft / width);
+      setMobileHeroPanelIndex(idx <= 0 ? 0 : 1);
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, []);
 
   if (loading) return <PageLoading title="Laddar dashboard..." />;
   if (error) return <p className="text-amber-400 p-4">{error}</p>;
@@ -190,34 +191,146 @@ export default function DashboardContent({ userName, userCity = null }: { userNa
 
   const hasOverlayCards = newMembersBlock || newCoursesCard || newDiscsBlock;
   const heroImages = data.heroImages ?? [];
+  const latestScores = data.latestScores ?? [];
+  const latestCompetitions = data.competitions ?? [];
 
-  return (
-    <div className="flex flex-col min-h-screen">
-      <div className="relative">
-        <DashboardHero images={heroImages} userName={userName} userCity={userCity} />
-        {hasOverlayCards && (
-          <div className="absolute inset-x-4 top-14 bottom-4 md:inset-x-auto md:left-auto md:right-6 md:top-auto md:max-w-[280px] z-10 flex flex-col gap-3">
-            {/* Mobil: Nya medlemmar + Nya discar 50/50 bredvid varandra. Desktop: staplade. */}
-            <div className="flex flex-row gap-2 md:flex-col md:gap-3">
-              {newMembersBlock && <div className="min-w-0 flex-1 md:flex-none">{newMembersBlock}</div>}
-              {newDiscsBlock && <div className="min-w-0 flex-1 md:flex-none">{newDiscsBlock}</div>}
-            </div>
-            {newCoursesCard}
-          </div>
+  const latestResultsHeroCard = (
+    <div className="rounded-xl bg-stone-900/60 backdrop-blur-sm px-3 py-2.5 md:px-4 md:py-3 min-w-0">
+      <div className="flex items-center justify-between mb-2 gap-2">
+        <h2 className="text-sm md:text-base font-semibold text-stone-100 flex items-center gap-1.5">
+          <TrophyIcon className="h-4 w-4 text-retro-accent shrink-0" aria-hidden />
+          <span className="truncate">Senaste resultat</span>
+        </h2>
+        <Link href="/results" className="text-[11px] md:text-xs text-retro-accent hover:underline shrink-0">
+          Visa alla
+        </Link>
+      </div>
+      <div className="space-y-1.5">
+        {latestScores.length === 0 ? (
+          <p className="text-xs text-stone-400">Inga resultat än.</p>
+        ) : (
+          latestScores.slice(0, 3).map((item) => (
+            <Link
+              key={item.courseId}
+              href={`/courses/${item.courseId}?from=dashboard`}
+              className="block rounded-lg bg-stone-800/70 hover:bg-stone-700/70 transition px-2.5 py-2"
+            >
+              <p className="text-xs md:text-sm text-stone-100 truncate">{item.courseName}</p>
+              <p className="text-[11px] md:text-xs text-stone-300 truncate">
+                {item.latestScore
+                  ? `${item.latestScore.score} kast${item.latestScore.profiles?.alias ? ` • ${item.latestScore.profiles.alias}` : ""}`
+                  : "Inga registrerade rundor"}
+              </p>
+            </Link>
+          ))
         )}
       </div>
-      <div className="p-4 pt-0 pb-4 space-y-6">
-        {/* Kartan går kant-till-kant på mobil och desktop (-mx-4 tar bort sidpadding) */}
-        <div className="-mx-4">
+    </div>
+  );
+
+  const latestCompetitionsHeroCard = (
+    <div className="rounded-xl bg-stone-900/60 backdrop-blur-sm px-3 py-2.5 md:px-4 md:py-3 min-w-0">
+      <div className="flex items-center justify-between mb-2 gap-2">
+        <h2 className="text-sm md:text-base font-semibold text-stone-100 flex items-center gap-1.5">
+          <MapPinIcon className="h-4 w-4 text-retro-accent shrink-0" aria-hidden />
+          <span className="truncate">Senaste tävlingar</span>
+        </h2>
+        <Link href="/competitions" className="text-[11px] md:text-xs text-retro-accent hover:underline shrink-0">
+          Visa alla
+        </Link>
+      </div>
+      <div className="space-y-1.5">
+        {latestCompetitions.length === 0 ? (
+          <p className="text-xs text-stone-400">Inga tävlingar än.</p>
+        ) : (
+          latestCompetitions.slice(0, 3).map((comp) => (
+            <Link
+              key={comp.id}
+              href={`/competitions/${comp.id}`}
+              className="block rounded-lg bg-stone-800/70 hover:bg-stone-700/70 transition px-2.5 py-2"
+            >
+              <p className="text-xs md:text-sm text-stone-100 truncate">{comp.title}</p>
+              <p className="text-[11px] md:text-xs text-stone-300 truncate">
+                {comp.start_date
+                  ? new Date(comp.start_date).toLocaleDateString("sv-SE", { year: "numeric", month: "short", day: "numeric" })
+                  : "Datum saknas"}
+              </p>
+            </Link>
+          ))
+        )}
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="flex flex-col h-[calc(100dvh-var(--topbar-offset))] overflow-y-auto overscroll-contain snap-y snap-mandatory">
+      {/* Sektion 1: hero i full viewport-höjd (mobil + desktop). */}
+      <section className="relative h-[calc(100dvh-var(--topbar-offset))] shrink-0 snap-start">
+        <div className="relative h-full">
+          <DashboardHero
+            images={heroImages}
+            userName={userName}
+            userCity={userCity}
+            desktopFullHeight
+          />
+
+          {/* Mobil: två horisontella "sidor" i hero-overlayn. */}
+          <div className="absolute left-4 right-4 top-20 z-20 overflow-hidden md:hidden">
+            <div
+              ref={mobileHeroScrollRef}
+              className="flex overflow-x-auto overscroll-x-contain snap-x snap-mandatory hide-scrollbar [touch-action:pan-x]"
+            >
+              <div className="snap-start shrink-0 min-w-full space-y-2">
+                <div className="grid grid-cols-2 gap-2">
+                  {newMembersBlock && <div className="min-w-0">{newMembersBlock}</div>}
+                  {newDiscsBlock && <div className="min-w-0">{newDiscsBlock}</div>}
+                </div>
+                {newCoursesCard}
+              </div>
+              <div className="snap-start shrink-0 min-w-full space-y-2">
+                {latestResultsHeroCard}
+                {latestCompetitionsHeroCard}
+              </div>
+            </div>
+            <div className="mt-2 flex justify-center gap-2">
+              <span className={`h-1.5 rounded-full transition-all ${mobileHeroPanelIndex === 0 ? "w-5 bg-white" : "w-1.5 bg-white/50"}`} />
+              <span className={`h-1.5 rounded-full transition-all ${mobileHeroPanelIndex === 1 ? "w-5 bg-white" : "w-1.5 bg-white/50"}`} />
+            </div>
+          </div>
+
+          {/* Desktop: "Senaste"-kort staplade under välkomsttexten. */}
+          <div className="absolute left-6 top-28 z-20 hidden md:block md:w-[320px]">
+            <div className="space-y-3">
+              {latestResultsHeroCard}
+              {latestCompetitionsHeroCard}
+            </div>
+          </div>
+
+          {hasOverlayCards && (
+            <div className="absolute inset-x-4 top-14 bottom-4 md:inset-x-auto md:left-auto md:right-6 md:top-auto md:max-w-[280px] z-10 hidden md:flex flex-col gap-3 pointer-events-none">
+              {/* Mobil: Nya medlemmar + Nya discar 50/50 bredvid varandra. Desktop: staplade. */}
+              <div className="flex flex-row gap-2 md:flex-col md:gap-3 pointer-events-auto">
+                {newMembersBlock && <div className="min-w-0 flex-1 md:flex-none pointer-events-auto">{newMembersBlock}</div>}
+                {newDiscsBlock && <div className="min-w-0 flex-1 md:flex-none pointer-events-auto">{newDiscsBlock}</div>}
+              </div>
+              <div className="pointer-events-auto">{newCoursesCard}</div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Sektion 2: karta i full viewport-höjd (mobil + desktop). */}
+      <section className="h-[calc(100dvh-var(--topbar-offset))] shrink-0 snap-start">
+        <div className="-mx-4 h-full md:mx-0 flex flex-col">
           <Map
             userName={userName}
             initialCourses={data.mapCourses}
             onSelectionChange={setSelectedMapCourseId}
             fromDashboard
+            height="100%"
           />
         </div>
-        <DashboardFeeds initialData={initialData} />
-      </div>
+      </section>
     </div>
   );
 }

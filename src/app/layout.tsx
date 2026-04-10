@@ -33,7 +33,7 @@ export default function RootLayout({
             <TopbarWrapper />
           </Suspense>
           <Providers>
-            <div className="">{children}</div>
+            <main className="pt-[var(--topbar-offset)] min-h-[100dvh]">{children}</main>
           </Providers>
         </TopbarActionsProvider>
       </body>

@@ -17,9 +17,11 @@ type Props = {
   onSelectionChange?: (courseId: string | null) => void;
   /** Om true, länkar till bana får ?from=dashboard så tillbaka på bansidan går till dashboard. */
   fromDashboard?: boolean;
+  /** Om satt används som höjd på kartcontainern (t.ex. "100%" för att fylla förälder). */
+  height?: string;
 };
 
-export default function Map({ userName, initialCourses, onSelectionChange, fromDashboard }: Props) {
+export default function Map({ userName, initialCourses, onSelectionChange, fromDashboard, height: heightProp }: Props) {
   const [courses, setCourses] = useState<Course[]>(initialCourses ?? []);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [courseSearch, setCourseSearch] = useState("");
@@ -67,7 +69,7 @@ export default function Map({ userName, initialCourses, onSelectionChange, fromD
     [courses, selectedId]
   );
 
-  const mapHeight = isMobile ? "320px" : "500px";
+  const mapHeight = heightProp ?? (isMobile ? "320px" : "500px");
 
   return (
     <>
@@ -168,6 +170,7 @@ export default function Map({ userName, initialCourses, onSelectionChange, fromD
             courses={courses}
             onSelectCourse={(c) => setSelectedAndNotify(c.id)}
             selectedCourseId={selectedId}
+            height="100%"
             centerOffsetPx={isMobile ? undefined : 180}
             fitToCourses={fromDashboard === true}
             isMobile={isMobile}
@@ -178,30 +181,34 @@ export default function Map({ userName, initialCourses, onSelectionChange, fromD
       {/* Mobil: vald bana → fullskärms-overlay med kort + inzoomed karta under */}
       {selectedCourse && (
         <div
-          className="fixed inset-0 z-40 bg-retro-bg overflow-y-auto md:hidden"
+          className="fixed inset-0 z-40 bg-retro-bg overflow-hidden md:hidden"
           onClick={() => setSelectedAndNotify(null)}
           aria-label="Stäng bana"
         >
           <div
-            className="min-h-full max-w-3xl mx-auto p-4 md:p-6 pb-8"
+            className="h-full max-w-3xl mx-auto p-4 md:p-6 flex flex-col gap-3"
             onClick={(e) => e.stopPropagation()}
           >
-            <CoursePreviewPanel
-              course={selectedCourse}
-              onClose={() => setSelectedAndNotify(null)}
-              embedded
-              fromDashboard={fromDashboard}
-            />
+            <div className="overflow-hidden bg-retro-surface rounded-xl border border-retro-border min-h-0 flex-[0_0_58%]">
+              <CoursePreviewPanel
+                course={selectedCourse}
+                onClose={() => setSelectedAndNotify(null)}
+                embedded
+                compact
+                compactImageSmall
+                fromDashboard={fromDashboard}
+              />
+            </div>
             {isMobile &&
               selectedCourse.latitude != null &&
               selectedCourse.longitude != null && (
-                <div className="mt-4 rounded-xl overflow-hidden border border-retro-border bg-retro-card">
+                <div className="min-h-0 flex-1 rounded-xl overflow-hidden border border-retro-border bg-retro-card">
                   <p className="sr-only">Karta – vald bana</p>
                   <LeafletMap
                     key="mobile-overlay-map"
                     courses={[selectedCourse]}
                     selectedCourseId={selectedCourse.id}
-                    height="280px"
+                    height="100%"
                     isMobile
                   />
                 </div>

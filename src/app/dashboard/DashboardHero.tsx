@@ -10,9 +10,15 @@ type Props = {
   images: { url: string }[];
   userName?: string;
   userCity?: string | null;
+  /** På desktop: fyll förälderns höjd (t.ex. 100vh i split-layout). */
+  desktopFullHeight?: boolean;
+  /** Externt styrd bildindex (t.ex. vid mobil-sektioner som swipeas). */
+  controlledIndex?: number;
+  /** Stäng av automatisk bildrotation (t.ex. när index styrs externt). */
+  disableAutoAdvance?: boolean;
 };
 
-export default function DashboardHero({ images, userName, userCity }: Props) {
+export default function DashboardHero({ images, userName, userCity, desktopFullHeight, controlledIndex, disableAutoAdvance }: Props) {
   const [index, setIndex] = useState(0);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
@@ -30,12 +36,18 @@ export default function DashboardHero({ images, userName, userCity }: Props) {
   const prev = useCallback(() => goTo(index - 1), [index, goTo]);
 
   useEffect(() => {
+    if (disableAutoAdvance) return;
     if (images.length <= 1) return;
     intervalRef.current = setInterval(next, AUTO_ADVANCE_MS);
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [images.length, index, next]);
+  }, [disableAutoAdvance, images.length, index, next]);
+
+  useEffect(() => {
+    if (controlledIndex == null || images.length === 0) return;
+    setIndex(((controlledIndex % images.length) + images.length) % images.length);
+  }, [controlledIndex, images.length]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     setTouchEnd(null);
@@ -77,13 +89,16 @@ export default function DashboardHero({ images, userName, userCity }: Props) {
 
   if (images.length === 0) {
     return (
-      <div className="w-full h-[40vh] min-h-[240px] bg-retro-card/50 border-b border-retro-border" aria-hidden />
+      <div
+        className={`w-full bg-retro-card/50 border-b border-retro-border ${desktopFullHeight ? "h-full min-h-0" : "h-[40vh] min-h-[240px]"}`}
+        aria-hidden
+      />
     );
   }
 
   return (
     <section
-      className="relative w-full h-[60vh] min-h-[320px] max-h-[720px] overflow-hidden bg-stone-900 md:mt-6"
+      className={`relative w-full overflow-hidden bg-stone-900 ${desktopFullHeight ? "h-full min-h-0 max-h-none md:mt-0" : "h-[60vh] min-h-[320px] max-h-[720px] md:mt-6"}`}
       aria-label="Bildspel"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}

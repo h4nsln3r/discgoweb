@@ -45,6 +45,7 @@ export default function Topbar({
   const [searchQuery, setSearchQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
+  const topbarRef = useRef<HTMLDivElement>(null);
   const [displayName, setDisplayName] = useState<string | null>(initialDisplayName ?? null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(initialAvatarUrl ?? null);
 
@@ -53,6 +54,18 @@ export default function Topbar({
       searchInputRef.current?.focus();
     }
   }, [searchOpen]);
+
+  useEffect(() => {
+    const updateTopbarOffset = () => {
+      const height = topbarRef.current?.offsetHeight;
+      if (!height) return;
+      document.documentElement.style.setProperty("--topbar-offset", `${height}px`);
+    };
+
+    updateTopbarOffset();
+    window.addEventListener("resize", updateTopbarOffset);
+    return () => window.removeEventListener("resize", updateTopbarOffset);
+  }, [hasPageTitle, topbarActions.pageTitle, pathname]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -137,6 +150,7 @@ export default function Topbar({
     <>
       {/* Sticky topbar: vänster = meny + tillbaka, mitten = logga, höger = redigera + profil */}
       <div
+        ref={topbarRef}
         className={`fixed top-0 left-0 right-0 z-30 flex items-center justify-between bg-retro-surface/95 backdrop-blur-sm border-b border-retro-border px-3 py-2.5 md:px-3 md:py-4 shadow-lg transition-opacity duration-200 overflow-visible ${
           menuOpen ? "opacity-0 pointer-events-none" : "opacity-100"
         }`}
@@ -293,9 +307,6 @@ export default function Topbar({
           </Link>
         </div>
       </div>
-
-      {/* Spacer: tunn bar + profilbild som sticker ut under */}
-      <div className="h-10 md:h-18 shrink-0" aria-hidden />
 
       {/* 🔲 Overlay */}
       {menuOpen && (

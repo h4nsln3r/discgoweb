@@ -2,6 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --topbar-offset: 3.25rem;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --topbar-offset: 4.75rem;
+  }
+}
+
 @layer base {
   html {
     scroll-behavior: smooth;
@@ -25,4 +35,13 @@
 .animate-participant-in {
   opacity: 0;
   animation: participant-in 0.65s cubic-bezier(0.22, 1, 0.36, 1) 0.5s forwards;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
 }

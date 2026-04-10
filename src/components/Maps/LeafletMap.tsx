@@ -187,6 +187,36 @@ function FitBoundsToCourses({
   return null;
 }
 
+function MapResizeHandler() {
+  const map = useMap();
+
+  useEffect(() => {
+    const invalidate = () => {
+      requestAnimationFrame(() => {
+        try {
+          map.invalidateSize(false);
+        } catch {
+          // Ignorera om kartan inte är redo ännu
+        }
+      });
+    };
+
+    invalidate();
+    window.addEventListener("resize", invalidate);
+
+    const container = map.getContainer();
+    const resizeObserver = new ResizeObserver(() => invalidate());
+    resizeObserver.observe(container);
+
+    return () => {
+      window.removeEventListener("resize", invalidate);
+      resizeObserver.disconnect();
+    };
+  }, [map]);
+
+  return null;
+}
+
 type Props = {
   courses: Course[];
   onSelectCourse?: (course: Course) => void;
@@ -260,6 +290,7 @@ export default function LeafletMap({
         className="w-full h-full z-0 rounded-lg shadow"
         style={{ height }}
       >
+      <MapResizeHandler />
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a>'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
