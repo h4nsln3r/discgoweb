@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { getCurrentUserWithAdmin } from "@/lib/auth-server";
-import { createServerSupabaseClient, createSupabaseAdminClient } from "@/lib/supabase-server";
+import { createServerSupabaseClient, createOptionalSupabaseAdminClient } from "@/lib/supabase-server";
 import { CalendarDaysIcon, TrophyIcon } from "@heroicons/react/24/outline";
 import AuthAwareLink from "@/components/AuthAwareLink";
 import { SetTopbarActions } from "@/components/Topbar/TopbarActionsContext";
@@ -34,17 +34,20 @@ type CompetitionWithCourses = {
 
 export default async function CompetitionDetailPage({ params, searchParams }: PageProps) {
   const { id } = await params;
+  const competitionId = id as string;
   const resolvedSearchParams = searchParams ? await searchParams : {};
   const justJoined = resolvedSearchParams?.joined === "1";
 
   const supabase = await createServerSupabaseClient();
-  // Admin-klient för publik data så gäster (utan inloggning) också ser tävling + banor + deltagare + resultat
-  const admin = createSupabaseAdminClient();
+  // Admin-klient för publik data. Om env saknas faller vi tillbaka till vanliga klienten utan att krascha sidan.
+  const admin = createOptionalSupabaseAdminClient();
+  if (!admin) {
+    console.error(
+      "[COMPETITION PAGE] Missing SUPABASE_SERVICE_ROLE_KEY. Falling back to session-scoped client; anonymous users may see limited data."
+    );
+  }
 
-  const { data: rawCompetition, error } = await admin
-    .from("competitions")
-    .select(
-      `
+  const competitionQuery = `
       id,
       title,
       description,
@@ -56,10 +59,18 @@ export default async function CompetitionDetailPage({ params, searchParams }: Pa
         course_id,
         courses ( id, name, latitude, longitude, location, main_image_url )
       )
-    `
-    )
-    .eq("id", id as string)
-    .single();
+    `;
+  const { data: rawCompetition, error } = admin
+    ? await admin
+        .from("competitions")
+        .select(competitionQuery)
+        .eq("id", competitionId as any)
+        .single()
+    : await supabase
+        .from("competitions")
+        .select(competitionQuery)
+        .eq("id", competitionId as any)
+        .single();
 
   const competition = rawCompetition as CompetitionWithCourses | null;
 
@@ -68,24 +79,43 @@ export default async function CompetitionDetailPage({ params, searchParams }: Pa
     notFound();
   }
 
-  const { user, isAdmin } = await getCurrentUserWithAdmin(supabase);
+  const { user, isAdmin } = await getCurrentUserWithAdmin(supabase as any);
 
-  const { data: participantsData } = await admin
-    .from("competition_participants")
-    .select("user_id, profiles(alias, avatar_url)")
-    .eq("competition_id", id);
-
-  const { data: creatorProfile } = competition.created_by
+  const { data: participantsData, error: participantsError } = admin
     ? await admin
+        .from("competition_participants")
+        .select("user_id, profiles(alias, avatar_url)")
+        .eq("competition_id", competitionId as any)
+    : await supabase
+        .from("competition_participants")
+        .select("user_id, profiles(alias, avatar_url)")
+        .eq("competition_id", competitionId as any);
+  if (participantsError) {
+    console.error("[COMPETITION PAGE] Failed to load participants", participantsError);
+  }
+
+  const { data: creatorProfileRaw } = competition.created_by
+    ? admin
+      ? await admin
         .from("profiles")
         .select("id, alias, avatar_url")
-        .eq("id", competition.created_by)
+        .eq("id", competition.created_by as any)
+        .single()
+      : await supabase
+        .from("profiles")
+        .select("id, alias, avatar_url")
+        .eq("id", competition.created_by as any)
         .single()
     : { data: null };
+  const creatorProfile = creatorProfileRaw as { id: string; alias: string | null; avatar_url: string | null } | null;
 
   type ParticipantRow = { user_id: string; alias: string | null; avatar_url: string | null };
-  const participantsFromJoin = (participantsData ?? []).map((p) => {
-    const prof = (p as { profiles: { alias: string | null; avatar_url: string | null } | null }).profiles;
+  type ParticipantSelectRow = {
+    user_id: string;
+    profiles: { alias: string | null; avatar_url: string | null } | null;
+  };
+  const participantsFromJoin = ((participantsData ?? []) as unknown as ParticipantSelectRow[]).map((p) => {
+    const prof = p.profiles;
     return {
       user_id: (p as { user_id: string }).user_id,
       alias: prof?.alias ?? null,
@@ -105,11 +135,16 @@ export default async function CompetitionDetailPage({ params, searchParams }: Pa
   const organizerIds = new Set<string>();
   if (competition.created_by) organizerIds.add(competition.created_by);
   try {
-    const { data: extraOrganizersData } = await admin
-      .from("competition_organizers")
-      .select("user_id")
-      .eq("competition_id", id);
-    (extraOrganizersData ?? []).forEach((r) => organizerIds.add(r.user_id));
+    const { data: extraOrganizersData } = admin
+      ? await admin
+          .from("competition_organizers")
+          .select("user_id")
+          .eq("competition_id", competitionId as any)
+      : await supabase
+          .from("competition_organizers")
+          .select("user_id")
+          .eq("competition_id", competitionId as any);
+    (extraOrganizersData ?? []).forEach((r: any) => organizerIds.add(r.user_id));
   } catch {
     // Tabellen competition_organizers kanske inte finns än
   }
@@ -122,11 +157,20 @@ export default async function CompetitionDetailPage({ params, searchParams }: Pa
     user?.id && (participantIds.has(user.id) || competition.created_by === user.id)
   );
 
-  const { data: competitionScores } = await admin
-    .from("scores")
-    .select("id, score, throws, date_played, created_at, course_id, user_id, courses ( name ), profiles!scores_user_id_fkey( alias )")
-    .eq("competition_id", id)
-    .order("score", { ascending: true });
+  const { data: competitionScores, error: competitionScoresError } = admin
+    ? await admin
+        .from("scores")
+        .select("id, score, throws, date_played, created_at, course_id, user_id, courses ( name ), profiles!scores_user_id_fkey( alias )")
+        .eq("competition_id", competitionId as any)
+        .order("score", { ascending: true })
+    : await supabase
+        .from("scores")
+        .select("id, score, throws, date_played, created_at, course_id, user_id, courses ( name ), profiles!scores_user_id_fkey( alias )")
+        .eq("competition_id", competitionId as any)
+        .order("score", { ascending: true });
+  if (competitionScoresError) {
+    console.error("[COMPETITION PAGE] Failed to load competition scores", competitionScoresError);
+  }
 
   type ScoreRow = {
     id: string;
@@ -140,21 +184,22 @@ export default async function CompetitionDetailPage({ params, searchParams }: Pa
     profiles: { alias?: string } | null;
   };
 
-  const scoresByCourse = (competitionScores ?? []).reduce(
+  const scoreRows = (competitionScores ?? []) as ScoreRow[];
+  const scoresByCourse = scoreRows.reduce(
     (acc: Record<string, ScoreRow[]>,
      row) => {
-      const courseId = (row as ScoreRow).course_id;
+      const courseId = row.course_id;
       if (!acc[courseId]) acc[courseId] = [];
-      acc[courseId].push(row as ScoreRow);
+      acc[courseId].push(row);
       return acc;
     },
     {}
   );
 
-  const totalsByUser = (competitionScores ?? []).reduce(
+  const totalsByUser: Record<string, { alias: string; throws: number; score: number }> = scoreRows.reduce(
     (acc: Record<string, { alias: string; throws: number; score: number }>,
      row) => {
-      const r = row as ScoreRow;
+      const r = row;
       const uid = r.user_id ?? "unknown";
       if (!acc[uid]) {
         acc[uid] = {
@@ -169,12 +214,11 @@ export default async function CompetitionDetailPage({ params, searchParams }: Pa
     },
     {}
   );
-  const totalRows = Object.entries(totalsByUser).sort(
+  const totalRows: [string, { alias: string; throws: number; score: number }][] = Object.entries(totalsByUser).sort(
     (a, b) => a[1].score - b[1].score
   );
 
-  const scoreEntriesForHoles = (competitionScores ?? []).map((row) => {
-    const r = row as ScoreRow;
+  const scoreEntriesForHoles = scoreRows.map((r) => {
     return {
       scoreId: r.id,
       userId: r.user_id ?? "",

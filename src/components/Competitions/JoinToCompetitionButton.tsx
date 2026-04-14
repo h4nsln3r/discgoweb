@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { Database } from "@/types/supabase";
 import { useToast } from "@/components/Toasts/ToastProvider";
 
 type Props = {
@@ -14,33 +12,32 @@ type Props = {
 
 export default function JoinToCompetitionButton({ competitionId, competitionTitle, className }: Props) {
   const router = useRouter();
-  const supabase = createClientComponentClient<Database>();
   const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
 
   const handleJoin = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      router.push(`/auth?redirect=${encodeURIComponent(`/competitions/${competitionId}`)}`);
-      return;
-    }
     setLoading(true);
-    const { error } = await supabase.from("competition_participants").insert({
-      competition_id: competitionId,
-      user_id: user.id,
-    });
-    if (error) {
-      if (error.code === "23505") {
-        showToast("Du har redan gått med i denna tävling.", "error");
-      } else {
-        showToast(error.message || "Kunde inte gå med.", "error");
+    try {
+      const res = await fetch(`/api/competitions/${competitionId}/join`, {
+        method: "POST",
+      });
+      const body = (await res.json().catch(() => ({}))) as { error?: string };
+
+      if (res.status === 401) {
+        router.push(`/auth?redirect=${encodeURIComponent(`/competitions/${competitionId}`)}`);
+        return;
       }
-    } else {
+      if (!res.ok) {
+        showToast(body.error || "Kunde inte gå med.", "error");
+        return;
+      }
+
       showToast("Du har gått med i " + competitionTitle + "!", "success");
       await router.push(`/competitions/${competitionId}?joined=1`);
       router.refresh();
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (

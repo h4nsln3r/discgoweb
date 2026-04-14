@@ -27,3 +27,14 @@ export function createSupabaseAdminClient() {
   }
   return createClient<Database>(url, key);
 }
+
+/**
+ * Säker variant för server-rendering:
+ * returnerar null i stället för att kasta om service role saknas.
+ */
+export function createOptionalSupabaseAdminClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return null;
+  return createClient<Database>(url, key);
+}

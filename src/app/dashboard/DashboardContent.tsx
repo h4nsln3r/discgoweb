@@ -379,7 +379,7 @@ export default function DashboardContent({ userName, userCity = null }: { userNa
         </div>
       </section>
 
-      {mapSectionProminent && (
+      {mapSectionProminent && !selectedMapCourseId && (
         <button
           type="button"
           onClick={() => heroSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
