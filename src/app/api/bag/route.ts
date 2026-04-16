@@ -20,8 +20,9 @@ export async function GET() {
 
   const { data: bagRows, error } = await supabase
     .from("player_bag")
-    .select("id, disc_id, created_at, status")
+    .select("id, disc_id, created_at, status, sort_order")
     .eq("user_id", user.id)
+    .order("sort_order", { ascending: true, nullsFirst: false })
     .order("created_at", { ascending: true });
 
   if (error) {
@@ -48,6 +49,7 @@ export async function GET() {
     disc_id: r.disc_id,
     created_at: r.created_at,
     status: r.status ?? "active",
+    sort_order: r.sort_order ?? null,
     disc: discMap.get(r.disc_id) ?? null,
   }));
 
@@ -75,9 +77,19 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "disc_id required" }, { status: 400 });
   }
 
+  const { data: lastBagItem } = await supabase
+    .from("player_bag")
+    .select("sort_order")
+    .eq("user_id", user.id)
+    .order("sort_order", { ascending: false, nullsFirst: false })
+    .limit(1)
+    .maybeSingle();
+
+  const nextSortOrder = (lastBagItem?.sort_order ?? -1) + 1;
+
   const { data, error } = await supabase
     .from("player_bag")
-    .insert({ user_id: user.id, disc_id })
+    .insert({ user_id: user.id, disc_id, sort_order: nextSortOrder })
     .select("id")
     .single();
 
@@ -147,8 +159,54 @@ export async function PATCH(req: Request) {
   }
 
   const body = await req.json().catch(() => ({}));
+  const action = body.action as string | undefined;
   const bagItemId = body.bag_item_id as string | undefined;
   const status = body.status as string | undefined;
+
+  if (action === "reorder") {
+    const items = Array.isArray(body.items) ? body.items : [];
+    if (items.length === 0) {
+      return NextResponse.json({ error: "items required" }, { status: 400 });
+    }
+
+    const bagItemIds = items
+      .map((item) => item?.id)
+      .filter((id): id is string => typeof id === "string");
+
+    if (bagItemIds.length !== items.length) {
+      return NextResponse.json({ error: "Each item must include id" }, { status: 400 });
+    }
+
+    const { data: existingItems, error: existingError } = await supabase
+      .from("player_bag")
+      .select("id")
+      .eq("user_id", user.id)
+      .in("id", bagItemIds);
+
+    if (existingError) {
+      return NextResponse.json({ error: existingError.message }, { status: 500 });
+    }
+
+    if ((existingItems ?? []).length !== bagItemIds.length) {
+      return NextResponse.json({ error: "One or more bag items were not found" }, { status: 404 });
+    }
+
+    const updates = items.map((item, index) =>
+      supabase
+        .from("player_bag")
+        .update({ sort_order: index })
+        .eq("id", item.id)
+        .eq("user_id", user.id)
+    );
+
+    const results = await Promise.all(updates);
+    const updateError = results.find((result) => result.error)?.error;
+    if (updateError) {
+      return NextResponse.json({ error: updateError.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ ok: true });
+  }
 
   if (!bagItemId || !status || !BAG_STATUSES.includes(status as (typeof BAG_STATUSES)[number])) {
     return NextResponse.json(

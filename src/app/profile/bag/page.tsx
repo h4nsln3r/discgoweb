@@ -1,5 +1,4 @@
 // app/profile/bag/page.tsx
-import BackButton from "@/components/Buttons/BackButton";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { redirect } from "next/navigation";
 import BagManager from "./BagManager";
@@ -25,9 +24,6 @@ export default async function ProfileBagPage() {
 
   return (
     <main className="p-4 sm:p-6 max-w-3xl mx-auto">
-      <div className="mb-6">
-        <BackButton />
-      </div>
       <h1 className="text-2xl font-bold text-stone-100 mb-2">Min bag</h1>
       <p className="text-stone-400 text-sm mb-6">
         Lägg till discar från listan nedan. Du kan plocka discar från alla discar som finns i systemet. Du kan också välja favorit disc direkt här.

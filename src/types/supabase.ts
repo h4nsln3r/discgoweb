@@ -331,6 +331,7 @@ export type Database = {
           disc_id: string
           created_at: string
           status: "active" | "discarded" | "worthless" | "for_trade"
+          sort_order: number | null
         }
         Insert: {
           id?: string
@@ -338,6 +339,7 @@ export type Database = {
           disc_id: string
           created_at?: string
           status?: "active" | "discarded" | "worthless" | "for_trade"
+          sort_order?: number | null
         }
         Update: {
           id?: string
@@ -345,6 +347,7 @@ export type Database = {
           disc_id?: string
           created_at?: string
           status?: "active" | "discarded" | "worthless" | "for_trade"
+          sort_order?: number | null
         }
         Relationships: [
           {

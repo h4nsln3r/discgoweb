@@ -132,6 +132,13 @@ export default function Topbar({
     (pathname
       ? "/" + pathname.split("/").filter(Boolean).slice(0, -1).join("/") || "/"
       : "/");
+  const handleBackClick = () => {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back();
+      return;
+    }
+    router.push(backHref);
+  };
 
   const linkClass = (href: string, highlight = false) =>
     navLinkClass(
@@ -168,14 +175,15 @@ export default function Topbar({
             <div className="shrink-0 -ml-0.5">{topbarActions.topbarExtraLeft}</div>
           )}
           {showBackLink && (
-            <Link
-              href={backHref}
+            <button
+              type="button"
+              onClick={handleBackClick}
               className="inline-flex items-center gap-1 p-1 md:p-1.5 rounded-lg hover:bg-retro-card text-stone-400 hover:text-stone-200 transition shrink-0"
               aria-label="Tillbaka"
             >
               <ArrowLeftIcon className="w-4 h-4 md:w-5 md:h-5" />
               <span className="hidden md:inline text-sm font-medium">Tillbaka</span>
-            </Link>
+            </button>
           )}
         </div>
 
