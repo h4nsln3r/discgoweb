@@ -6,6 +6,7 @@ import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Database } from "@/types/supabase";
 import { useToast } from "@/components/Toasts/ToastProvider";
 import { SetTopbarActions } from "@/components/Topbar/TopbarActionsContext";
+import { compareCompetitionCourseOrder } from "@/lib/competition-courses-sort";
 
 export default function AddCompetitionScorePage() {
   const supabase = useMemo(() => createClientComponentClient<Database>(), []);
@@ -26,11 +27,18 @@ export default function AddCompetitionScorePage() {
     const fetchCourses = async () => {
       const { data, error } = await supabase
         .from("competition_courses")
-        .select("course_id, courses ( name )")
+        .select("course_id, created_at, courses ( name )")
         .eq("competition_id", competitionId);
 
       if (data) {
-        const formatted = data
+        const rows = [...data] as {
+          course_id: string | null;
+          sort_order?: number | null;
+          created_at: string | null;
+          courses: { name: string } | null;
+        }[];
+        rows.sort(compareCompetitionCourseOrder);
+        const formatted = rows
           .filter(
             (
               entry

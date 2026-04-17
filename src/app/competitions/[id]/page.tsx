@@ -4,7 +4,10 @@ import { createServerSupabaseClient, createOptionalSupabaseAdminClient } from "@
 import { CalendarDaysIcon, TrophyIcon } from "@heroicons/react/24/outline";
 import AuthAwareLink from "@/components/AuthAwareLink";
 import { SetTopbarActions } from "@/components/Topbar/TopbarActionsContext";
-import CompetitionCoursesMapClient from "@/components/Competitions/CompetitionCoursesMapClient";
+import {
+  CompetitionHeroDesktopTop,
+  CompetitionMapMainFlow,
+} from "@/components/Competitions/CompetitionMapPlacement";
 import JoinToCompetitionButton from "@/components/Competitions/JoinToCompetitionButton";
 import CompetitionParticipantsSection from "@/components/Competitions/CompetitionParticipantsSection";
 import ScrollToDeltagareOnJoin from "@/components/Competitions/ScrollToDeltagareOnJoin";
@@ -12,6 +15,7 @@ import DeleteCompetitionButton from "@/components/Competitions/DeleteCompetition
 import CompetitionBanorResultatSection from "@/components/Competitions/CompetitionBanorResultatSection";
 import CompetitionStabilitySection from "@/components/Competitions/CompetitionStabilitySection";
 import CompetitionRoundCharts from "@/components/Competitions/CompetitionRoundCharts";
+import { sortCompetitionCourseLinks } from "@/lib/competition-courses-sort";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -28,7 +32,17 @@ type CompetitionWithCourses = {
   created_by: string | null;
   competition_courses: {
     course_id: string;
-    courses: { id: string; name: string; latitude: number | null; longitude: number | null; location: string | null; main_image_url: string | null } | null;
+    /** Finns efter migrering `competition_courses_sort_order` */
+    sort_order?: number | null;
+    created_at: string | null;
+    courses: {
+      id: string;
+      name: string;
+      latitude: number | null;
+      longitude: number | null;
+      location: string | null;
+      main_image_url: string | null;
+    } | null;
   }[];
 };
 
@@ -57,6 +71,7 @@ export default async function CompetitionDetailPage({ params, searchParams }: Pa
       created_by,
       competition_courses (
         course_id,
+        created_at,
         courses ( id, name, latitude, longitude, location, main_image_url )
       )
     `;
@@ -230,8 +245,37 @@ export default async function CompetitionDetailPage({ params, searchParams }: Pa
 
   const isGuest = !user;
 
+  const competitionCourseIds = competition.competition_courses
+    .map((e) => e.course_id)
+    .filter((cid): cid is string => Boolean(cid));
+
+  const holeCountByCourse: Record<string, number> = {};
+  if (competitionCourseIds.length > 0) {
+    const holesQuery = admin
+      ? await admin.from("course_holes").select("course_id").in("course_id", competitionCourseIds as any)
+      : await supabase.from("course_holes").select("course_id").in("course_id", competitionCourseIds as any);
+    if (holesQuery.error) {
+      console.error("[COMPETITION PAGE] Failed to load course_holes for hole counts", holesQuery.error);
+    }
+    for (const row of holesQuery.data ?? []) {
+      const cid = (row as { course_id: string }).course_id;
+      holeCountByCourse[cid] = (holeCountByCourse[cid] ?? 0) + 1;
+    }
+  }
+
+  const orderedCompetitionCourses = sortCompetitionCourseLinks(competition.competition_courses);
+  const mapCourses = orderedCompetitionCourses
+    .map((e) => e.courses)
+    .filter((c): c is NonNullable<typeof c> => c != null)
+    .map((c) => ({
+      ...c,
+      hole_count: holeCountByCourse[c.id] ?? 0,
+    }));
+
+  const hasHeroImage = Boolean(competition.image_url);
+
   return (
-    <div className={isGuest ? "" : "pt-2 md:pt-7"}>
+    <div>
       <SetTopbarActions
         backHref="/competitions"
         editHref={canEditCompetition ? `/competitions/${id}/edit` : null}
@@ -248,14 +292,14 @@ export default async function CompetitionDetailPage({ params, searchParams }: Pa
           />
           {/* Tävlingsnamn + datum nere till vänster på bilden */}
           <div
-            className="absolute bottom-0 left-0 right-0 pt-16 pb-4 px-4 md:px-6 md:pt-10 md:pb-3 bg-gradient-to-t from-black/80 via-black/40 to-transparent"
+            className="absolute bottom-0 left-0 right-0 pt-16 px-4 pb-14 md:px-6 md:pt-10 md:pb-20 bg-gradient-to-t from-black/80 via-black/40 to-transparent"
             aria-hidden
           >
-            <h1 className="font-bebas text-7xl sm:text-8xl md:text-[5.5rem] lg:text-[7rem] xl:text-[8.5rem] tracking-wide uppercase text-white drop-shadow-lg max-w-5xl md:max-w-4xl leading-none md:mt-2 md:leading-tight">
+            <h1 className="font-bebas text-7xl sm:text-8xl md:text-[5.5rem] lg:text-[7rem] xl:text-[8.5rem] tracking-wide uppercase text-white drop-shadow-lg max-w-5xl md:max-w-4xl leading-none md:mt-2 md:leading-none mb-0">
               {competition.title}
             </h1>
             {competition.start_date && competition.end_date && (
-              <p className="mt-2 md:mt-1 md:mb-3 text-white/95 text-lg md:text-xl font-medium drop-shadow-md uppercase tracking-wide">
+              <p className="mt-2 md:mt-1.5 md:mb-3 text-white/95 text-lg md:text-xl font-medium drop-shadow-md uppercase tracking-wide leading-snug">
                 {isSameDay(competition.start_date, competition.end_date)
                   ? formatDateWithWeekday(competition.start_date)
                   : `${formatDateWithWeekday(competition.start_date)} – ${formatDateWithWeekday(competition.end_date)}`}
@@ -271,21 +315,58 @@ export default async function CompetitionDetailPage({ params, searchParams }: Pa
               />
             </div>
           )}
+          <CompetitionHeroDesktopTop
+            courses={mapCourses}
+            competitionId={id}
+            infoColumn={
+              competition.description ? (
+                <div className="rounded-xl border border-white/20 bg-black/50 backdrop-blur-md p-4 shadow-lg ring-1 ring-black/25">
+                  <p className="text-white/95 whitespace-pre-line text-sm leading-relaxed drop-shadow-sm">
+                    {competition.description}
+                  </p>
+                </div>
+              ) : null
+            }
+            metaColumn={
+              <>
+                {competition.start_date && competition.end_date ? (
+                  <CompetitionDateCard startDate={competition.start_date} endDate={competition.end_date} />
+                ) : null}
+                <CompetitionParticipantsSection
+                  id="deltagare"
+                  competitionId={id}
+                  competitionTitle={competition.title}
+                  createdBy={competition.created_by}
+                  organizerIds={Array.from(organizerIds)}
+                  participants={participants}
+                  currentUserId={user?.id ?? null}
+                  justJoined={justJoined}
+                  isGuest={isGuest}
+                />
+              </>
+            }
+          />
         </div>
       )}
       <div className="w-full px-4 py-8 md:px-0 md:py-8">
       <ScrollToDeltagareOnJoin justJoined={justJoined} />
-      {/* Desktop: 100vw, 25% beskrivning | 20% datum+deltagare | 55% banor. Mobil: staplad. */}
+      {/* Utan hjältebild (desktop): 25% / 20% / 55%. Med hjältebild: beskrivning + datum + deltagare ligger i heron på md+. */}
       <div
-        className={`grid gap-4 md:gap-0 items-start
-          grid-cols-1
-          ${competition.description
-            ? "md:w-screen md:relative md:left-1/2 md:-translate-x-1/2 md:grid-cols-[25vw_20vw_55vw]"
-            : "md:w-screen md:relative md:left-1/2 md:-translate-x-1/2 md:grid-cols-[20vw_80vw]"
+        className={`grid gap-4 items-start grid-cols-1
+          ${
+            hasHeroImage
+              ? "md:max-w-5xl md:mx-auto md:gap-8 md:grid-cols-1"
+              : `md:gap-0 md:w-screen md:relative md:left-1/2 md:-translate-x-1/2 ${
+                  competition.description
+                    ? "md:grid-cols-[25vw_20vw_55vw]"
+                    : "md:grid-cols-[20vw_80vw]"
+                }`
           }`}
       >
         {competition.description && (
-          <section className="min-w-0 w-full pl-4 md:pl-5 md:pr-2">
+          <section
+            className={`min-w-0 w-full pl-4 md:pl-5 md:pr-2 ${hasHeroImage ? "md:hidden" : ""}`}
+          >
             <div className="md:sticky md:top-24">
               <h2 className="font-bebas text-xl md:text-2xl tracking-wide uppercase text-stone-100 mb-2 md:mb-3">
                 {competition.title}
@@ -296,7 +377,7 @@ export default async function CompetitionDetailPage({ params, searchParams }: Pa
             </div>
           </section>
         )}
-        <aside className="min-w-0 space-y-6 md:px-2 md:pr-2">
+        <aside className={`min-w-0 space-y-6 ${hasHeroImage ? "md:hidden" : "md:px-2 md:pr-2"}`}>
           {competition.start_date && competition.end_date && (
             <CompetitionDateCard
               startDate={competition.start_date}
@@ -316,11 +397,10 @@ export default async function CompetitionDetailPage({ params, searchParams }: Pa
           />
         </aside>
         <main className="min-w-0 space-y-6 md:pl-4 md:pr-6">
-      <CompetitionCoursesMapClient
+      <CompetitionMapMainFlow
+        hasHeroImage={Boolean(competition.image_url)}
         competitionId={id}
-        courses={competition.competition_courses
-          .map((e) => e.courses)
-          .filter((c): c is NonNullable<typeof c> => c != null)}
+        courses={mapCourses}
       />
 
       <div className="flex flex-wrap items-center gap-3">
@@ -339,7 +419,7 @@ export default async function CompetitionDetailPage({ params, searchParams }: Pa
       <section className="w-full px-4 py-8 md:px-6 md:py-10">
       <CompetitionBanorResultatSection
         competitionId={id}
-        entries={competition.competition_courses.map((entry) => ({
+        entries={orderedCompetitionCourses.map((entry) => ({
           course_id: entry.course_id,
           courseName: entry.courses?.name ?? "Okänd bana",
           main_image_url: entry.courses?.main_image_url ?? null,

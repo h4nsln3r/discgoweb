@@ -297,32 +297,40 @@ export default function BagManager({ discs, favoriteDiscId }: { discs: Disc[]; f
           <PlusCircleIcon className="w-5 h-5 text-retro-accent" />
           Lägg till disc
         </h2>
-        {availableDiscs.length === 0 ? (
-          <p className="text-stone-500 text-sm">Alla discar är redan i din bag.</p>
-        ) : (
-          <div className="flex flex-wrap gap-2 items-center">
-            <select
-              className="rounded-xl border border-retro-border bg-retro-card text-stone-200 px-3 py-2 min-w-[180px] focus:outline-none focus:ring-2 focus:ring-retro-accent"
-              value={selectedDiscId}
-              onChange={(e) => setSelectedDiscId(e.target.value)}
-            >
-              <option value="">Välj disc...</option>
-              {availableDiscs.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.name}
-                </option>
-              ))}
-            </select>
-            <button
-              type="button"
-              disabled={!selectedDiscId || adding}
-              onClick={addToBag}
-              className="px-4 py-2 rounded-xl bg-retro-accent text-stone-100 font-medium hover:bg-retro-accent-hover transition disabled:opacity-50"
-            >
-              {adding ? "Lägger till..." : "Lägg till"}
-            </button>
-          </div>
-        )}
+        <div className="space-y-2">
+          {availableDiscs.length === 0 ? (
+            <p className="text-stone-500 text-sm">Alla discar är redan i din bag.</p>
+          ) : (
+            <div className="flex flex-wrap gap-2 items-center">
+              <select
+                className="rounded-xl border border-retro-border bg-retro-card text-stone-200 px-3 py-2 min-w-[180px] focus:outline-none focus:ring-2 focus:ring-retro-accent"
+                value={selectedDiscId}
+                onChange={(e) => setSelectedDiscId(e.target.value)}
+              >
+                <option value="">Välj disc...</option>
+                {availableDiscs.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                disabled={!selectedDiscId || adding}
+                onClick={addToBag}
+                className="px-4 py-2 rounded-xl bg-retro-accent text-stone-100 font-medium hover:bg-retro-accent-hover transition disabled:opacity-50"
+              >
+                {adding ? "Lägger till..." : "Lägg till"}
+              </button>
+            </div>
+          )}
+          <Link
+            href="/discs/new"
+            className="inline-flex items-center rounded-xl border border-retro-border bg-retro-card px-3 py-2 text-sm text-stone-200 hover:bg-retro-card/80 transition"
+          >
+            Skapa en ny disc
+          </Link>
+        </div>
         {error && <p className="text-amber-400 text-sm mt-2">{error}</p>}
       </div>
 

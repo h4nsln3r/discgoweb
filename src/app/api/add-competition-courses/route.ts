@@ -23,7 +23,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
   }
 
-  const inserts = courseIds.map((courseId) => ({
+  // sort_order sätts när kolumnen finns (migrering). Ordning följer arrayen → skapa rader i samma ordning.
+  const inserts = courseIds.map((courseId: string) => ({
     competition_id: competitionId,
     course_id: courseId,
   }));

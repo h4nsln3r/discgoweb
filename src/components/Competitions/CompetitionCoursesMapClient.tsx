@@ -9,11 +9,13 @@ type CourseInput = {
   longitude: number | null;
   location: string | null;
   main_image_url?: string | null;
+  hole_count?: number;
 };
 
 type Props = {
   courses: CourseInput[];
   competitionId?: string;
+  variant?: "default" | "hero";
 };
 
 const CompetitionCoursesMap = dynamic(
@@ -21,7 +23,7 @@ const CompetitionCoursesMap = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="rounded-xl border border-retro-border bg-retro-surface h-80 animate-pulse" />
+      <div className="rounded-xl border border-retro-border bg-retro-surface h-52 animate-pulse" />
     ),
   }
 );
@@ -29,8 +31,9 @@ const CompetitionCoursesMap = dynamic(
 export default function CompetitionCoursesMapClient({
   courses,
   competitionId,
+  variant = "default",
 }: Props) {
   return (
-    <CompetitionCoursesMap courses={courses} competitionId={competitionId} />
+    <CompetitionCoursesMap courses={courses} competitionId={competitionId} variant={variant} />
   );
 }

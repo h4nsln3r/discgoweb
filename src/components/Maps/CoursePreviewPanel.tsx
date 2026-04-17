@@ -23,6 +23,16 @@ type Props = {
   compact?: boolean;
   /** Extra kompakt bild (halv höjd) – för mobil-bottenpanel. */
   compactImageSmall?: boolean;
+  /** Hög bild i kompakt läge (t.ex. sidebar i tävlingsheron). */
+  compactImageTall?: boolean;
+  /** Visa banrekord / hemmabana trots compact (t.ex. tävlingssidebar). */
+  showExtrasInCompact?: boolean;
+  /** Dölj "Lägg till resultat". */
+  hideAddResult?: boolean;
+  /** Dölj X ovanpå bilden när stäng finns utanför (undvik dubbel stäng). */
+  hideImageCloseButton?: boolean;
+  /** Ingen egen ram/rundning – fullbredd under accordion-rad (tävlingsheron). */
+  accordionFlush?: boolean;
 };
 
 type BestScore = {
@@ -33,7 +43,20 @@ type BestScore = {
   profiles: { alias: string | null } | null;
 };
 
-export default function CoursePreviewPanel({ course, onClose, embedded, fromDashboard, competitionId, compact, compactImageSmall }: Props) {
+export default function CoursePreviewPanel({
+  course,
+  onClose,
+  embedded,
+  fromDashboard,
+  competitionId,
+  compact,
+  compactImageSmall,
+  compactImageTall,
+  showExtrasInCompact,
+  hideAddResult,
+  hideImageCloseButton,
+  accordionFlush,
+}: Props) {
   const courseHref = course
     ? `/courses/${course.id}${fromDashboard ? "?from=dashboard" : competitionId ? `?from=competition&competitionId=${competitionId}` : ""}`
     : "#";
@@ -49,6 +72,11 @@ export default function CoursePreviewPanel({ course, onClose, embedded, fromDash
     let cancelled = false;
 
     (async () => {
+      if (accordionFlush && embedded) {
+        setBestScore(null);
+        setLoadingScore(false);
+        return;
+      }
       // Guard inside the effect to keep hooks order stable
       if (!course?.id) {
         setBestScore(null);
@@ -89,10 +117,14 @@ export default function CoursePreviewPanel({ course, onClose, embedded, fromDash
     return () => {
       cancelled = true;
     };
-  }, [course?.id, supabase]);
+  }, [course?.id, supabase, accordionFlush, embedded]);
 
   // Hemmabana – vilka som har denna bana som hemmabana
   useEffect(() => {
+    if (accordionFlush && embedded) {
+      setHomeCourseProfiles([]);
+      return;
+    }
     if (!course?.id) {
       setHomeCourseProfiles([]);
       return;
@@ -117,57 +149,96 @@ export default function CoursePreviewPanel({ course, onClose, embedded, fromDash
         if (!cancelled) setHomeCourseProfiles([]);
       });
     return () => { cancelled = true; };
-  }, [course?.id, supabase]);
+  }, [course?.id, supabase, accordionFlush, embedded]);
 
   // Early return placed AFTER all hooks are declared
   if (!course) return null;
   const dashboardSplitLayout = embedded && fromDashboard;
+  const accordionFlushLayout = Boolean(accordionFlush && embedded);
+
+  const accordionThumbImage = accordionFlushLayout && course.main_image_url;
+
+  const imageVisual = (
+    <>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={course.main_image_url!}
+        alt={course.name}
+        className={`h-full w-full object-cover ${
+          accordionFlushLayout ? "" : "transition-opacity hover:opacity-95"
+        }`}
+      />
+      {!hideImageCloseButton ? (
+        <button
+          type="button"
+          className="absolute top-3 right-3 p-2 rounded-full bg-retro-surface/90 hover:bg-retro-card border border-retro-border shadow"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onClose();
+          }}
+          aria-label="Stäng"
+        >
+          <XMarkIcon className="h-5 w-5 text-stone-200" />
+        </button>
+      ) : null}
+      {!accordionFlushLayout && course.hole_count != null && course.hole_count > 0 && (
+        <div className="absolute bottom-2 left-2 rounded-lg bg-black/60 px-2 py-1 text-xs font-medium text-stone-200">
+          {course.hole_count} hål
+        </div>
+      )}
+    </>
+  );
 
   const panelContent = (
     <div
-      className={`overflow-hidden bg-retro-surface ${embedded ? "rounded-xl border border-retro-border" : "rounded-t-3xl border-t border-retro-border"}`}
-      style={{ height: "100%" }}
+      className={`overflow-hidden bg-retro-surface ${
+        accordionFlushLayout
+          ? "rounded-none border-0 border-t border-amber-400/20 shadow-none bg-retro-surface/98"
+          : embedded
+            ? "rounded-xl border border-retro-border"
+            : "rounded-t-3xl border-t border-retro-border"
+      } ${
+        embedded && compact && showExtrasInCompact && !accordionFlushLayout
+          ? "flex flex-col min-h-0 h-full"
+          : ""
+      } ${accordionThumbImage ? "flex flex-col min-h-0" : ""}`}
+      style={accordionFlushLayout ? undefined : { height: "100%" }}
     >
-          {/* Header image – klickbar, går till bansidan */}
-          {course.main_image_url ? (
+          {/* Tävlings-accordion: liten bild överst (25 % av kortbredd), ingen länk till banan */}
+          {accordionThumbImage ? (
+            <div className="flex shrink-0 justify-center border-b border-amber-400/15 bg-black/10 py-2">
+              <div className="relative w-[25%] min-w-[3.25rem] max-w-[9rem] aspect-[4/3] overflow-hidden rounded-md bg-black/30">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={course.main_image_url}
+                  alt={course.name}
+                  className="absolute inset-0 h-full w-full object-cover object-center"
+                  sizes="(max-width: 768px) 25vw, 120px"
+                />
+              </div>
+            </div>
+          ) : course.main_image_url ? (
             <Link
               href={courseHref}
               onClick={onClose}
-              className={`relative block w-full overflow-hidden md:rounded-t-2xl cursor-pointer ${
+              className={`relative block w-full overflow-hidden cursor-pointer ${
+                accordionFlushLayout ? "rounded-none md:rounded-none" : "md:rounded-t-2xl"
+              } ${
                 dashboardSplitLayout
                   ? "h-[40%] min-h-[150px] md:min-h-[180px]"
                   : compact
-                    ? (compactImageSmall ? "aspect-[3/2] max-h-14" : "aspect-[3/2] max-h-28")
+                    ? compactImageTall
+                      ? "min-h-[20rem] h-96 sm:min-h-[22rem] sm:h-[26rem] w-full shrink-0"
+                      : compactImageSmall
+                        ? "aspect-[3/2] max-h-14"
+                        : "aspect-[3/2] max-h-28"
                     : "aspect-[16/9]"
               }`}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={course.main_image_url}
-                alt={course.name}
-                className="h-full w-full object-cover transition-opacity hover:opacity-95"
-              />
-              {/* Close btn over image – stoppar propagation så X bara stänger */}
-              <button
-                type="button"
-                className="absolute top-3 right-3 p-2 rounded-full bg-retro-surface/90 hover:bg-retro-card border border-retro-border shadow"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  onClose();
-                }}
-                aria-label="Stäng"
-              >
-                <XMarkIcon className="h-5 w-5 text-stone-200" />
-              </button>
-              {/* Antal hål – samma badge som på alla-banor-sidan */}
-              {course.hole_count != null && course.hole_count > 0 && (
-                <div className="absolute bottom-2 left-2 rounded-lg bg-black/60 px-2 py-1 text-xs font-medium text-stone-200">
-                  {course.hole_count} hål
-                </div>
-              )}
+              {imageVisual}
             </Link>
-          ) : (
+          ) : !hideImageCloseButton ? (
             <div className="flex justify-end p-3 border-b border-retro-border">
               <button
                 className="p-2 rounded-lg hover:bg-retro-card text-stone-300"
@@ -177,14 +248,26 @@ export default function CoursePreviewPanel({ course, onClose, embedded, fromDash
                 <XMarkIcon className="h-6 w-6" />
               </button>
             </div>
-          )}
+          ) : null}
 
           {/* Content */}
-          <div className={dashboardSplitLayout ? "p-4 h-[60%] overflow-y-auto" : "p-4"}>
+          <div
+            className={
+              accordionThumbImage
+                ? "p-3 sm:p-4 pb-4 flex-1 min-w-0 min-h-0 overflow-y-auto"
+                : dashboardSplitLayout
+                  ? "p-4 h-[60%] overflow-y-auto"
+                  : compact && showExtrasInCompact
+                    ? "p-4 pb-5 flex-1 min-h-0 overflow-y-auto"
+                    : "p-4"
+            }
+          >
             {/* Title & location – samma stil som lagnamn på lagsidan, mindre storlek + hover */}
             <div className="mb-2">
               <h3 className="text-xl font-bebas tracking-wide text-stone-100 uppercase">
-                {compact ? (
+                {accordionFlushLayout ? (
+                  <span className="text-stone-100">{course.name}</span>
+                ) : compact ? (
                   <Link href={courseHref} onClick={onClose} className="inline-block text-retro-accent transition-all duration-200 hover:scale-105 hover:text-amber-300">
                     Gå till: {course.name}
                   </Link>
@@ -194,6 +277,11 @@ export default function CoursePreviewPanel({ course, onClose, embedded, fromDash
                   </Link>
                 )}
               </h3>
+              {accordionFlushLayout ? (
+                <p className="mt-1 text-sm text-stone-400 tabular-nums">
+                  {course.hole_count ?? 0} hål
+                </p>
+              ) : null}
               {(course.location || course.city) && (
                 <p className="mt-1 text-sm text-stone-400 flex items-center gap-1">
                   <MapPinIcon className="h-4 w-4 shrink-0" />
@@ -204,8 +292,10 @@ export default function CoursePreviewPanel({ course, onClose, embedded, fromDash
               )}
             </div>
 
-            {/* Banrekord + Hemmabana för – samma rad */}
-            {!compact && ((!loadingScore && bestScore) || homeCourseProfiles.length > 0) && (
+            {/* Banrekord + Hemmabana för – samma rad (inte i tävlings-accordion) */}
+            {!accordionFlushLayout &&
+              (!compact || showExtrasInCompact) &&
+              ((!loadingScore && bestScore) || homeCourseProfiles.length > 0) && (
               <div className="mt-2 flex flex-row gap-2">
                 {/* Banrekord */}
                 {!loadingScore && bestScore && (
@@ -280,8 +370,8 @@ export default function CoursePreviewPanel({ course, onClose, embedded, fromDash
               </div>
             )}
 
-            {/* Actions – Lägg till resultat (visas alltid vid tävling, annars bara när inte compact) */}
-            {(!compact || competitionId) && (
+            {/* Actions – Lägg till resultat */}
+            {!hideAddResult && (!compact || competitionId) && (
               <div className="mt-4">
                 <Link
                   href={competitionId ? `/results/new?competition_id=${competitionId}&course_id=${course.id}` : `/results/new?course_id=${course.id}`}

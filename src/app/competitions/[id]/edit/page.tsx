@@ -9,6 +9,8 @@ import { SetTopbarActions } from "@/components/Topbar/TopbarActionsContext";
 import { useToast } from "@/components/Toasts/ToastProvider";
 import CompetitionImageField from "@/components/Forms/CompetitionImageField";
 import DeleteCompetitionButton from "@/components/Competitions/DeleteCompetitionButton";
+import { ChevronUpIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
+import { compareCompetitionCourseOrder } from "@/lib/competition-courses-sort";
 
 export default function EditCompetitionPage() {
   const supabase = useMemo(() => createClientComponentClient<Database>(), []);
@@ -96,14 +98,18 @@ export default function EditCompetitionPage() {
 
       const { data: compCourses } = await supabase
         .from("competition_courses")
-        .select("course_id")
+        .select("course_id, created_at")
         .eq("competition_id", id);
 
       if (cancelled) return;
 
-      const ids = (compCourses ?? [])
-        .map((r) => r.course_id)
-        .filter((c): c is string => c != null);
+      const rows = (compCourses ?? []) as {
+        course_id: string | null;
+        sort_order?: number | null;
+        created_at: string | null;
+      }[];
+      rows.sort(compareCompetitionCourseOrder);
+      const ids = rows.map((r) => r.course_id).filter((c): c is string => c != null);
       setSelectedCourseIds(ids);
 
       const { data: courses } = await supabase
@@ -180,10 +186,22 @@ export default function EditCompetitionPage() {
 
   const toggleCourse = (courseId: string, checked: boolean) => {
     if (checked) {
-      setSelectedCourseIds((prev) => [...prev, courseId]);
+      setSelectedCourseIds((prev) => (prev.includes(courseId) ? prev : [...prev, courseId]));
     } else {
       setSelectedCourseIds((prev) => prev.filter((c) => c !== courseId));
     }
+  };
+
+  const moveCourse = (index: number, direction: -1 | 1) => {
+    setSelectedCourseIds((prev) => {
+      const next = index + direction;
+      if (next < 0 || next >= prev.length) return prev;
+      const copy = [...prev];
+      const t = copy[index]!;
+      copy[index] = copy[next]!;
+      copy[next] = t;
+      return copy;
+    });
   };
 
   if (loading) {
@@ -314,27 +332,75 @@ export default function EditCompetitionPage() {
           inputClass={inputClass}
         />
 
-        <div>
-          <h2 className="font-semibold mb-2 text-stone-200">Banor i tävlingen</h2>
-          <div className="space-y-2 max-h-48 overflow-y-auto rounded-lg border border-retro-border p-3 bg-retro-card">
-            {allCourses.length === 0 ? (
-              <p className="text-sm text-retro-muted">Inga banor tillagda än.</p>
+        <div className="space-y-4">
+          <div>
+            <h2 className="font-semibold mb-2 text-stone-200">Spelordning</h2>
+            <p className="text-xs text-stone-500 mb-2">
+              Första banan överst. Om du inte ändrar ordning används samma ordning som när banorna kopplades till tävlingen.
+            </p>
+            {selectedCourseIds.length === 0 ? (
+              <p className="text-sm text-stone-500 rounded-lg border border-retro-border p-3 bg-retro-card">
+                Inga banor valda än. Kryssa i banor nedan – de läggs sist i ordningen.
+              </p>
             ) : (
-              allCourses.map((c) => (
-                <label
-                  key={c.id}
-                  className="flex items-center gap-2 cursor-pointer text-sm text-stone-200"
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedCourseIds.includes(c.id)}
-                    onChange={(e) => toggleCourse(c.id, e.target.checked)}
-                    className="rounded border-retro-border bg-retro-surface text-retro-accent focus:ring-retro-accent"
-                  />
-                  {c.name}
-                </label>
-              ))
+              <ol className="space-y-1.5 rounded-lg border border-retro-border p-3 bg-retro-card list-none m-0">
+                {selectedCourseIds.map((courseId, index) => {
+                  const name = allCourses.find((c) => c.id === courseId)?.name ?? courseId;
+                  return (
+                    <li
+                      key={courseId}
+                      className="flex items-center gap-2 rounded-md bg-retro-surface/80 border border-retro-border/60 px-2 py-1.5"
+                    >
+                      <span className="tabular-nums text-stone-500 text-sm w-6 shrink-0 font-medium">{index + 1}.</span>
+                      <span className="flex-1 min-w-0 text-sm text-stone-200 truncate">{name}</span>
+                      <div className="flex shrink-0 gap-0.5">
+                        <button
+                          type="button"
+                          onClick={() => moveCourse(index, -1)}
+                          disabled={index === 0}
+                          className="p-1 rounded text-stone-400 hover:text-stone-200 hover:bg-retro-card disabled:opacity-30 disabled:pointer-events-none"
+                          aria-label="Flytta upp"
+                        >
+                          <ChevronUpIcon className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => moveCourse(index, 1)}
+                          disabled={index === selectedCourseIds.length - 1}
+                          className="p-1 rounded text-stone-400 hover:text-stone-200 hover:bg-retro-card disabled:opacity-30 disabled:pointer-events-none"
+                          aria-label="Flytta ner"
+                        >
+                          <ChevronDownIcon className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ol>
             )}
+          </div>
+          <div>
+            <h2 className="font-semibold mb-2 text-stone-200">Lägg till eller ta bort banor</h2>
+            <div className="space-y-2 max-h-48 overflow-y-auto rounded-lg border border-retro-border p-3 bg-retro-card">
+              {allCourses.length === 0 ? (
+                <p className="text-sm text-retro-muted">Inga banor tillagda än.</p>
+              ) : (
+                allCourses.map((c) => (
+                  <label
+                    key={c.id}
+                    className="flex items-center gap-2 cursor-pointer text-sm text-stone-200"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedCourseIds.includes(c.id)}
+                      onChange={(e) => toggleCourse(c.id, e.target.checked)}
+                      className="rounded border-retro-border bg-retro-surface text-retro-accent focus:ring-retro-accent"
+                    />
+                    {c.name}
+                  </label>
+                ))
+              )}
+            </div>
           </div>
         </div>
 

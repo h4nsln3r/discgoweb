@@ -20,18 +20,21 @@ export type Database = {
           course_id: string | null
           created_at: string | null
           id: string
+          sort_order: number | null
         }
         Insert: {
           competition_id: string
           course_id?: string | null
           created_at?: string | null
           id?: string
+          sort_order?: number | null
         }
         Update: {
           competition_id?: string
           course_id?: string | null
           created_at?: string | null
           id?: string
+          sort_order?: number | null
         }
         Relationships: [
           {
